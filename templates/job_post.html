@@ -134,21 +134,22 @@
   <script>
     async function fetchJobs() {
       const jobListingsDiv = document.getElementById('jobListings');
-      const loadingMsg = document.getElementById('loadingMessage');
-      const noJobsMsg = document.getElementById('noJobsMsg');
+const loadingMsg = document.getElementById('loadingMessage');
+const noJobsMsg = document.getElementById('noJobsMsg');
 
-      jobListingsDiv.innerHTML = ''; // Clear existing listings
-      loadingMsg.style.display = 'block'; // Show loading message
-      noJobsMsg.style.display = 'none'; // Hide no jobs message
+if (jobListingsDiv) jobListingsDiv.innerHTML = ''; // Clear existing listings
+if (loadingMsg) loadingMsg.style.display = 'block'; // Show loading message
+if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
 
       try {
         const response = await fetch('/jobs');
         const jobs = await response.json();
 
+        console.log(jobs)
         loadingMsg.style.display = 'none'; // Hide loading message
 
         if (jobs.length === 0) {
-          noJobsMsg.style.display = 'block'; // Show no jobs message if array is empty
+          if (noJobsMsg) noJobsMsg.style.display = 'block'; // Show no jobs message if array is empty
         } else {
           jobs.forEach(job => {
             const jobCard = document.createElement('div');
@@ -160,7 +161,7 @@
                 <p><strong>Location:</strong> ${job.location}</p>
                 <p><strong>Experience:</strong> ${job.required_experience}</p>
                 <p><strong>Assessment Timer:</strong> ${job.assessment_timer} minutes</p>
-                <p><strong>Min. Assessment Score:</strong> ${job.min_assessment_score !== null ? job.min_assessment_score : 'N/A'}%</p>
+                <p><strong>Min. Assessment Score:</strong> ${job.min_assesment_score}</p>
                 <p><strong>Posted On:</strong> ${new Date(job.posted_at).toLocaleDateString()}</p>
               </div>
               <h3>Description:</h3>

@@ -54,6 +54,7 @@ class Job(db.Model):
     required_experience = db.Column(db.String(50), nullable=False)
     assessment_timer = db.Column(db.Integer, nullable=True, default=0)
     assessment_questions = db.Column(db.Text, nullable=True)
+    min_assesment_score = db.Column(db.Integer, nullable=True, default=0)
 
     def __repr__(self):
         return f'<Job {self.title}>'
@@ -156,7 +157,7 @@ def handle_jobs():
         required_experience = request.form.get('requiredExperience')
         assessment_timer_str = request.form.get('assessmentTimer')
         assessment_questions = request.form.get('assessmentQuestions')
-
+        min_assesment_score = request.form.get('minAssessmentScore')
         if not all([title, description, qualifications, responsibilities, job_type, location, required_experience]):
             return jsonify({"message": "Missing required fields."}), 400
 
@@ -171,7 +172,8 @@ def handle_jobs():
             location=location,
             required_experience=required_experience,
             assessment_timer=assessment_timer,
-            assessment_questions=assessment_questions
+            assessment_questions=assessment_questions,
+            min_assesment_score=min_assesment_score
         )
         db.session.add(new_job)
         try:
@@ -196,7 +198,8 @@ def handle_jobs():
                 'location': job.location,
                 'required_experience': job.required_experience,
                 'assessment_timer': job.assessment_timer,
-                'assessment_questions': json.loads(job.assessment_questions) if job.assessment_questions else []
+                'assessment_questions': json.loads(job.assessment_questions) if job.assessment_questions else [],
+                'min_assesment_score': job.min_assesment_score
             })
         return jsonify(jobs_list), 200
 
@@ -218,7 +221,8 @@ def handle_job(job_id):
             'location': job.location,
             'required_experience': job.required_experience,
             'assessment_timer': job.assessment_timer,
-            'assessment_questions': json.loads(job.assessment_questions) if job.assessment_questions else []
+            'assessment_questions': json.loads(job.assessment_questions) if job.assessment_questions else [],
+            'min_assesment_score': job.min_assesment_score
         }), 200
 
     elif request.method == 'PUT':
@@ -231,6 +235,7 @@ def handle_job(job_id):
         required_experience = request.form.get('requiredExperience')
         assessment_timer_str = request.form.get('assessmentTimer')
         assessment_questions = request.form.get('assessmentQuestions')
+        min_assesment_score = request.form.get('minAssesmentScore')
 
         if not all([title, description, qualifications, responsibilities, job_type, location, required_experience]):
             return jsonify({"message": "Missing required fields."}), 400
@@ -244,6 +249,7 @@ def handle_job(job_id):
         job.required_experience = required_experience
         job.assessment_timer = int(assessment_timer_str) if assessment_timer_str and assessment_timer_str.isdigit() else 0
         job.assessment_questions = assessment_questions
+        job.min_assesment_score = float(min_assesment_score) if min_assesment_score and min_assesment_score.replace('.', '', 1).isdigit() else 0.0
 
         try:
             db.session.commit()
@@ -278,6 +284,7 @@ def submit_application():
     job = db.session.get(Job, job_id)
     if not job:
         return jsonify({"message": "Job not found."}), 404
+    assessment_timer = job.assessment_timer
 
     if resume_file and allowed_file(resume_file.filename):
         filename = secure_filename(f"{uuid.uuid4()}_{resume_file.filename}")
@@ -318,7 +325,8 @@ def submit_application():
             return jsonify({
                 "message": "Application submitted successfully! Please proceed to assessment.",
                 "job_id": job_id,
-                "application_id": new_application.id
+                "application_id": new_application.id,
+                "assessment_timer":assessment_timer
             }), 201
         except Exception as e:
             db.session.rollback()
@@ -347,7 +355,7 @@ def submit_assessment(job_id, application_id):
     job_assessment_questions = json.loads(job.assessment_questions) if job.assessment_questions else []
 
     # Prepare user answers for Gemini
-    print(job_assessment_questions)
+   
     formatted_user_answers = []
     for ua in user_answers:
         idx = ua.get('question_index')
@@ -363,9 +371,58 @@ def submit_assessment(job_id, application_id):
     # Construct prompt for Gemini
     prompt_parts = [
         f"""
-        You are an AI assistant for evaluating job applications.
-        Based on the provided Job Description, Qualifications, Responsibilities, Applicant's Resume, and their answers to assessment questions,
+        You are an advanced AI expert in resume screening and candidate-job matching.
+
+You will receive a job description and a resume. Analyze the resume in detail against the job description and provide a comprehensive evaluation.
+
+Instructions:
+
+Score the resume out of 100, considering the following criteria:
+
+skills: How well the candidate's skills match the required skills in the job description.
+
+qualifications: Whether the candidate's qualifications meet or exceed the requirements.
+
+achievements: Relevance and quantity of achievements related to the required skills.
+
+certifications: Number and relevance of certifications to the job requirements.
+
+projects: How well the candidate's project experience aligns with the job description.
+
+location: Whether the candidate's preferred location (e.g., hybrid, remote) matches the job's requirements.
+
+experience: Whether the candidate's work experience meets or exceeds the job requirements.
+
+resume_quality: The overall quality of the resume, including presence of LinkedIn links, contact information, location, and overall professionalism.
+
+For each criterion, assign a score out of 100.
+
+
+Calculate the overall score (out of 100) as a weighted or averaged value of the above criteria.
+
+Based on the overall score and individual criteria, provide a "Decision" field with either "accept" or "reject".
+
+Output should be strictly in the following JSON format and nothing else:
+
+
+json
+
+   {{"gemini_score": 85.5, "reasoning": "Strong alignment with qualifications and good answers.", assessment_score:86.7}}
+
+   
+also the assesment_score should be purely 
+Based on the provided applicants their answers to assessment questions,
         provide an assessment score from 0.0 to 100.0.
+
+        Assessment Questions and User Answers:
+        {user_answers_str}
+
+        Evalutate the answers based on the given question for it 
+        Provide only a JSON output with the assessment score and a brief reasoning.
+        Example: {{"assessment_score": 85.5, "reasoning": "Strong alignment with qualifications and good answers."}}
+
+
+the gemini_score Evaluate using only the information provided below.
 
         Job Title: {job.title}
         Job Description: {job_description}
@@ -379,20 +436,17 @@ def submit_assessment(job_id, application_id):
         Applicant Education: {application.education}
         Resume Text: {resume_text}
 
-        Assessment Questions and User Answers:
-        {user_answers_str}
-
-        Evaluate the applicant's suitability for the role based on all provided information.
-        Pay close attention to how well their resume text, experience, and answers align with the job requirements.
-        Provide only a JSON output with the assessment score and a brief reasoning.
-        Example: {{"assessment_score": 85.5, "reasoning": "Strong alignment with qualifications and good answers."}}
         """,
     ]
+
+   
+    
 
     gemini_prompt = "".join(prompt_parts)
 
     try:
-        model = genai.GenerativeModel('gemini-pro', generation_config=generation_config)
+        model = genai.GenerativeModel('gemini-2.0-flash', generation_config=generation_config)
+       
         response = model.generate_content(gemini_prompt)
         
         gemini_output_text = response.text.strip()
@@ -404,14 +458,16 @@ def submit_assessment(job_id, application_id):
             
         gemini_output = json.loads(gemini_output_json_str)
         
+        gemini_score = float(gemini_output.get('gemini_score', 0.0))
         assessment_score = float(gemini_output.get('assessment_score', 0.0))
         # assessment_reasoning = gemini_output.get('reasoning', 'No specific reasoning provided.')
 
     except Exception as e:
         print(f"Error calling Gemini API for assessment scoring or parsing response: {e}")
-        assessment_score = 0.0 # Default score if AI call fails
+        eligibilty_score = 0.0 # Default score if AI call fails
         # assessment_reasoning = f"AI assessment scoring failed: {e}"
 
+    application.eligibility_score = gemini_score
     application.assessment_score = assessment_score
     application.status = 'Pending' # Update status after assessment
     try:

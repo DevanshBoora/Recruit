@@ -245,7 +245,7 @@
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const applications = await response.json();
-
+      console.log(applications)
       applicationsTableBody.innerHTML = ''; // Clear existing rows
       if (applications.length === 0) {
         noApplicationsMessage.style.display = 'block';
@@ -255,6 +255,7 @@
 
       applications.forEach(application => {
         const applicationRow = applicationsTableBody.insertRow();
+        console.log(application.id)
         applicationRow.dataset.applicationId = application.id;
 
         applicationRow.innerHTML = `
@@ -340,8 +341,8 @@
         actionsCell.appendChild(rejectBtn);
       } else {
         // Remove buttons if status is Accepted or Rejected
-        const acceptBtn = actionCell.querySelector('.accept-btn');
-        const rejectBtn = actionCell.querySelector('.reject-btn');
+        const acceptBtn = actionsCell.querySelector('.accept-btn');
+        const rejectBtn = actionsCell.querySelector('.reject-btn');
         if (acceptBtn) acceptBtn.remove();
         if (rejectBtn) rejectBtn.remove();
       }

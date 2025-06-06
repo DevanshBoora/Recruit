@@ -151,7 +151,7 @@
     // These are passed from Flask backend context
     const jobId = localStorage.getItem('jobid'); // Fallback to Flask context if not in localStorage
     const applicationId = localStorage.getItem('appid')
-    const assessmentTimer = 5; // Use tojson for safety with JS
+    const assessmentTimer = localStorage.getItem('asstimer'); // Use tojson for safety with JS
 
     let timerInterval;
     let timeRemaining = assessmentTimer * 60; // Convert minutes to seconds

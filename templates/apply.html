@@ -116,7 +116,9 @@
           localStorage.removeItem('jobLocation');
           localStorage.removeItem('requiredExperience');
           localStorage.setItem('appid', result.application_id); // Store application ID for assessment page
-          localStorage.setItem('jobid', result.job_id); // Store job ID for assessment page
+          localStorage.setItem('jobid', result.job_id); 
+          localStorage.setItem('asstimer',result.assessment_timer); // Store assessment timer
+        // Store job ID for assessment page
         } else {
           showGlobalMessage(result.message, 'error');
         }
