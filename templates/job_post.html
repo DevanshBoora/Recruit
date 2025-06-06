@@ -160,7 +160,7 @@
                 <p><strong>Location:</strong> ${job.location}</p>
                 <p><strong>Experience:</strong> ${job.required_experience}</p>
                 <p><strong>Assessment Timer:</strong> ${job.assessment_timer} minutes</p>
-                <p><strong>Min. Assessment Score:</strong> ${job.min_assessment_score}%</p>
+                <p><strong>Min. Assessment Score:</strong> ${job.min_assessment_score !== null ? job.min_assessment_score : 'N/A'}%</p>
                 <p><strong>Posted On:</strong> ${new Date(job.posted_at).toLocaleDateString()}</p>
               </div>
               <h3>Description:</h3>

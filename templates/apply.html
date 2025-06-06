@@ -25,7 +25,7 @@
       <input type="hidden" id="jobId" name="jobId" /> 
       
       <label for="name">Full Name:</label>
-      <input type="text" id="name" name="name"  required  value="mani" /
+      <input type="text" id="name" name="name"  required  value="mani" />
       
       <label for="age">Age:</label>
       <select id="age" name="age">
@@ -39,7 +39,7 @@
       <input type="email" id="email" name="email" required  value="gangolamanikanta@gmail.com"/>
 
       <label for="applicantExperience">Your Work Experience (e.g., 2 years in software development):</label>
-      <textarea id="applicantExperience" name="applicantExperience" rows="3">2 years</textarea>
+      <textarea id="applicantExperience" name="experience" rows="3">2 years</textarea>
 
       <label for="education">Education (e.g., B.Sc. Computer Science):</label>
       <textarea id="education" name="education" rows="2">Btech</textarea>
@@ -82,8 +82,8 @@
       formData.append('age', document.getElementById('age').value.trim()); // Get age from select
       formData.append('email', document.getElementById('email').value.trim());
       
-      // NEW: Append Applicant Experience and Education
-      formData.append('applicantExperience', document.getElementById('applicantExperience').value.trim());
+      // FIX: Changed 'applicantExperience' to 'experience' to match the name attribute in the HTML
+      formData.append('experience', document.getElementById('applicantExperience').value.trim());
       formData.append('education', document.getElementById('education').value.trim());
 
       // Append the resume file
@@ -104,7 +104,7 @@
         const result = await response.json();
 
         if (response.ok) {
-          showGlobalMessage(result.message, 'success', `/assessment/${result.job_id}/${result.application_id}`); 
+          showGlobalMessage(result.message, 'success', `/assessment/${result.job_id}/${result.application_id}`);         
           form.reset();
           // Clear localStorage flags after successful submission (if any are still used, though not directly relevant to apply.html anymore)
           localStorage.removeItem('jobId'); 
@@ -125,8 +125,5 @@
         console.error('Fetch error:', err);
       }
     });
-
-
-
   </script>
 {% endblock %}

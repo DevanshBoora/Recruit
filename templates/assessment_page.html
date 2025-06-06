@@ -187,7 +187,7 @@
         questionsContainer.innerHTML = '<p>Loading assessment questions...</p>'; // Loading indicator
 
         try {
-            const response = await fetch(`/jobs/${jobId}/assessment_questions`);
+            const response = await fetch(`/jobs/${jobId}`);
             console.log(response);
             const question = await response.json();
             questions=question['assessment_questions']
