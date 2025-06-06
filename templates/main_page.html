@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}DevOrks - Innovations for Tomorrow{% endblock %}
+
+{% block head_extra %}
+    <style>
+        .hero {
+            background-color: var(--accent-color);
+            color: var(--surface-color-dark);
+            text-align: center;
+            padding: 100px 20px;
+            margin-bottom: 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px var(--shadow-color-dark);
+            animation: fadeIn 1s ease-out;
+        }
+        .hero h1 {
+            font-size: 3.8em;
+            margin-bottom: 15px;
+            color: var(--surface-color-dark); /* Override for hero heading */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .hero p {
+            font-size: 1.3em;
+            max-width: 900px;
+            margin: 0 auto;
+            color: var(--surface-color-dark);
+            opacity: 0.9;
+        }
+        .content-section {
+            padding: 40px;
+            margin: 40px auto;
+            background-color: var(--surface-color-dark);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px var(--shadow-color-dark);
+            border: 1px solid var(--border-color-dark);
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+        .content-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px var(--shadow-color-dark);
+        }
+        .content-section h2 {
+            color: var(--accent-color);
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+        .content-section p {
+            font-size: 1.1em;
+            color: var(--text-color-faded);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="hero">
+        <h1>Welcome to Devorks</h1>
+        <p>Innovations for Tomorrow: Pioneering Solutions in Technology and Beyond.</p>
+    </div>
+
+    <div class="content-section">
+        <h2>Who We Are</h2>
+        <p>DevOrks is a leading technology company dedicated to creating cutting-edge solutions that drive progress and empower businesses. With a focus on innovation and excellence, we deliver bespoke software, cloud services, and digital transformation strategies.</p>
+    </div>
+
+    <div class="content-section">
+        <h2>What We Do</h2>
+        <p>Our expertise spans a wide range of domains, including AI, machine learning, cloud computing, cybersecurity, and data analytics. We help businesses optimize their operations, enhance customer experiences, and achieve their strategic goals through robust and scalable technology solutions.</p>
+    </div>
+
+    <div class="content-section">
+        <h2>Our Mission</h2>
+        <p>To innovate relentlessly, deliver exceptional value, and foster a culture of growth and collaboration. We are committed to making a positive impact on the world through technology.</p>
+    </div>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Job Post{% endblock %}
+
+{% block content %}
+  <div class="form-card">
+    <h2 id="formTitle">Edit Job: <span id="currentJobTitle"></span></h2>
+    <form id="editJobForm">
+      <input type="hidden" id="jobId" />
+      <label for="jobTitle">Job Title:</label>
+      <input type="text" id="jobTitle" required />
+      
+      <label for="jobDescription">Job Description:</label>
+      <textarea id="jobDescription" rows="4" required></textarea>
+      
+      <label for="qualifications">Qualifications:</label>
+      <textarea id="qualifications" rows="3" required></textarea>
+      
+      <label for="responsibilities">Responsibilities:</label>
+      <textarea id="responsibilities" rows="3" required></textarea>
+
+      <label for="jobType">JobType:</label>
+      <select id="jobType" required>
+        <option value="">Select Job Type...</option>
+        <option value="On-site">On-site</option>
+        <option value="Remote">Remote</option>
+        <option value="Hybrid">Hybrid</option>
+      </select>
+
+      <label for="jobLocation">Job Location:</label>
+      <select id="jobLocation" required>
+          <option value="">Select a City...</option>
+          <option value="New York">New York</option>
+          <option value="San Francisco">San Francisco</option>
+          <option value="London">London</option>
+          <option value="Berlin">Berlin</option>
+          <option value="Paris">Paris</option>
+          <option value="Tokyo">Tokyo</option>
+          <option value="Sydney">Sydney</option>
+          <option value="Singapore">Singapore</option>
+          <option value="Bengaluru">Bengaluru</option>
+          <option value="Toronto">Toronto</option>
+          <option value="Dubai">Dubai</option>
+          <option value="Sao Paulo">Sao Paulo</option>
+          <option value="Hyderabad">Hyderabad</option>
+      </select>
+
+      <label for="requiredExperience">Required Experience:</label>
+      <input type="text" id="requiredExperience" placeholder="e.g., 2+ years, 5-7 years" required />
+
+      <label for="assessmentTimer">Assessment Timer (minutes):</label>
+      <input type="number" id="assessmentTimer" name="assessmentTimer" min="0" value="0" />
+
+      <label for="minAssessmentScore">Min. Assessment Score:</label>
+      <input type="number" id="minAssessmentScore" name="minAssessmentScore" min="0" max="100" value="0" required />
+
+      <fieldset class="assessment-builder-fieldset">
+        <legend>Assessment Questions</legend>
+        <div class="assessment-question-actions">
+          <button type="button" class="btn" onclick="addQuestion('mcq')">Add MCQ</button>
+          <button type="button" class="btn" onclick="addQuestion('text')">Add Text Question</button>
+          <button type="button" class="btn" onclick="addQuestion('coding')">Add Coding Question</button>
+        </div>
+        <div id="questionsBuilderContainer" class="questions-builder-container">
+          <p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded);">No questions added yet. Use the buttons above to add questions.</p>
+        </div>
+        <input type="hidden" id="assessmentQuestions" name="assessmentQuestions" value="[]" />
+      </fieldset>
+
+      <button type="submit" class="btn btn-primary">Update Job</button>
+    </form>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Global counter for questions
+    let questionCounter = 0;
+    let questionsData = []; // Array to store question objects
+
+    function updateNoQuestionsMessage() {
+        const message = document.getElementById('noQuestionsMessage');
+        if (questionsData.length === 0) {
+            message.style.display = 'block';
+        } else {
+            message.style.display = 'none';
+        }
+    }
+
+    function addQuestion(type, questionText = '', options = {}, correctOption = '', expectedKeywords = [], starterCode = '') {
+        const container = document.getElementById('questionsBuilderContainer');
+        const questionId = `question-${questionCounter}`;
+
+        let questionHtml = `
+            <div class="question-card" id="${questionId}" data-question-type="${type}">
+                <button type="button" class="delete-question-btn" onclick="deleteQuestion('${questionId}')">X</button>
+                <h3>Question ${questionCounter + 1} (${type.toUpperCase()})</h3>
+                <label for="q-${questionCounter}-text">Question Text:</label>
+                <textarea id="q-${questionCounter}-text" rows="2" required onchange="updateQuestionData()">${questionText}</textarea>
+        `;
+
+        if (type === 'mcq') {
+            questionHtml += `
+                <div class="mcq-options-container">
+                    <label>Options:</label>
+                    <input type="text" id="q-${questionCounter}-option-a" placeholder="Option A" value="${options.a || ''}" required onchange="updateQuestionData()"/>
+                    <input type="text" id="q-${questionCounter}-option-b" placeholder="Option B" value="${options.b || ''}" required onchange="updateQuestionData()"/>
+                    <input type="text" id="q-${questionCounter}-option-c" placeholder="Option C" value="${options.c || ''}" required onchange="updateQuestionData()"/>
+                    <input type="text" id="q-${questionCounter}-option-d" placeholder="Option D" value="${options.d || ''}" required onchange="updateQuestionData()"/>
+                </div>
+                <label for="q-${questionCounter}-correct">Correct Option (A, B, C, D):</label>
+                <input type="text" id="q-${questionCounter}-correct" maxlength="1" pattern="[A-Da-d]" value="${correctOption}" required onchange="updateQuestionData()"/>
+            `;
+        } else if (type === 'text') {
+            questionHtml += `
+                <label for="q-${questionCounter}-expected">Expected Keywords (comma-separated, optional):</label>
+                <input type="text" id="q-${questionCounter}-expected" placeholder="keyword1, keyword2" value="${expectedKeywords.join(', ')}" onchange="updateQuestionData()"/>
+            `;
+        } else if (type === 'coding') {
+            questionHtml += `
+                <label for="q-${questionCounter}-expected">Expected Keywords in Solution (comma-separated, optional):</label>
+                <input type="text" id="q-${questionCounter}-expected" placeholder="function_name, loop_type" value="${expectedKeywords.join(', ')}" onchange="updateQuestionData()"/>
+                <label for="q-${questionCounter}-starter">Starter Code (optional):</label>
+                <textarea id="q-${questionCounter}-starter" rows="4" onchange="updateQuestionData()">${starterCode}</textarea>
+            `;
+        }
+
+        questionHtml += `</div>`;
+        container.insertAdjacentHTML('beforeend', questionHtml);
+        
+        // Add a new empty question object to our data array
+        questionsData.push({
+            id: questionId,
+            type: type,
+            text: questionText,
+            options: options, // For MCQ
+            correct_option: correctOption, // For MCQ
+            expected_keywords: expectedKeywords, // For text/coding
+            starter_code: starterCode // For coding
+        });
+        questionCounter++;
+        updateNoQuestionsMessage();
+        updateQuestionData(); // Initial update after adding
+    }
+
+    function deleteQuestion(questionId) {
+        document.getElementById(questionId).remove();
+        // Remove from questionsData array
+        questionsData = questionsData.filter(q => q.id !== questionId);
+        questionCounter--; // Decrement counter, though IDs might not be sequential now
+        updateNoQuestionsMessage();
+        updateQuestionData(); // Update JSON after deletion
+    }
+
+    function updateQuestionData() {
+        questionsData.forEach(q => {
+            const index = parseInt(q.id.split('-')[1]);
+            const questionTextarea = document.getElementById(`q-${index}-text`);
+            if (questionTextarea) {
+                q.text = questionTextarea.value.trim();
+            }
+
+            if (q.type === 'mcq') {
+                q.options = {
+                    a: document.getElementById(`q-${index}-option-a`).value.trim(),
+                    b: document.getElementById(`q-${index}-option-b`).value.trim(),
+                    c: document.getElementById(`q-${index}-option-c`).value.trim(),
+                    d: document.getElementById(`q-${index}-option-d`).value.trim(),
+                };
+                q.correct_option = document.getElementById(`q-${index}-correct`).value.trim().toLowerCase();
+            } else if (q.type === 'text' || q.type === 'coding') {
+                const keywordsInput = document.getElementById(`q-${index}-expected`);
+                if (keywordsInput) {
+                    q.expected_keywords = keywordsInput.value.split(',').map(k => k.trim()).filter(k => k);
+                }
+                if (q.type === 'coding') {
+                    const starterCodeInput = document.getElementById(`q-${index}-starter`);
+                    if (starterCodeInput) {
+                        q.starter_code = starterCodeInput.value.trim();
+                    }
+                }
+            }
+        });
+        // Update the hidden input with the JSON string of all questions
+        document.getElementById('assessmentQuestions').value = JSON.stringify(questionsData);
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('job_id');
+        if (jobId) {
+            document.getElementById('jobId').value = jobId;
+            try {
+                const response = await fetch(`/jobs/${jobId}`);
+                const job = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('currentJobTitle').textContent = job.title;
+                    document.getElementById('jobTitle').value = job.title;
+                    document.getElementById('jobDescription').value = job.description;
+                    document.getElementById('qualifications').value = job.qualifications;
+                    document.getElementById('responsibilities').value = job.responsibilities;
+                    document.getElementById('jobType').value = job.job_type;
+                    document.getElementById('jobLocation').value = job.location;
+                    document.getElementById('requiredExperience').value = job.required_experience;
+                    document.getElementById('assessmentTimer').value = job.assessment_timer;
+                    document.getElementById('minAssessmentScore').value = job.min_assessment_score; // Add this line
+                    
+                    // Load assessment questions if available
+                    if (job.assessment_questions) {
+                        try {
+                            const loadedQuestions = JSON.parse(job.assessment_questions);
+                            questionsData = []; // Clear existing data
+                            questionCounter = 0; // Reset counter for fresh load
+                            document.getElementById('questionsBuilderContainer').innerHTML = ''; // Clear builder UI
+                            loadedQuestions.forEach(q => {
+                                addQuestion(q.type, q.text, q.options, q.correct_option, q.expected_keywords, q.starter_code);
+                            });
+                        } catch (e) {
+                            console.error("Error parsing assessment questions JSON:", e);
+                            showGlobalMessage("Error loading assessment questions. They might be malformed.", 'error');
+                        }
+                    }
+                    updateNoQuestionsMessage(); // Ensure message is correct after loading
+                    updateQuestionData(); // Initial update after loading
+                } else {
+                    showGlobalMessage(job.message, 'error');
+                }
+            } catch (err) {
+                showGlobalMessage('Error fetching job details. Please try again.', 'error');
+                console.error('Fetch error:', err);
+            }
+        } else {
+            showGlobalMessage('No job ID provided for editing.', 'error', '/job_post.html');
+        }
+    });
+
+    document.getElementById('editJobForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const jobId = document.getElementById('jobId').value;
+        const formData = new FormData();
+        formData.append('jobTitle', document.getElementById('jobTitle').value.trim());
+        formData.append('jobDescription', document.getElementById('jobDescription').value.trim());
+        formData.append('qualifications', document.getElementById('qualifications').value.trim());
+        formData.append('responsibilities', document.getElementById('responsibilities').value.trim());
+        formData.append('jobType', document.getElementById('jobType').value);
+        formData.append('jobLocation', document.getElementById('jobLocation').value); // Get value from select
+        formData.append('requiredExperience', document.getElementById('requiredExperience').value.trim());
+        formData.append('assessmentTimer', document.getElementById('assessmentTimer').value);
+        formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value); // Add this line
+
+        const assessmentQuestionsHiddenInput = document.getElementById('assessmentQuestions');
+        updateQuestionData(); // Ensure questionsData is up-to-date before submitting
+        formData.append('assessmentQuestions', assessmentQuestionsHiddenInput.value); // Append the JSON string
+
+        try {
+            const response = await fetch(`/jobs/${jobId}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showGlobalMessage(result.message, 'success', '/job_post.html');
+                // No form reset needed for edit
+            } else {
+                showGlobalMessage(result.message, 'error');
+            }
+        } catch (err) {
+            showGlobalMessage('Error updating job. Please try again.', 'error');
+            console.error('Fetch error:', err);
+        }
+    });
+  </script>
+{% endblock %}

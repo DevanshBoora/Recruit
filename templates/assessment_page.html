@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+
+{% block title %}Job Assessment{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Assessment specific styles */
+    .assessment-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        background-color: var(--surface-color-dark);
+        border-radius: 10px;
+        box-shadow: 0 4px 15px var(--shadow-color-dark);
+        border: 1px solid var(--border-color-dark);
+    }
+
+    .assessment-container h1 {
+        text-align: center;
+        color: var(--accent-color);
+        margin-bottom: 20px;
+        font-size: 2.5em;
+    }
+
+    .assessment-timer {
+        text-align: center;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: var(--accent-color);
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 2px solid var(--accent-color);
+        border-radius: 8px;
+        background-color: #2b2b2b;
+    }
+
+    .question-card {
+        background-color: #3a3a3a;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color-dark);
+        box-shadow: 0 2px 8px var(--shadow-color-dark);
+    }
+
+    .question-card p {
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+
+    .question-card .question-number {
+        font-weight: bold;
+        color: var(--text-color-faded);
+        margin-bottom: 10px;
+        font-size: 1.1em;
+    }
+
+    .question-card .question-text {
+        font-size: 1.2em;
+        color: var(--text-color-light);
+        margin-bottom: 20px;
+    }
+
+    .question-card input[type="radio"] {
+        margin-right: 10px;
+        transform: scale(1.2); /* Make radio buttons a bit larger */
+        vertical-align: middle;
+    }
+
+    .question-card label {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--text-color-light);
+        font-size: 1.1em;
+        cursor: pointer;
+        padding: 8px 0;
+    }
+
+    .question-card textarea {
+        width: calc(100% - 20px);
+        padding: 10px;
+        border: 1px solid var(--border-color-dark);
+        border-radius: 5px;
+        background-color: var(--input-bg-dark);
+        color: var(--text-color-light);
+        font-size: 1em;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .question-card textarea.coding-input {
+        font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+        background-color: #202020; /* Darker background for code */
+        min-height: 150px;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .assessment-submit-btn {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        background-color: var(--button-bg-dark);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2em;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 30px;
+    }
+
+    .assessment-submit-btn:hover {
+        background-color: var(--button-hover-dark);
+    }
+
+    .assessment-submit-btn:disabled {
+        background-color: #555;
+        cursor: not-allowed;
+    }
+
+    .error-text {
+        color: var(--error-color);
+        text-align: center;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assessment-container">
+    <h1>Job Assessment</h1>
+    <p class="assessment-timer">Time Remaining: <span id="timerDisplay">--:--</span></p>
+
+    <form id="assessmentForm">
+        <div id="questionsContainer">
+            <p>Loading assessment questions...</p>
+        </div>
+        <button type="submit" class="assessment-submit-btn" id="submitAssessmentBtn">Submit Assessment</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // These are passed from Flask backend context
+    const jobId = localStorage.getItem('jobid'); // Fallback to Flask context if not in localStorage
+    const applicationId = localStorage.getItem('appid')
+    const assessmentTimer = 5; // Use tojson for safety with JS
+
+    let timerInterval;
+    let timeRemaining = assessmentTimer * 60; // Convert minutes to seconds
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (assessmentTimer && assessmentTimer > 0) {
+            startTimer();
+        } else {
+            document.getElementById('timerDisplay').textContent = 'No timer set';
+        }
+        fetchAssessmentQuestions(jobId);
+    });
+
+    function startTimer() {
+        const timerDisplay = document.getElementById('timerDisplay');
+        timerInterval = setInterval(() => {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                timerDisplay.textContent = 'Time Expired!';
+                showGlobalMessage('Time for the assessment has expired. Your answers will be submitted automatically.', 'error');
+                submitAssessment(true); // Submit automatically when time expires
+            }
+            timeRemaining--;
+        }, 1000);
+    }
+
+    async function fetchAssessmentQuestions(jobId) {
+        const questionsContainer = document.getElementById('questionsContainer');
+        questionsContainer.innerHTML = '<p>Loading assessment questions...</p>'; // Loading indicator
+
+        try {
+            const response = await fetch(`/jobs/${jobId}/assessment_questions`);
+            console.log(response);
+            const question = await response.json();
+            questions=question['assessment_questions']
+            console.log(questions);
+            if (response.ok) {
+                if (questions.length > 0) {
+                    questionsContainer.innerHTML = ''; // Clear loading message
+                    questions.forEach((q, index) => {
+                        const questionCard = document.createElement('div');
+                        questionCard.className = 'question-card';
+                        let inputHtml = '';
+                        if (q.type === 'mcq') {
+                            inputHtml = `
+                                <div class="options-grid">
+                                   ${Object.values(q.options).map((option, optIndex) => `
+    <label>
+        <input type="radio" name="question-${index}" value="${option}" data-question-type="${q.type}">
+        ${option}
+    </label>
+`).join('')}
+                                </div>
+                            `;
+                        } else if (q.type === 'text') {
+                            inputHtml = `<textarea name="question-${index}" rows="5" placeholder="Type your answer here..." data-question-type="${q.type}" required></textarea>`;
+                        } else if (q.type === 'coding') {
+                            inputHtml = `<textarea name="question-${index}" rows="10" class="coding-input" placeholder="Write your code here..." data-question-type="${q.type}" required></textarea>`;
+                        }
+
+                        questionCard.innerHTML = `
+                            <p class="question-number">Question ${index + 1}</p>
+                            <p class="question-text">${q.text}</p>
+                            ${inputHtml}
+                        `;
+                        questionsContainer.appendChild(questionCard);
+                    });
+                } else {
+                    questionsContainer.innerHTML = '<p class="error-text">No assessment questions found for this job.</p>';
+                    document.getElementById('submitAssessmentBtn').disabled = true; // Disable submit if no questions
+                }
+            } else {
+                questionsContainer.innerHTML = `<p class="error-text">Error loading questions: ${questions.message || 'Unknown error'}</p>`;
+                document.getElementById('submitAssessmentBtn').disabled = true;
+            }
+        } catch (error) {
+            console.error('Error fetching assessment questions:', error);
+            questionsContainer.innerHTML = '<p class="error-text">Failed to load assessment questions. Please try again.</p>';
+            document.getElementById('submitAssessmentBtn').disabled = true;
+        }
+    }
+
+    document.getElementById('assessmentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitAssessment(false); // Not an automatic submission
+    });
+
+    async function submitAssessment(isAutomatic = false) {
+        clearInterval(timerInterval); // Stop the timer
+
+        const submitButton = document.getElementById('submitAssessmentBtn');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+
+        const questionsCards = document.querySelectorAll('.question-card');
+        const submittedAnswers = [];
+
+        questionsCards.forEach((card, index) => {
+            let answer = '';
+            // Get question type from data attribute
+            const questionTypeElement = card.querySelector('[name^="question-"]');
+            const questionType = questionTypeElement ? questionTypeElement.dataset.questionType : '';
+
+            if (questionType === 'mcq') {
+                const selectedOption = card.querySelector(`input[name="question-${index}"]:checked`);
+                if (selectedOption) {
+                    answer = selectedOption.value;
+                }
+            } else if (questionType === 'text' || questionType === 'coding') {
+                const textarea = card.querySelector(`textarea[name="question-${index}"]`);
+                if (textarea) {
+                    answer = textarea.value;
+                }
+            }
+            submittedAnswers.push({ question_index: index, answer: answer });
+        });
+
+        try {
+            const response = await fetch(`/submit_assessment/${jobId}/${applicationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answers: submittedAnswers })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showGlobalMessage(result.message, 'success', '/view_applications.html'); // Redirect to applications view
+            } else {
+                showGlobalMessage(result.message || 'Failed to submit assessment.', 'error');
+                if (!isAutomatic) { // Only re-enable button if not an automatic submission
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Submit Assessment';
+                }
+            }
+        } catch (error) {
+            console.error('Error submitting assessment:', error);
+            showGlobalMessage('An error occurred during assessment submission. Please try again.', 'error');
+            if (!isAutomatic) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit Assessment';
+            }
+        }
+    }
+</script>
+{% endblock %}

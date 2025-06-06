@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}DevOrks - Apply for Job{% endblock %}
+
+{% block head_extra %}
+  <style>
+    .form-card {
+      max-width: 550px; /* Slightly wider for the form */
+    }
+    .form-card h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      color: var(--accent-color);
+    }
+    /* Removed h2 span styling as job title display is removed */
+    /* Specific styles for form fields (already in base.html) can be tweaked here if needed */
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="form-card">
+    <h2>Submit Your Application</h2>
+    <form id="applyForm">
+      <input type="hidden" id="jobId" name="jobId" /> 
+      
+      <label for="name">Full Name:</label>
+      <input type="text" id="name" name="name"  required  value="mani" /
+      
+      <label for="age">Age:</label>
+      <select id="age" name="age">
+        <option value="">Select Age</option>
+        {% for i in range(18, 66) %} {# Age range from 18 to 65 #}
+          <option value="{{ i }}">{{ i }}</option>
+        {% endfor %}
+      </select>
+      
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required  value="gangolamanikanta@gmail.com"/>
+
+      <label for="applicantExperience">Your Work Experience (e.g., 2 years in software development):</label>
+      <textarea id="applicantExperience" name="applicantExperience" rows="3">2 years</textarea>
+
+      <label for="education">Education (e.g., B.Sc. Computer Science):</label>
+      <textarea id="education" name="education" rows="2">Btech</textarea>
+      
+      <label for="resume">Upload Resume (PDF only):</label>
+      <input type="file" id="resume" name="resume" accept=".pdf" required />
+      
+      <button type="submit">Submit Application</button>
+    </form>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const jobId = urlParams.get('job_id'); // This correctly gets the job ID from the URL
+
+      // Set the value of the hidden jobId input
+      if (jobId) {
+        document.getElementById('jobId').value = jobId;
+      } else {
+        showGlobalMessage('Error: Job ID not found in URL for application. Please apply from a job posting.', 'error');
+        // Optionally disable the form or redirect if no job ID
+        document.getElementById('applyForm').style.display = 'none';
+      }
+
+      // No longer displaying job title or required experience here, as per new requirements
+    });
+
+    document.getElementById('applyForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const form = this; // Reference to the form
+      const jobId = document.getElementById('jobId').value; 
+      const formData = new FormData();
+      
+      formData.append('jobId', jobId); 
+      formData.append('name', document.getElementById('name').value.trim());
+      formData.append('age', document.getElementById('age').value.trim()); // Get age from select
+      formData.append('email', document.getElementById('email').value.trim());
+      
+      // NEW: Append Applicant Experience and Education
+      formData.append('applicantExperience', document.getElementById('applicantExperience').value.trim());
+      formData.append('education', document.getElementById('education').value.trim());
+
+      // Append the resume file
+      const resumeFile = document.getElementById('resume').files[0];
+      if (resumeFile) {
+        formData.append('resume', resumeFile);
+      } else {
+        showGlobalMessage('Please upload a resume file.', 'error');
+        return; 
+      }
+      
+      try {
+        const response = await fetch('/submit_application', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showGlobalMessage(result.message, 'success', `/assessment/${result.job_id}/${result.application_id}`); 
+          form.reset();
+          // Clear localStorage flags after successful submission (if any are still used, though not directly relevant to apply.html anymore)
+          localStorage.removeItem('jobId'); 
+          localStorage.removeItem('jobTitle');
+          localStorage.removeItem('jobDescription');
+          localStorage.removeItem('qualifications');
+          localStorage.removeItem('responsibilities');
+          localStorage.removeItem('jobType');
+          localStorage.removeItem('jobLocation');
+          localStorage.removeItem('requiredExperience');
+          localStorage.setItem('appid', result.application_id); // Store application ID for assessment page
+          localStorage.setItem('jobid', result.job_id); // Store job ID for assessment page
+        } else {
+          showGlobalMessage(result.message, 'error');
+        }
+      } catch (err) {
+        showGlobalMessage('An error occurred. Please try again.', 'error');
+        console.error('Fetch error:', err);
+      }
+    });
+
+
+
+  </script>
+{% endblock %}
