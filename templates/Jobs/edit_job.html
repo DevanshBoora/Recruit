@@ -268,7 +268,7 @@
             const result = await response.json();
 
             if (response.ok) {
-                showGlobalMessage(result.message, 'success', '/job_post.html');
+                showGlobalMessage(result.message, 'success', 'Jobs/job_post.html');
                 // No form reset needed for edit
             } else {
                 showGlobalMessage(result.message, 'error');

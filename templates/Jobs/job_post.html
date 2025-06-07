@@ -192,7 +192,7 @@ if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
           document.querySelectorAll('.edit-btn').forEach(button => {
             button.addEventListener('click', function() {
               const jobId = this.dataset.jobId;
-              window.location.href = `/edit_job.html?job_id=${jobId}`; // Corrected: directly use jobId from dataset
+              window.location.href = `/jobs/edit_job.html?job_id=${jobId}`; // Corrected: directly use jobId from dataset
             });
           });
 

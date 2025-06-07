@@ -274,7 +274,7 @@
         });
 
         try {
-            const response = await fetch(`/submit_assessment/${jobId}/${applicationId}`, {
+            const response = await fetch(`http://localhost:5000/submit/submit_assessment/${jobId}/${applicationId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
