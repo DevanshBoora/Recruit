@@ -225,7 +225,7 @@
             const result = await response.json();
 
             if (response.ok) {
-                showGlobalMessage(result.message, 'success', '/job_post.html');
+                showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
                 document.getElementById('jobForm').reset(); // Clear form on success
 
                 // Clear localStorage flags after successful update/post
