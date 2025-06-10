@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule Interview</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        nav {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        nav a:hover::before {
+            left: 100%;
+        }
+
+        nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-content {
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label i {
+            color: #667eea;
+            width: 16px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        input:hover, select:hover {
+            border-color: #c1c9d2;
+        }
+
+        .mode-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .mode-option {
+            position: relative;
+        }
+
+        .mode-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .mode-label {
+            display: block;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #666;
+            background: white;
+        }
+
+        .mode-option input:checked + .mode-label {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.02);
+        }
+
+        .conditional-fields {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff, #f1f3ff);
+            border-radius: 15px;
+            border: 1px solid #e1e8ff;
+            transition: all 0.4s ease;
+            transform-origin: top;
+        }
+
+        .hidden {
+            display: none;
+            opacity: 0;
+            transform: scaleY(0);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #218838, #1ea169);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Custom select styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 45px;
+        }
+
+        /* Animation for conditional fields */
+        .slide-in {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .form-content {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            nav a {
+                display: block;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="{{ url_for('schedule_interview') }}">
+                <i class="fas fa-calendar-plus"></i> Schedule Interview
+            </a>
+            <a href="{{ url_for('feedback') }}">
+                <i class="fas fa-comments"></i> Feedback
+            </a>
+            <a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+        </nav>
+
+        <div class="form-content">
+            <h1><i class="fas fa-user-tie"></i> Schedule Interview</h1>
+
+            <form method="POST">
+                <!-- Candidate Selection -->
+                <div class="form-group">
+                    <label for="candidate">
+                        <i class="fas fa-user"></i>
+                        Select Candidate
+                    </label>
+                    <select id="candidate" name="candidate_id" required>
+                        {% for c in candidates %}
+                            <option value="{{ c['id'] }}">{{ c['applicant_name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Mode Selection -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-video"></i>
+                        Interview Mode
+                    </label>
+                    <div class="mode-toggle">
+                        <div class="mode-option">
+                            <input type="radio" id="virtual" name="mode" value="Virtual" checked onchange="toggleFields()">
+                            <label for="virtual" class="mode-label">
+                                <i class="fas fa-video"></i> Virtual
+                            </label>
+                        </div>
+                        <div class="mode-option">
+                            <input type="radio" id="real" name="mode" value="Real" onchange="toggleFields()">
+                            <label for="real" class="mode-label">
+                                <i class="fas fa-building"></i> In-Person
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interview Date & Time -->
+                <div class="form-group">
+                    <label for="datetime">
+                        <i class="fas fa-calendar-alt"></i>
+                        Date & Time
+                    </label>
+                    <input type="datetime-local" id="datetime" name="interview_datetime" required>
+                </div>
+
+                <!-- Interviewer Name -->
+                <div class="form-group">
+                    <label for="interviewer">
+                        <i class="fas fa-user-tie"></i>
+                        Interviewer Name
+                    </label>
+                    <input type="text" id="interviewer" name="interviewer_name" required placeholder="Enter interviewer's full name">
+                </div>
+
+                <!-- Interviewer Email -->
+                <div class="form-group">
+                    <label for="interviewer_email">
+                        <i class="fas fa-envelope"></i>
+                        Interviewer Email
+                    </label>
+                    <input type="email" id="interviewer_email" name="interviewer_email" required placeholder="interviewer@company.com">
+                </div>
+
+                <!-- Virtual Mode Fields -->
+                <div id="virtual-fields" class="conditional-fields">
+                    <div class="form-group">
+                        <label for="meeting_link">
+                            <i class="fas fa-link"></i>
+                            Meeting Link
+                        </label>
+                        <input type="url" id="meeting_link" name="meeting_link" placeholder="https://zoom.us/j/123456789">
+                    </div>
+                </div>
+
+                <!-- Real Mode Fields -->
+                <div id="real-fields" class="conditional-fields hidden">
+                    <div class="form-group">
+                        <label for="address">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Interview Address
+                        </label>
+                        <input type="text" id="address" name="address" placeholder="Office address with building and room details">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-calendar-check"></i>
+                    Schedule Interview
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleFields() {
+            const virtualMode = document.getElementById('virtual').checked;
+            const virtualFields = document.getElementById('virtual-fields');
+            const realFields = document.getElementById('real-fields');
+
+            if (virtualMode) {
+                virtualFields.classList.remove('hidden');
+                realFields.classList.add('hidden');
+                
+                // Add animation class
+                setTimeout(() => {
+                    virtualFields.classList.add('slide-in');
+                }, 10);
+            } else {
+                realFields.classList.remove('hidden');
+                virtualFields.classList.add('hidden');
+                
+                // Add animation class
+                setTimeout(() => {
+                    realFields.classList.add('slide-in');
+                }, 10);
+            }
+
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                virtualFields.classList.remove('slide-in');
+                realFields.classList.remove('slide-in');
+            }, 400);
+        }
+
+        // Run on load
+        window.onload = function() {
+            toggleFields();
+            
+            // Set minimum date to today
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const datetimeInput = document.getElementById('datetime');
+            const minDateTime = tomorrow.toISOString().slice(0, 16);
+            datetimeInput.min = minDateTime;
+        };
+
+        // Add some interactive feedback
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'translateY(-2px)';
+            });
+            
+            element.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

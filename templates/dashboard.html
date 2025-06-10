@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Feedback Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow-x: auto;
+            color: white;
+        }
+
+        /* Static background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 70%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.2) 0%, transparent 70%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Static geometric shapes */
+        .geometric-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+        }
+
+        .shape:nth-child(1) {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 50%;
+            top: 10%;
+            left: 10%;
+        }
+
+        .shape:nth-child(2) {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #45b7d1, #96ceb4);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            top: 70%;
+            right: 10%;
+        }
+
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #f9ca24, #f0932b);
+            transform: rotate(45deg);
+            top: 50%;
+            left: 5%;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            text-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #4ecdc4, transparent);
+        }
+
+        nav {
+            text-align: center;
+            margin-bottom: 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 2rem;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        nav a {
+            margin: 0 1.5rem;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            padding: 1rem 2.5rem;
+            border-radius: 25px;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 3rem;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .table-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #4ecdc4, #ff6b6b, #45b7d1, transparent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            color: white;
+            font-weight: 500;
+        }
+
+        th {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.8), rgba(78, 205, 196, 0.8));
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        td {
+            color: white;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.03);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            font-size: 1rem;
+        }
+
+        /* Decision Column Styling - Blue and Red */
+        .decision-accepted {
+            color: #007bff !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 
+                0 0 20px rgba(0, 123, 255, 0.8), 
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(0, 123, 255, 0.05)) !important;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 123, 255, 0.3);
+        }
+
+        .decision-accepted::before {
+            content: '✓ ';
+            margin-right: 0.5rem;
+            font-size: 1.3em;
+            color: #007bff;
+            text-shadow: 0 0 15px rgba(0, 123, 255, 0.8);
+        }
+
+        .decision-rejected {
+            color: #dc3545 !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 
+                0 0 20px rgba(220, 53, 69, 0.8), 
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
+            border-radius: 8px;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .decision-rejected::before {
+            content: '✗ ';
+            margin-right: 0.5rem;
+            font-size: 1.3em;
+            color: #dc3545;
+            text-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
+        }
+
+        /* Row-level color coding */
+        .row-accepted {
+            border-left: 4px solid #007bff;
+            background: linear-gradient(90deg, rgba(0, 123, 255, 0.05), transparent) !important;
+        }
+
+        .row-rejected {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(90deg, rgba(220, 53, 69, 0.05), transparent) !important;
+        }
+
+        .status-true {
+            color: #00ff88;
+            font-weight: 700;
+            text-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.8), 
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        .status-true::before {
+            content: '✓';
+            margin-right: 0.8rem;
+            font-size: 1.4em;
+        }
+
+        .status-false {
+            color: #ff3366;
+            font-weight: 700;
+            text-shadow: 
+                0 0 20px rgba(255, 51, 102, 0.8), 
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        .status-false::before {
+            content: '✗';
+            margin-right: 0.8rem;
+            font-size: 1.4em;
+        }
+
+        /* Score column enhancements */
+        td:nth-child(4), td:nth-child(5), td:nth-child(6) {
+            font-weight: 700;
+            text-align: center;
+            position: relative;
+            background: linear-gradient(135deg, rgba(69, 183, 209, 0.1), rgba(150, 206, 180, 0.1));
+            color: #4ecdc4;
+            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        /* Candidate name styling */
+        td:nth-child(1) {
+            font-weight: 600;
+            color: #96ceb4;
+            text-shadow: 0 0 10px rgba(150, 206, 180, 0.5);
+        }
+
+        /* Comments column styling */
+        td:nth-child(3) {
+            color: white;
+            opacity: 0.9;
+        }
+
+        /* N/A styling */
+        td[data-na="true"] {
+            opacity: 0.6;
+            font-style: italic;
+            color: #999 !important;
+        }
+
+        /* Static floating elements */
+        .floating-element {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .floating-element:nth-child(1) {
+            width: 6px;
+            height: 6px;
+            top: 15%;
+            left: 8%;
+        }
+
+        .floating-element:nth-child(2) {
+            width: 4px;
+            height: 4px;
+            top: 70%;
+            left: 90%;
+        }
+
+        .floating-element:nth-child(3) {
+            width: 8px;
+            height: 8px;
+            top: 40%;
+            left: 5%;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            body {
+                padding: 1.5rem;
+            }
+            
+            .table-wrapper {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 1000px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            nav {
+                padding: 1.5rem;
+            }
+            
+            nav a {
+                display: block;
+                margin: 0.8rem 0;
+                padding: 0.8rem 2rem;
+            }
+            
+            .table-wrapper {
+                padding: 1.5rem;
+            }
+            
+            th, td {
+                padding: 1rem 0.8rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="geometric-bg">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    
+    <div class="container">
+        <nav>
+            <a href="{{ url_for('schedule_interview') }}">Schedule Interview</a> |
+            <a href="{{ url_for('feedback') }}">Feedback</a> |
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        </nav>
+        
+        <h1>Interview Feedback Dashboard</h1>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Candidate Name</th>
+                        <th>Decision</th>
+                        <th>Comments</th>
+                        <th>Communication</th>
+                        <th>Technical</th>
+                        <th>Problem Solving</th>
+                        <th>Rejection Email Sent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in feedback %}
+                    <tr class="{% if row.decision.lower() == 'accepted' or row.decision.lower() == 'accept' %}row-accepted{% elif row.decision.lower() == 'rejected' or row.decision.lower() == 'reject' %}row-rejected{% endif %}">
+                        <td>{{ row.applicant_name }}</td>
+                        <td class="{% if row.decision.lower() == 'accepted' or row.decision.lower() == 'accept' %}decision-accepted{% elif row.decision.lower() == 'rejected' or row.decision.lower() == 'reject' %}decision-rejected{% endif %}">
+                            {{ row.decision }}
+                        </td>
+                        <td>{{ row.comments }}</td>
+                        <td>{{ row.communication_score if row.communication_score is not none else 'N/A' }}</td>
+                        <td>{{ row.technical_score if row.technical_score is not none else 'N/A' }}</td>
+                        <td>{{ row.problem_solving_score if row.problem_solving_score is not none else 'N/A' }}</td>
+                        <td class="status-{{ row.rejection_email_sent | lower }}">
+                            {{ 'Sent' if row.rejection_email_sent else 'Not Sent' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

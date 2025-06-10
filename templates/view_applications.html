@@ -259,17 +259,20 @@
         applicationRow.dataset.applicationId = application.id;
 
         applicationRow.innerHTML = `
-            <td>${application.job_title}</td>
-            <td>${application.applicant_name}</td>
-            <td>${application.applicant_email}</td>
-            <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td> <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td> <td>${application.education !== null ? application.education : 'N/A'}</td> <td>${new Date(application.applied_at).toLocaleString()}</td>
-            <td>${application.eligibility_score.toFixed(2)}</td>
-            <td>${application.assessment_score.toFixed(2)}</td>
-            <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
-            <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
-            <td class="actions-cell">
-                </td>
-        `;
+    <td>${application.job_title}</td>
+    <td>${application.applicant_name}</td>
+    <td>${application.applicant_email}</td>
+    <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td>
+    <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td>
+    <td>${application.education !== null ? application.education : 'N/A'}</td>
+    <td>${new Date(application.applied_at).toLocaleString()}</td>
+    <td>${application.eligibility_score != null ? application.eligibility_score.toFixed(2) : 'N/A'}</td>
+    <td>${application.assessment_score != null ? application.assessment_score.toFixed(2) : 'N/A'}</td>
+    <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
+    <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
+    <td class="actions-cell"></td>
+`;
+
 
         // Initial button setup
         updateApplicationRowInTable(application.id, application.status);

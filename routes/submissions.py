@@ -131,128 +131,73 @@ def submit_assessment(job_id, application_id):
     resume_text = application.resume_plain_text
     job_assessment_questions = json.loads(job.assessment_questions) if job.assessment_questions else []
 
-    # Prepare user answers for Gemini
-   
+    # Format answers for Gemini
     formatted_user_answers = []
     for ua in user_answers:
         idx = ua.get('question_index')
         answer = ua.get('answer')
         if 0 <= idx < len(job_assessment_questions):
-
             question_text = job_assessment_questions[idx]['text']
             formatted_user_answers.append(f"Question: {question_text}\nAnswer: {answer}")
-    
-    user_answers_str = "\\n\\n".join(formatted_user_answers)
+    user_answers_str = "\n\n".join(formatted_user_answers)
 
+    # Prompt for Gemini
+    gemini_prompt = f"""
+You are an AI expert in evaluating job candidates based on resume and assessment.
 
-    # Construct prompt for Gemini
-    prompt_parts = [
-        f"""
-        You are an advanced AI expert in resume screening and candidate-job matching.
+Evaluate the following candidate:
 
-You will receive a job description and a resume. Analyze the resume in detail against the job description and provide a comprehensive evaluation.
+Job Title: {job.title}
+Job Description: {job_description}
+Qualifications: {job_qualifications}
+Responsibilities: {job_responsibilities}
 
-Instructions:
+Applicant:
+- Name: {application.applicant_name}
+- Email: {application.applicant_email}
+- Age: {application.applicant_age}
+- Experience: {application.applicant_experience}
+- Education: {application.education}
+- Resume: {resume_text[:3000]}  # limit for long resumes
 
-Score the resume out of 100, considering the following criteria:
+Assessment Answers:
+{user_answers_str}
 
-skills: How well the candidate's skills match the required skills in the job description.
-
-qualifications: Whether the candidate's qualifications meet or exceed the requirements.
-
-achievements: Relevance and quantity of achievements related to the required skills.
-
-certifications: Number and relevance of certifications to the job requirements.
-
-projects: How well the candidate's project experience aligns with the job description.
-
-location: Whether the candidate's preferred location (e.g., hybrid, remote) matches the job's requirements.
-
-experience: Whether the candidate's work experience meets or exceeds the job requirements.
-
-resume_quality: The overall quality of the resume, including presence of LinkedIn links, contact information, location, and overall professionalism.
-
-For each criterion, assign a score out of 100.
-
-
-Calculate the overall score (out of 100) as a weighted or averaged value of the above criteria.
-
-Based on the overall score and individual criteria, provide a "Decision" field with either "accept" or "reject".
-
-Output should be strictly in the following JSON format and nothing else:
-
-
-json
-
-   {{"gemini_score": 85.5, "reasoning": "Strong alignment with qualifications and good answers.", assessment_score:86.7}}
-
-   
-also the assesment_score should be purely 
-Based on the provided applicants their answers to assessment questions,
-        provide an assessment score from 0.0 to 100.0.
-
-        Assessment Questions and User Answers:
-        {user_answers_str}
-
-        Evalutate the answers based on the given question for it 
-        Provide only a JSON output with the assessment score and a brief reasoning.
-        Example: {{"assessment_score": 85.5, "reasoning": "Strong alignment with qualifications and good answers."}}
-
-
-the gemini_score Evaluate using only the information provided below.
-
-        Job Title: {job.title}
-        Job Description: {job_description}
-        Qualifications: {job_qualifications}
-        Responsibilities: {job_responsibilities}
-
-        Applicant Name: {application.applicant_name}
-        Applicant Email: {application.applicant_email}
-        Applicant Age: {application.applicant_age}
-        Applicant Experience: {application.applicant_experience}
-        Applicant Education: {application.education}
-        Resume Text: {resume_text}
-
-        """,
-    ]
-
-   
-    
-
-    gemini_prompt = "".join(prompt_parts)
+Output strict JSON like this:
+{{
+  "gemini_score": 85.5,
+  "assessment_score": 86.7,
+  "reasoning": "Strong alignment with qualifications and good answers."
+}}
+"""
 
     try:
         model = genai.GenerativeModel('gemini-2.0-flash', generation_config=generation_config)
-       
         response = model.generate_content(gemini_prompt)
-        
-        gemini_output_text = response.text.strip()
-        json_match = re.search(r"```json\s*(\{.*?})\s*```", gemini_output_text, re.DOTALL)
-        if json_match:
-            gemini_output_json_str = json_match.group(1)
-        else:
-            gemini_output_json_str = gemini_output_text
-            
-        gemini_output = json.loads(gemini_output_json_str)
-        
-        gemini_score = float(gemini_output.get('gemini_score', 0.0))
-        assessment_score = float(gemini_output.get('assessment_score', 0.0))
-        # assessment_reasoning = gemini_output.get('reasoning', 'No specific reasoning provided.')
+        result_text = response.text.strip()
 
-    except Exception as e:
-        print(f"Error calling Gemini API for assessment scoring or parsing response: {e}")
-        eligibilty_score = 0.0 # Default score if AI call fails
-        # assessment_reasoning = f"AI assessment scoring failed: {e}"
+        # Extract JSON from response
+        match = re.search(r"\{.*?\}", result_text, re.DOTALL)
+        if not match:
+            raise ValueError("No valid JSON object found in Gemini response.")
+        gemini_output = json.loads(match.group(0))
 
-    application.eligibility_score = gemini_score
-    application.assessment_score = assessment_score
-    application.status = 'Pending' # Update status after assessment
-    try:
+        gemini_score = float(gemini_output.get("gemini_score", 0.0))
+        assessment_score = float(gemini_output.get("assessment_score", 0.0))
+        # Optional: store reasoning if needed: gemini_output.get("reasoning", "")
+
+        application.eligibility_score = gemini_score
+        application.assessment_score = assessment_score
+        application.status = "Pending"
+
         db.session.commit()
-        return jsonify({"message": "Assessment submitted and scored successfully!", "assessment_score": assessment_score}), 200
+        return jsonify({
+            "message": "Assessment submitted and scored successfully!",
+            "gemini_score": gemini_score,
+            "assessment_score": assessment_score
+        }), 200
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Error submitting assessment: {str(e)}"}), 500
-
-
-
+        print(f"[Gemini Error] {e}")
+        return jsonify({"message": f"Error during Gemini evaluation: {str(e)}"}), 500
