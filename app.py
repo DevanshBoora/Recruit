@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask_cors import CORS
 import os
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
@@ -9,7 +10,7 @@ from models import db,Job,Application
 
 
 app = Flask(__name__)
-
+CORS(app)
 register_blueprints(app)
 
 # --- Configuration for Upload Folder ---
