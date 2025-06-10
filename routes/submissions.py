@@ -128,7 +128,9 @@ def submit_assessment(job_id, application_id):
     job_description = job.description
     job_qualifications = job.qualifications
     job_responsibilities = job.responsibilities
+    min_assessment_score = job.min_assesment_score
     resume_text = application.resume_plain_text
+
     job_assessment_questions = json.loads(job.assessment_questions) if job.assessment_questions else []
 
     # Format answers for Gemini
