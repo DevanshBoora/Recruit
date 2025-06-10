@@ -46,6 +46,7 @@ def extract_text_from_pdf(pdf_file_object):
 
 @submit_bp.route('/submit_application', methods=['POST'])
 def submit_application():
+    print("Received request to submit_application!") 
     job_id = request.form.get('jobId')
     name = request.form.get('name')
     applicant_age_str = request.form.get('age') # Retrieved from form

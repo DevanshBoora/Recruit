@@ -19,8 +19,8 @@ class Job(db.Model):
     assessment_timer = db.Column(db.Integer)
     assessment_questions = db.Column(db.Text)
     min_assesment_score = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 class Application(db.Model):
     __tablename__ = 'application'
 
@@ -32,6 +32,7 @@ class Application(db.Model):
     applicant_experience = db.Column(db.Float)
     education = db.Column(db.String(255))
     resume_path = db.Column(db.String(500))
+    resume_plain_text=db.Column(db.String(1024))
     applied_at = db.Column(db.DateTime, default=datetime.utcnow)
     eligibility_score = db.Column(db.Float)
     assessment_score = db.Column(db.Float)
