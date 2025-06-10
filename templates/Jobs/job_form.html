@@ -69,7 +69,7 @@
       <input type="number" id="minAssessmentScore" name="minAssessmentScore" min="0" max="100" value="0" required />
 
       <fieldset class="assessment-builder-fieldset">
-        <legend>Assessment Questions</legend>
+        <legend>Assessment Questions(MANDATORY)</legend>
         <div class="assessment-question-actions">
           <button type="button" class="btn" onclick="addQuestion('mcq')">Add MCQ</button>
           <button type="button" class="btn" onclick="addQuestion('text')">Add Text Question</button>
@@ -225,7 +225,7 @@
             const result = await response.json();
 
             if (response.ok) {
-                showGlobalMessage(result.message, 'success', '/job_post.html');
+                showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
                 document.getElementById('jobForm').reset(); // Clear form on success
 
                 // Clear localStorage flags after successful update/post

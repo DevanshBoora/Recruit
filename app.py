@@ -1,3 +1,6 @@
+from flask import Flask, request, jsonify, render_template, send_from_directory,session
+from flask_cors import CORS
+import os,json
 from flask import Flask, redirect, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 import os
@@ -12,14 +15,19 @@ import schedule
 
 from routes import register_blueprints
 from models import db, Job, Application
+import logging
+from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
     send_initial_rejection_email,
     send_reminder_email,
     send_schedule_email,
     send_rejection_email
 )
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
+CORS(app)
 CORS(app)
 register_blueprints(app)
 
@@ -29,6 +37,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your_super_secret_key'
+app.config['SESSION_TYPE'] = 'filesystem'
 
 db.init_app(app)
 with app.app_context():
@@ -247,5 +257,10 @@ def run_scheduler():
 threading.Thread(target=run_scheduler, daemon=True).start()
 
 # ------------------ Main ------------------ #
+
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
