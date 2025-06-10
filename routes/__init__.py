@@ -12,3 +12,5 @@ def register_blueprints(app):
     app.register_blueprint(submit_bp, url_prefix='/submit')  # Routes here will be prefixed with /submit
     app.register_blueprint(chat_bp, url_prefix='/api/chat')  # Routes here will be prefixed with /chat
     
+    
+    
