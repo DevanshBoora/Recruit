@@ -128,7 +128,9 @@ def submit_assessment(job_id, application_id):
     job_description = job.description
     job_qualifications = job.qualifications
     job_responsibilities = job.responsibilities
+    min_assessment_score = job.min_assesment_score
     resume_text = application.resume_plain_text
+
     job_assessment_questions = json.loads(job.assessment_questions) if job.assessment_questions else []
 
     # Prepare user answers for Gemini
@@ -139,11 +141,11 @@ def submit_assessment(job_id, application_id):
         answer = ua.get('answer')
         if 0 <= idx < len(job_assessment_questions):
 
-            question_text = job_assessment_questions[idx]['text']
+            question_text = job_assessment_questions[idx]
+            print(question_text)
             formatted_user_answers.append(f"Question: {question_text}\nAnswer: {answer}")
     
     user_answers_str = "\\n\\n".join(formatted_user_answers)
-
 
     # Construct prompt for Gemini
     prompt_parts = [
@@ -195,8 +197,11 @@ Based on the provided applicants their answers to assessment questions,
         {user_answers_str}
 
         Evalutate the answers based on the given question for it 
-        Provide only a JSON output with the assessment score and a brief reasoning.
-        Example: {{"assessment_score": 85.5, "reasoning": "Strong alignment with qualifications and good answers."}}
+        Provide only a JSON output with the assessment score.
+        If it is multiple choice see the correct answer using correct_option and match with the use answer give points based on it , give appropriate marks,( 1 question asked, if it correct give 100 marks, 2 questions asked only one correct give 50 marks , like divide marks for the quetions)
+        for the coding assessment, give good marks , if their code should represent that they have minimum knowledge of the question asked,
+        and if they have given a good answer to the question, give them good marks
+        Example: {{"assessment_score": 85.5"}}
 
 
 the gemini_score Evaluate using only the information provided below.
@@ -237,6 +242,11 @@ the gemini_score Evaluate using only the information provided below.
         
         gemini_score = float(gemini_output.get('gemini_score', 0.0))
         assessment_score = float(gemini_output.get('assessment_score', 0.0))
+        print(min_assessment_score)
+        if ( assessment_score < min_assessment_score):
+            print("deleteign it ")
+            db.session.delete(application) # Delete application if assessment score is below minimum
+            db.session.commit()
         # assessment_reasoning = gemini_output.get('reasoning', 'No specific reasoning provided.')
 
     except Exception as e:
