@@ -15,3 +15,9 @@ def apply_page():
 @general_bp.route('/view_applications.html')
 def view_applications_page():
     return render_template('view_applications.html')
+
+
+@general_bp.route('/chat')
+def chat_page():
+    # This renders the HTML page for the chat interface
+    return render_template('chat.html')

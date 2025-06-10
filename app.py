@@ -1,12 +1,16 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
-import os
+from flask import Flask, request, jsonify, render_template, send_from_directory,session
+import os,json
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
 from routes import register_blueprints
 from models import db,Job,Application
+import logging
+from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 
@@ -23,6 +27,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your_super_secret_key'
+app.config['SESSION_TYPE'] = 'filesystem'
 
 db.init_app(app)
 
@@ -36,6 +42,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is not set.")
 genai.configure(api_key=GEMINI_API_KEY)
+
 
 
 # In app.py
@@ -113,6 +120,11 @@ def serve_resume(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename)
     except FileNotFoundError:
         return jsonify({"message": "Resume file not found."}), 404
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
