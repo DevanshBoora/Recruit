@@ -121,7 +121,7 @@ def handle_job(job_id):
         
         job.title = title
         job.description = description
-        job.qualifications = qualifications
+        job.qualification = qualifications
         job.responsibilities = responsibilities
         job.job_type = job_type
         job.location = location

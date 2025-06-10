@@ -148,7 +148,7 @@ def submit_assessment(job_id, application_id):
     user_answers_str = "\\n\\n".join(formatted_user_answers)
 
     # Construct prompt for Gemini
-    prompt_parts = [
+    gemini_prompt = [
         f"""
         You are an advanced AI expert in resume screening and candidate-job matching.
 
@@ -229,7 +229,7 @@ Output strict JSON like this:
   "reasoning": "Strong alignment with qualifications and good answers."
 }}
 """
-
+    ]
     try:
         model = genai.GenerativeModel('gemini-2.0-flash', generation_config=generation_config)
         response = model.generate_content(gemini_prompt)

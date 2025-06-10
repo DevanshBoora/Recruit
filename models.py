@@ -20,6 +20,7 @@ class Job(db.Model):
     assessment_timer = db.Column(db.Integer, nullable=True, default=0)
     assessment_questions = db.Column(db.Text, nullable=True)
     min_assesment_score = db.Column(db.Integer, nullable=True, default=0)
+    applications = db.relationship('Application', backref='job', lazy=True, cascade='all, delete-orphan')
     def to_dict(self):
         return {
             'id': self.id,
@@ -30,8 +31,8 @@ class Job(db.Model):
             'required_experience': self.required_experience,
             'responsibilities': self.responsibilities,
             'qualifications': self.qualifications
-        }    applications = db.relationship('Application', backref='job', lazy=True, cascade='all, delete-orphan')
-
+            
+        }
     def __repr__(self):
         return f'<Job {self.title}>'
 
