@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interviewer Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ interviewer.name }}</h1>
+
+    <h2>Your Interview Slots</h2>
+    {% if slots %}
+        <ul>
+            {% for slot in slots %}
+                <li>
+                    {{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }} | 
+                    Mode: {{ slot.mode }} | 
+                    {% if slot.is_booked %}<strong>Booked</strong>{% else %}Available{% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No slots added yet.</p>
+    {% endif %}
+    <a href="/interviewer/slots">+ Add Slots</a>
+
+    <h2>Scheduled Interviews</h2>
+    {% if interviews %}
+        <ul>
+            {% for interview in interviews %}
+                <li>
+                    {{ interview.interview_date.strftime('%Y-%m-%d %H:%M') }} - 
+                    Candidate ID: {{ interview.candidate_id }} - 
+                    Mode: {{ interview.mode }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No interviews scheduled yet.</p>
+    {% endif %}
+
+    <p><a href="/interviewer/logout">Logout</a></p>
+</body>
+</html>

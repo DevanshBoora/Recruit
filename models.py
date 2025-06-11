@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
-
+from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
 class Job(db.Model):
@@ -30,9 +30,9 @@ class Job(db.Model):
             'required_experience': self.required_experience,
             'responsibilities': self.responsibilities,
             'qualifications': self.qualifications,
-            'assessment_timer': self.assessment_timer, # Added these from previous fix
-            'min_assesment_score': self.min_assesment_score, # Added these from previous fix
-            'posted_at': self.posted_at.isoformat() # Convert datetime to string
+            'assessment_timer': self.assessment_timer,
+            'min_assesment_score': self.min_assesment_score,
+            'posted_at': self.posted_at.isoformat()
         }
     def __repr__(self):
         return f'<Job {self.title}>'
@@ -57,7 +57,7 @@ class Application(db.Model):
     status = db.Column(db.String(50), default="Pending")
     rejection_email_sent = db.Column(db.Boolean, default=False)
 
-    job = db.relationship('Job', backref=db.backref('applications', lazy=True)) # This is correct for Application
+    job = db.relationship('Job', backref=db.backref('applications', lazy=True))
 
     def to_dict(self):
         return {
@@ -112,9 +112,32 @@ class AcceptedCandidate(db.Model):
     applicant_name = db.Column(db.String(255), nullable=False)
     applicant_email = db.Column(db.String(255), nullable=False)
     candidate = db.relationship('Application', backref=db.backref('accepted_entry', lazy=True))
+
+
 class Interviewer(db.Model):
     __tablename__ = 'interviewer'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(100), unique=True)
-    department = db.Column(db.String(100))
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class InterviewSlot(db.Model):
+    __tablename__ = 'interviewer_slot'
+    id = db.Column(db.Integer, primary_key=True)
+    interviewer_id = db.Column(db.Integer, db.ForeignKey('interviewer.id'), nullable=False)
+    slot_datetime = db.Column(db.DateTime, nullable=False)
+    is_booked = db.Column(db.Boolean, default=False)
+    mode = db.Column(db.String(20), nullable=False)  # 'Online' or 'Offline'
+    meeting_link = db.Column(db.String(1000))  # For online interviews
+    address = db.Column(db.String(1000))  # For offline interviews
+
+    interviewer = db.relationship('Interviewer', backref='slots')
+
+    def __repr__(self):
+        return f'<InterviewSlot {self.slot_datetime} - {self.mode}>'
