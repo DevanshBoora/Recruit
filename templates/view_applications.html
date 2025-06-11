@@ -43,6 +43,47 @@
     text-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
   }
 
+  /* Page-specific navigation styles */
+  .page-nav {
+    background-color: var(--card-color-dark);
+    border: 1px solid var(--border-color-dark);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto 30px auto;
+    max-width: 5000px;
+    text-align: center;
+  }
+
+  .page-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .page-nav ul li a {
+    background-color: var(--accent-color);
+    color: var(--surface-color-dark);
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+  }
+
+  .page-nav ul li a:hover {
+    filter: var(--button-hover-darken);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+  }
+
   .applications-table {
     width: 50%;
     border-collapse: separate; /* Use separate to allow border-radius on cells */
@@ -199,8 +240,18 @@
 {% endblock %}
 
 {% block content %}
+<!-- Page-specific navigation - outside the main wrapper -->
+<div class="page-nav">
+    <ul>
+        <li><a href="/schedule">Schedule Interview</a></li>
+        <li><a href="/feedback">Feedback</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+    </ul>
+</div>
+
 <div class="applications-wrapper">
     <h1>All Job Applications</h1>
+    
     <div id="applicationsListings">
         <table id="applicationsTable" class="applications-table">
             <thead>

@@ -1,9 +1,7 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory,session
-from flask_cors import CORS
-import os,json
-from flask import Flask, redirect, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect
 from flask_cors import CORS
 import os
+import json
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -23,11 +21,11 @@ from email_utils import (
     send_schedule_email,
     send_rejection_email
 )
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
-CORS(app)
 CORS(app)
 register_blueprints(app)
 
@@ -113,6 +111,15 @@ def serve_resume(filename):
 def schedule_interview():
     if request.method == "POST":
         data = request.form
+
+        # Prevent scheduling more than once
+        existing = db.session.execute(text("""
+            SELECT 1 FROM interview_schedule WHERE candidate_id = :candidate_id
+        """), {"candidate_id": data["candidate_id"]}).fetchone()
+
+        if existing:
+            return redirect("/schedule?message=Interview%20already%20scheduled%20for%20this%20candidate.&type=error")
+
         try:
             db.session.execute(text("""
                 INSERT INTO interview_schedule 
@@ -136,18 +143,39 @@ def schedule_interview():
                 send_schedule_email(data["interviewer_email"], data["interview_datetime"], data["mode"],
                                     data["interviewer_name"], data.get("meeting_link"), data.get("address"), True)
             db.session.commit()
+            return redirect("/schedule?message=Interview%20scheduled%20successfully!&type=success")
         except Exception as e:
             db.session.rollback()
-            return f"Error: {e}", 500
-        return redirect("/schedule")
+            return redirect(f"/schedule?message=Error%20scheduling%20interview:%20{str(e)}&type=error")
 
-    candidates = db.session.execute(text("SELECT id, applicant_name FROM application WHERE status = 'Accepted'"))
+    # GET request - fetch only candidates who don't have interviews scheduled
+    candidates = db.session.execute(text("""
+        SELECT a.id, a.applicant_name
+        FROM application a 
+        WHERE a.status = 'Accepted' 
+        AND a.id NOT IN (
+            SELECT DISTINCT candidate_id 
+            FROM interview_schedule 
+            WHERE candidate_id IS NOT NULL
+        )
+        ORDER BY a.applied_at DESC
+    """)).mappings().all()
+    
     return render_template("schedule.html", candidates=candidates)
 
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
     if request.method == "POST":
         data = request.form
+
+        # Prevent duplicate feedback
+        existing = db.session.execute(text("""
+            SELECT 1 FROM feedback WHERE candidate_id = :candidate_id
+        """), {"candidate_id": data["candidate_id"]}).fetchone()
+
+        if existing:
+            return "Feedback already submitted for this candidate.", 400
+
         try:
             db.session.execute(text("""
                 INSERT INTO feedback (candidate_id, comments, decision, communication_score, technical_score, problem_solving_score)
@@ -174,9 +202,19 @@ def feedback():
             return f"Error: {e}", 500
         return redirect("/feedback")
 
+    # GET request - fetch only candidates who don't have feedback submitted
     candidates = db.session.execute(text("""
-        SELECT id, applicant_name FROM application WHERE status = 'Accepted'
+        SELECT a.id, a.applicant_name 
+        FROM application a 
+        WHERE a.status = 'Accepted' 
+        AND a.id NOT IN (
+            SELECT DISTINCT candidate_id 
+            FROM feedback 
+            WHERE candidate_id IS NOT NULL
+        )
+        ORDER BY a.applied_at DESC
     """)).mappings().all()
+    
     return render_template("feedback.html", candidates=candidates)
 
 @app.route("/dashboard")
@@ -188,7 +226,6 @@ def dashboard():
         JOIN application a ON f.candidate_id = a.id
     """)).mappings().all()
     return render_template("dashboard.html", feedback=result)
-
 # ------------------ Background Tasks ------------------ #
 
 def send_feedback_rejections():
@@ -199,14 +236,27 @@ def send_feedback_rejections():
             JOIN application a ON f.candidate_id = a.id
             WHERE f.decision = 'Rejected' AND (f.rejection_email_sent IS NULL OR f.rejection_email_sent = FALSE)
         """)).mappings().all()
+        
         for r in results:
             try:
+                # Double-check before sending to prevent race conditions
+                check_sent = db.session.execute(text("""
+                    SELECT rejection_email_sent FROM feedback WHERE feedback_id = :id
+                """), {"id": r['feedback_id']}).scalar()
+                
+                if check_sent:  # If already sent, skip
+                    continue
+                    
                 send_rejection_email(r['applicant_email'], r['applicant_name'], r['comments'])
+                
+                # Mark as sent immediately after sending
                 db.session.execute(text("UPDATE feedback SET rejection_email_sent = TRUE WHERE feedback_id = :id"),
                                    {"id": r['feedback_id']})
                 db.session.commit()
+                print(f"Sent rejection email to {r['applicant_name']} ({r['applicant_email']})")
+                
             except Exception as e:
-                print(f"Error sending feedback rejection: {e}")
+                print(f"Error sending feedback rejection to {r['applicant_name']}: {e}")
                 db.session.rollback()
 
 def send_reminders():
@@ -220,47 +270,78 @@ def send_reminders():
             JOIN application a ON i.candidate_id = a.id
             WHERE i.interview_date > :now
         """), {"now": now}).mappings().all()
+        
         for i in interviews:
-            diff = i['interview_date'] - now
+            interview_time = i['interview_date']
+            time_diff = interview_time - now
+            
             try:
-                if diff <= timedelta(days=1) and not i['reminder_1day_sent']:
-                    send_reminder_email(i['candidate_email'], i['interview_date'], i['applicant_name'],
+                # 1 day reminder
+                if time_diff <= timedelta(days=1) and time_diff > timedelta(hours=23) and not i['reminder_1day_sent']:
+                    # Double-check before sending
+                    check_sent = db.session.execute(text("""
+                        SELECT reminder_1day_sent FROM interview_schedule WHERE id = :id
+                    """), {"id": i['id']}).scalar()
+                    
+                    if check_sent:  # Already sent, skip
+                        continue
+                    
+                    # Send to candidate
+                    send_reminder_email(i['candidate_email'], interview_time, i['applicant_name'],
                                         i['mode'], i['meeting_link'], i['address'])
-                    send_reminder_email(i['interviewer_email'], i['interview_date'], i['interviewer_name'],
+                    
+                    # Send to interviewer
+                    send_reminder_email(i['interviewer_email'], interview_time, i['interviewer_name'],
                                         i['mode'], i['meeting_link'], i['address'], True)
+                    
+                    # Mark as sent
                     db.session.execute(text("UPDATE interview_schedule SET reminder_1day_sent = TRUE WHERE id = :id"),
                                        {"id": i['id']})
                     db.session.commit()
-                elif diff <= timedelta(hours=1) and not i['reminder_1hour_sent']:
-                    send_reminder_email(i['candidate_email'], i['interview_date'], i['applicant_name'],
+                    print(f"Sent 1-day reminder for {i['applicant_name']}")
+                
+                # 1 hour reminder
+                elif time_diff <= timedelta(hours=1) and time_diff > timedelta(minutes=30) and not i['reminder_1hour_sent']:
+                    # Double-check before sending
+                    check_sent = db.session.execute(text("""
+                        SELECT reminder_1hour_sent FROM interview_schedule WHERE id = :id
+                    """), {"id": i['id']}).scalar()
+                    
+                    if check_sent:  # Already sent, skip
+                        continue
+                    
+                    # Send to candidate
+                    send_reminder_email(i['candidate_email'], interview_time, i['applicant_name'],
                                         i['mode'], i['meeting_link'], i['address'])
-                    send_reminder_email(i['interviewer_email'], i['interview_date'], i['interviewer_name'],
+                    
+                    # Send to interviewer
+                    send_reminder_email(i['interviewer_email'], interview_time, i['interviewer_name'],
                                         i['mode'], i['meeting_link'], i['address'], True)
+                    
+                    # Mark as sent
                     db.session.execute(text("UPDATE interview_schedule SET reminder_1hour_sent = TRUE WHERE id = :id"),
                                        {"id": i['id']})
                     db.session.commit()
+                    print(f"Sent 1-hour reminder for {i['applicant_name']}")
+                    
             except Exception as e:
-                print(f"Reminder error: {e}")
+                print(f"Reminder error for {i['applicant_name']}: {e}")
                 db.session.rollback()
 
 # ------------------ Scheduler ------------------ #
 
-schedule.every(10).seconds.do(send_feedback_rejections)
-schedule.every(10).seconds.do(send_reminders)
+# Reduce frequency to prevent excessive checking
+schedule.every(1).minutes.do(send_feedback_rejections)  # Changed from 10 seconds to 1 minute
+schedule.every(1).minutes.do(send_reminders)  # Changed from 10 seconds to 1 minute
 
 def run_scheduler():
     while True:
-        print(f"[{datetime.now()}] Running scheduled tasks...")
         schedule.run_pending()
-        time.sleep(10)
+        time.sleep(60)  # Check every minute instead of every 10 seconds
 
 threading.Thread(target=run_scheduler, daemon=True).start()
 
 # ------------------ Main ------------------ #
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
