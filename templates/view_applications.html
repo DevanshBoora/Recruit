@@ -236,6 +236,32 @@
     height: 600px; /* Adjust height as needed */
     border: none;
   }
+
+  /* Loading spinner for accept button */
+  .accept-btn.loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+  }
+
+  .accept-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 {% endblock %}
 
@@ -324,7 +350,6 @@
     <td class="actions-cell"></td>
 `;
 
-
         // Initial button setup
         updateApplicationRowInTable(application.id, application.status);
       });
@@ -344,7 +369,15 @@
     }
   }
 
-  async function updateApplicationStatus(appId, newStatus) {
+  async function updateApplicationStatus(appId, newStatus, navigateToSchedule = false) {
+    const acceptButton = document.querySelector(`[data-application-id="${appId}"] .accept-btn`);
+    
+    // Add loading state to accept button if it's an acceptance
+    if (newStatus === 'Accepted' && acceptButton) {
+      acceptButton.classList.add('loading');
+      acceptButton.disabled = true;
+    }
+
     try {
       const response = await fetch(`/applications/${appId}/status`, {
         method: 'PUT',
@@ -359,12 +392,29 @@
       if (response.ok) {
         showGlobalMessage(result.message, 'success');
         updateApplicationRowInTable(appId, newStatus); // Update the specific row
+        
+        // Navigate to schedule page if it's an acceptance
+        if (navigateToSchedule && newStatus === 'Accepted') {
+          setTimeout(() => {
+            window.location.href = '/schedule';
+          }, 1000); // Small delay to show success message
+        }
       } else {
         showGlobalMessage(result.message, 'error');
+        // Remove loading state on error
+        if (acceptButton) {
+          acceptButton.classList.remove('loading');
+          acceptButton.disabled = false;
+        }
       }
     } catch (error) {
       console.error('Error updating application status:', error);
       showGlobalMessage('Failed to update application status. Please try again.', 'error');
+      // Remove loading state on error
+      if (acceptButton) {
+        acceptButton.classList.remove('loading');
+        acceptButton.disabled = false;
+      }
     }
   }
 
@@ -384,12 +434,12 @@
         const acceptBtn = document.createElement('button');
         acceptBtn.textContent = 'Accept';
         acceptBtn.classList.add('accept-btn');
-        acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted'));
+        acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted', true)); // Pass true for navigation
 
         const rejectBtn = document.createElement('button');
         rejectBtn.textContent = 'Reject';
         rejectBtn.classList.add('reject-btn');
-        rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected'));
+        rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected', false));
 
         actionsCell.appendChild(acceptBtn);
         actionsCell.appendChild(rejectBtn);
@@ -411,6 +461,42 @@
     const pdfViewer = document.getElementById('pdfViewer');
     pdfViewer.src = `/resumes/${resumePath}`; // Set the source of the iframe
     resumeModal.style.display = 'block'; // Show the modal
+  }
+
+  // Add a global message function if it doesn't exist
+  function showGlobalMessage(message, type) {
+    // Create or update a message element
+    let messageElement = document.getElementById('globalMessage');
+    if (!messageElement) {
+      messageElement = document.createElement('div');
+      messageElement.id = 'globalMessage';
+      messageElement.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        transition: opacity 0.3s ease;
+      `;
+      document.body.appendChild(messageElement);
+    }
+    
+    messageElement.textContent = message;
+    messageElement.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
+    messageElement.style.opacity = '1';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      messageElement.style.opacity = '0';
+      setTimeout(() => {
+        if (messageElement.parentNode) {
+          messageElement.parentNode.removeChild(messageElement);
+        }
+      }, 300);
+    }, 3000);
   }
 
   // Modal close logic

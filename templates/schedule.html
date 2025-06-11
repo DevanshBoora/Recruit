@@ -168,6 +168,9 @@
                         {% for candidate in candidates %}
                         <option value="{{ candidate.id }}">{{ candidate.applicant_name }}</option>
                         {% endfor %}
+                        {% if not candidates %}
+                        <option value="" disabled>No candidates available for scheduling</option>
+                        {% endif %}
                     </select>
                 </div>
                 
