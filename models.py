@@ -77,59 +77,6 @@ class Application(db.Model):
     def __repr__(self):
         return f'<Application {self.applicant_name} for Job {self.job_id}>'
 
-
-class Conversation(db.Model):
-    __tablename__ = 'conversations'
-    id = db.Column(db.Integer, primary_key=True)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    conversation_info = db.Column(db.Text, nullable=True) # Storing JSON string
-
-    messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
-
-    def __repr__(self):
-        return f'<Conversation {self.id} started at {self.started_at}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'started_at': self.started_at.isoformat(),
-            'conversation_info': json.loads(self.conversation_info) if self.conversation_info else None,
-            'messages': [msg.to_dict() for msg in self.messages]
-        }
-
-class Message(db.Model):
-    __tablename__ = 'messages'
-    id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
-    sender = db.Column(db.String(50), nullable=False) # 'user' or 'bot'
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # REMOVED: messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
-    # This line is redundant and incorrect here. The backref on Conversation already handles it.
-    # If you intended a self-referencing relationship for Message, it needs proper primaryjoin and remote_side.
-    # But based on typical use, Conversation.messages is what you want.
-
-    def __repr__(self: 'Message') -> str: # Added type hint for clarity
-        return f'<Message {self.id} from {self.sender} in convo {self.conversation_id}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'conversation_id': self.conversation_id,
-            'sender': self.sender,
-            'content': self.content,
-            'timestamp': self.timestamp.isoformat()
-        }
-
-# REMOVED: These lines were misplaced and caused the error
-# eligibility_score = db.Column(db.Float)
-# assessment_score = db.Column(db.Float)
-# status = db.Column(db.String(50), default="Pending")
-# rejection_email_sent = db.Column(db.Boolean, default=False)
-# job = db.relationship('Job', backref=db.backref('applications', lazy=True))
-
-
 class InterviewSchedule(db.Model):
     __tablename__ = 'interview_schedule'
     id = db.Column(db.Integer, primary_key=True)
@@ -165,3 +112,9 @@ class AcceptedCandidate(db.Model):
     applicant_name = db.Column(db.String(255), nullable=False)
     applicant_email = db.Column(db.String(255), nullable=False)
     candidate = db.relationship('Application', backref=db.backref('accepted_entry', lazy=True))
+class Interviewer(db.Model):
+    __tablename__ = 'interviewer'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    email = db.Column(db.String(100), unique=True)
+    department = db.Column(db.String(100))

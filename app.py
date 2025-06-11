@@ -331,8 +331,8 @@ def send_reminders():
 # ------------------ Scheduler ------------------ #
 
 # Reduce frequency to prevent excessive checking
-schedule.every(1).minutes.do(send_feedback_rejections)  # Changed from 10 seconds to 1 minute
-schedule.every(1).minutes.do(send_reminders)  # Changed from 10 seconds to 1 minute
+schedule.every(2).minutes.do(send_feedback_rejections)  # Changed from 10 seconds to 1 minute
+schedule.every(2).minutes.do(send_reminders)  # Changed from 10 seconds to 1 minute
 
 def run_scheduler():
     while True:
