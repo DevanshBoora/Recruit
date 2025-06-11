@@ -282,7 +282,7 @@
       if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
 
       try {
-        const response = await fetch('/jobs');
+        const response = await fetch('http://localhost:5000/jobs');
         const jobs = await response.json();
 
         console.log("Fetched jobs:", jobs); // For debugging
