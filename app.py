@@ -276,59 +276,49 @@ def send_reminders():
             time_diff = interview_time - now
             
             try:
-                # 1 day reminder
-                if time_diff <= timedelta(days=1) and time_diff > timedelta(hours=23) and not i['reminder_1day_sent']:
-                    # Double-check before sending
-                    check_sent = db.session.execute(text("""
-                        SELECT reminder_1day_sent FROM interview_schedule WHERE id = :id
-                    """), {"id": i['id']}).scalar()
-                    
-                    if check_sent:  # Already sent, skip
-                        continue
-                    
-                    # Send to candidate
-                    send_reminder_email(i['candidate_email'], interview_time, i['applicant_name'],
-                                        i['mode'], i['meeting_link'], i['address'])
-                    
-                    # Send to interviewer
-                    send_reminder_email(i['interviewer_email'], interview_time, i['interviewer_name'],
-                                        i['mode'], i['meeting_link'], i['address'], True)
-                    
-                    # Mark as sent
-                    db.session.execute(text("UPDATE interview_schedule SET reminder_1day_sent = TRUE WHERE id = :id"),
-                                       {"id": i['id']})
+                # --- 1 day reminder ---
+                if time_diff <= timedelta(days=1) and time_diff > timedelta(hours=23):
+                    rows_updated = db.session.execute(text("""
+                        UPDATE interview_schedule 
+                        SET reminder_1day_sent = TRUE 
+                        WHERE id = :id AND reminder_1day_sent = FALSE
+                    """), {"id": i['id']}).rowcount
                     db.session.commit()
-                    print(f"Sent 1-day reminder for {i['applicant_name']}")
-                
-                # 1 hour reminder
-                elif time_diff <= timedelta(hours=1) and time_diff > timedelta(minutes=30) and not i['reminder_1hour_sent']:
-                    # Double-check before sending
-                    check_sent = db.session.execute(text("""
-                        SELECT reminder_1hour_sent FROM interview_schedule WHERE id = :id
-                    """), {"id": i['id']}).scalar()
-                    
-                    if check_sent:  # Already sent, skip
-                        continue
-                    
-                    # Send to candidate
-                    send_reminder_email(i['candidate_email'], interview_time, i['applicant_name'],
-                                        i['mode'], i['meeting_link'], i['address'])
-                    
-                    # Send to interviewer
-                    send_reminder_email(i['interviewer_email'], interview_time, i['interviewer_name'],
-                                        i['mode'], i['meeting_link'], i['address'], True)
-                    
-                    # Mark as sent
-                    db.session.execute(text("UPDATE interview_schedule SET reminder_1hour_sent = TRUE WHERE id = :id"),
-                                       {"id": i['id']})
-                    db.session.commit()
-                    print(f"Sent 1-hour reminder for {i['applicant_name']}")
-                    
-            except Exception as e:
-                print(f"Reminder error for {i['applicant_name']}: {e}")
-                db.session.rollback()
 
-# ------------------ Scheduler ------------------ #
+                    if rows_updated == 0:
+                        continue  # Already sent
+
+                    send_reminder_email(i['candidate_email'], interview_time, i['applicant_name'],
+                                        i['mode'], i['meeting_link'], i['address'])
+
+                    send_reminder_email(i['interviewer_email'], interview_time, i['interviewer_name'],
+                                        i['mode'], i['meeting_link'], i['address'], True)
+
+                    print(f"✅ Sent 1-day reminder for {i['applicant_name']}")
+
+                # --- 1 hour reminder ---
+                elif time_diff <= timedelta(hours=1) and time_diff > timedelta(minutes=30):
+                    rows_updated = db.session.execute(text("""
+                        UPDATE interview_schedule 
+                        SET reminder_1hour_sent = TRUE 
+                        WHERE id = :id AND reminder_1hour_sent = FALSE
+                    """), {"id": i['id']}).rowcount
+                    db.session.commit()
+
+                    if rows_updated == 0:
+                        continue  # Already sent
+
+                    send_reminder_email(i['candidate_email'], interview_time, i['applicant_name'],
+                                        i['mode'], i['meeting_link'], i['address'])
+
+                    send_reminder_email(i['interviewer_email'], interview_time, i['interviewer_name'],
+                                        i['mode'], i['meeting_link'], i['address'], True)
+
+                    print(f"✅ Sent 1-hour reminder for {i['applicant_name']}")
+
+            except Exception as e:
+                print(f"❌ Reminder error for {i['applicant_name']}: {e}")
+                db.session.rollback()
 
 # Reduce frequency to prevent excessive checking
 schedule.every(2).minutes.do(send_feedback_rejections)  # Changed from 10 seconds to 1 minute
