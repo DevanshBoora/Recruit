@@ -243,7 +243,7 @@ def dashboard():
     
     return render_template("dashboard.html", feedback=feedback_data)
 
-@app.route('/interviewer/login', methods=['GET', 'POST'])
+'''@app.route('/interviewer/login', methods=['GET', 'POST'])
 def interviewer_login():
     if request.method == 'POST':
         email = request.form['email']
@@ -369,7 +369,7 @@ def interviewer_dashboard():
         interviewer=interviewer,
         slots=upcoming_slots,
         interviews=scheduled_interviews
-    )
+    )'''
 
 # ------------------ Background Tasks ------------------ #
 
