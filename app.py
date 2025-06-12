@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect,flash
 from flask_cors import CORS
 import os
 import json
@@ -114,6 +114,15 @@ def schedule_interview():
     if request.method == "POST":
         data = request.form
         try:
+            # Step 1: Check if candidate already has an interview scheduled
+            existing = db.session.execute(text("""
+                SELECT 1 FROM interview_schedule WHERE candidate_id = :candidate_id
+            """), {"candidate_id": data["candidate_id"]}).first()
+
+            if existing:
+                return "Interview already scheduled for this candidate.", 400
+
+            # Step 2: Insert new interview schedule
             db.session.execute(text("""
                 INSERT INTO interview_schedule 
                 (candidate_id, mode, interview_date, interviewer_name, interviewer_email, meeting_link, address)
@@ -128,22 +137,48 @@ def schedule_interview():
                 "address": data.get("address")
             })
 
-            result = db.session.execute(text("SELECT applicant_email FROM application WHERE id = :id"),
-                                        {"id": data["candidate_id"]}).mappings().first()
+            # Fetch candidate email
+            result = db.session.execute(text("""
+                SELECT applicant_email FROM application WHERE id = :candidate_id
+            """), {"candidate_id": data["candidate_id"]}).mappings().first()
+
             if result:
-                send_schedule_email(result['applicant_email'], data["interview_datetime"], data["mode"],
-                                    data["interviewer_name"], data.get("meeting_link"), data.get("address"))
-                send_schedule_email(data["interviewer_email"], data["interview_datetime"], data["mode"],
-                                    data["interviewer_name"], data.get("meeting_link"), data.get("address"), True)
+                send_schedule_email(
+                    result["applicant_email"],
+                    data["interview_datetime"],
+                    data["mode"],
+                    data["interviewer_name"],
+                    data.get("meeting_link"),
+                    data.get("address")
+                )
+
+            send_schedule_email(
+                data["interviewer_email"],
+                data["interview_datetime"],
+                data["mode"],
+                data["interviewer_name"],
+                data.get("meeting_link"),
+                data.get("address"),
+                is_interviewer=True
+            )
+
             db.session.commit()
+            flash("Interview scheduled successfully and email sent.", "success")
         except Exception as e:
             db.session.rollback()
             return f"Error: {e}", 500
-        return redirect("/schedule")
 
-    candidates = db.session.execute(text("SELECT id, applicant_name FROM application WHERE status = 'Accepted'"))
+        return redirect("/view_applications.html")
+
+    # Fetch candidates who have not been scheduled yet
+    candidates = db.session.execute(text("""
+        SELECT a.id, a.applicant_name
+        FROM application a
+        WHERE a.status = 'Accepted'
+        AND a.id NOT IN (SELECT candidate_id FROM interview_schedule)
+    """)).mappings().all()
+
     return render_template("schedule.html", candidates=candidates)
-
 
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
@@ -166,11 +201,10 @@ def feedback():
                 technical_score=float(data["technical_score"]),
                 problem_solving_score=float(data["problem_solving_score"])
             )
-            
             db.session.add(new_feedback)
-            
+
             if data['decision'] == "Accepted":
-                application = Application.query.get(data['candidate_id'])
+                application = Application.query.get(int(data['candidate_id']))
                 if application:
                     accepted_candidate = AcceptedCandidate(
                         candidate_id=application.id,
@@ -178,23 +212,32 @@ def feedback():
                         applicant_email=application.applicant_email
                     )
                     db.session.add(accepted_candidate)
-                    
+
             db.session.commit()
+            flash("Feedback submitted successfully.", "success")
+            return redirect("/view_applications.html")
+
         except Exception as e:
             db.session.rollback()
             return f"Error: {e}", 500
-        return redirect("/feedback")
 
-    # GET request - fetch only candidates who don't have feedback submitted using ORM
-    candidates = db.session.query(Application.id, Application.applicant_name)\
-        .filter(Application.status == 'Accepted')\
-        .filter(~Application.id.in_(
-            db.session.query(Feedback.candidate_id)
-            .filter(Feedback.candidate_id.isnot(None))
-        ))\
-        .order_by(Application.applied_at.desc()).all()
-    
-    return render_template("feedback.html", candidates=candidates)
+    try:
+        # GET request – only show candidates with interviews and no feedback
+        candidates = db.session.query(Application.id, Application.applicant_name).filter(
+            Application.status == 'Accepted',
+            Application.id.in_(
+                db.session.query(InterviewSchedule.candidate_id).filter(InterviewSchedule.candidate_id.isnot(None))
+            ),
+            ~Application.id.in_(
+                db.session.query(Feedback.candidate_id).filter(Feedback.candidate_id.isnot(None))
+            )
+        ).order_by(Application.applied_at.desc()).all()
+
+        return render_template("feedback.html", candidates=candidates)
+
+    except Exception as e:
+        return f"Error loading feedback page: {e}", 500
+
 
 @app.route("/dashboard")
 def dashboard():
@@ -356,7 +399,7 @@ def send_feedback_rejections():
         for feedback in rejected_feedback:
             try:
                 # Double-check before sending to prevent race conditions
-                feedback_obj = Feedback.query.get(feedback.feedback_id)
+                feedback_obj = Feedback.session.get(feedback.feedback_id)
                 if feedback_obj.rejection_email_sent:
                     continue
                     
@@ -396,7 +439,7 @@ def send_reminders():
             time_diff = interview_time - now
             
             try:
-                interview_obj = InterviewSchedule.query.get(interview.id)
+                interview_obj = InterviewSchedule.session.get(interview.id)
                 
                 # --- 1 day reminder ---
                 if time_diff <= timedelta(days=1) and time_diff > timedelta(hours=23):
