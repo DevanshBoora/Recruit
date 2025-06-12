@@ -1,4 +1,4 @@
-{% extends "base.html" %}Add commentMore actions
+{% extends "base.html" %}
 
 {% block title %}Schedule Interview - DevOrks{% endblock %}
 
@@ -71,12 +71,15 @@
     .mode-dependent {
         display: none;
         opacity: 0;
-        transition: opacity 0.3s ease;
+        transition: all 0.3s ease;
+        max-height: 0;
+        overflow: hidden;
     }
 
     .mode-dependent.show {
         display: block;
         opacity: 1;
+        max-height: 200px;
     }
 
     .submit-button {
@@ -142,7 +145,7 @@
             flex-direction: column;
         }
         .form-group {
-           min-width: 100%;Add commentMore actions
+           min-width: 100%;
         }
     }
 </style>
@@ -156,24 +159,26 @@
         <div class="info-box">
             <p><strong>Instructions:</strong> Select a candidate and fill in the interview details. The system will automatically send email notifications to both the candidate and interviewer.</p>
         </div>
-        <form method="POST" action="/schedule" id="scheduleForm">Add commentMore actions
+        
+        <form method="POST" action="/schedule" id="scheduleForm">
             <div class="form-section">
                 <h3>Candidate Selection</h3>
                 <div class="form-group">
-                  <label for="candidate_id">Select Candidate <span class="required">*</span></label>Add commentMore actions
+                    <label for="candidate_id">Select Candidate <span class="required">*</span></label>
                     <select name="candidate_id" id="candidate_id" required>
                         <option value="">-- Select a Candidate --</option>
                         {% for candidate in candidates %}
-                        <option value="{{ candidate.id }}">{{ candidate.applicant_name }}</option>
+                        <option value="{{ candidate.id }}"selected>{{ candidate.applicant_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div id="candidateInfo" class="candidate-info" style="display: none;">Add commentMore actions
+                <div id="candidateInfo" class="candidate-info" style="display: none;">
                     <h4>Candidate Information</h4>
                     <p id="candidateDetails">Select a candidate to view details</p>
                 </div>
             </div>
-            <div class="form-section">Add commentMore actions
+            
+            <div class="form-section">
                 <h3>Interview Details</h3>
                 
                 <div class="form-row">
@@ -192,7 +197,8 @@
                     </div>
                 </div>
             </div>
-            <div class="form-section">Add commentMore actions
+            
+            <div class="form-section">
                 <h3>Interviewer Information</h3>
                 
                 <div class="form-row">
@@ -207,26 +213,29 @@
                     </div>
                 </div>
             </div>
-            <div class="form-section">Add commentMore actions
+            
+            <div class="form-section">
                 <h3>Interview Location Details</h3>
                 
                 <div id="onlineSection" class="mode-dependent">
                     <div class="form-group">
-                      <label for="meeting_link">Meeting Link</label>Add commentMore actions
+                        <label for="meeting_link">Meeting Link</label>
                         <input type="url" name="meeting_link" id="meeting_link" placeholder="https://zoom.us/j/meeting-id or https://meet.google.com/meeting-id">
                     </div>
                 </div>
-                <div id="offlineSection" class="mode-dependent">Add commentMore actions
+                
+                <div id="offlineSection" class="mode-dependent">
                     <div class="form-group">
-                      <label for="address">Interview Address</label>Add commentMore actions
+                        <label for="address">Interview Address</label>
                         <textarea name="address" id="address" rows="3" placeholder="Enter the complete address where the interview will be conducted"></textarea>
                     </div>
                 </div>
             </div>
-            <button type="submit" class="submit-button" id="submitBtn">Schedule Interview</button>Add commentMore actions
+            
+            <button type="submit" class="submit-button" id="submitBtn">Schedule Interview</button>
         </form>
     </div>
-    </div>Add commentMore actions
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -252,25 +261,35 @@
         modeSelect.addEventListener('change', function() {
             const selectedMode = this.value;
             
-            // Hide all mode-dependent sections
+            // Hide all mode-dependent sections with proper cleanup
             onlineSection.classList.remove('show');
             offlineSection.classList.remove('show');
+            setTimeout(() => {
+                if (!onlineSection.classList.contains('show')) {
+                    onlineSection.style.display = 'none';
+                }
+                if (!offlineSection.classList.contains('show')) {
+                    offlineSection.style.display = 'none';
+                }
+            }, 300);
             
             // Clear inputs when switching modes
             meetingLinkInput.value = '';
             addressInput.value = '';
             
-            // Show relevant section
+            // Show relevant section with animation
             if (selectedMode === 'online') {
+                onlineSection.style.display = 'block';
                 setTimeout(() => {
-                  onlineSection.classList.add('show');Add commentMore actions
-                }, 100);
+                    onlineSection.classList.add('show');
+                }, 10);
                 meetingLinkInput.setAttribute('required', 'required');
                 addressInput.removeAttribute('required');
             } else if (selectedMode === 'offline') {
+                offlineSection.style.display = 'block';
                 setTimeout(() => {
-                  offlineSection.classList.add('show');Add commentMore actions
-                }, 100);
+                    offlineSection.classList.add('show');
+                }, 10);
                 addressInput.setAttribute('required', 'required');
                 meetingLinkInput.removeAttribute('required');
             } else {
@@ -278,7 +297,8 @@
                 addressInput.removeAttribute('required');
             }
         });
-        candidateSelect.addEventListener('change', function() {Add commentMore actions
+
+        candidateSelect.addEventListener('change', function() {
             if (this.value) {
                 const selectedOption = this.options[this.selectedIndex];
                 candidateDetails.textContent = `Selected: ${selectedOption.text}`;
@@ -287,7 +307,8 @@
                 candidateInfo.style.display = 'none';
             }
         });
-        // Form validation and submissionAdd commentMore actions
+
+        // Form validation and submission
         scheduleForm.addEventListener('submit', function(e) {
             const mode = modeSelect.value;
             const meetingLink = meetingLinkInput.value.trim();
@@ -309,7 +330,7 @@
             // Validate date is in the future
             const selectedDateTime = new Date(document.getElementById('interview_datetime').value);
             const now = new Date();
-            if (selectedDateTime <= now) {Add commentMore actions
+            if (selectedDateTime <= now) {
                 e.preventDefault();
                 showGlobalMessage('Please select a future date and time for the interview.', 'error');
                 return;
@@ -319,7 +340,8 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Scheduling...';
         });
-        // Handle form response messagesAdd commentMore actions
+
+        // Handle form response messages
         const urlParams = new URLSearchParams(window.location.search);
         const message = urlParams.get('message');
         const type = urlParams.get('type');

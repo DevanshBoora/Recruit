@@ -14,7 +14,7 @@ import time
 import schedule
 from datetime import datetime
 from routes import register_blueprints
-from models import db, Job, Application, Interviewer, InterviewSlot, InterviewSchedule, Feedback, AcceptedCandidate
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate
 import logging
 from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
@@ -113,69 +113,37 @@ def serve_resume(filename):
 def schedule_interview():
     if request.method == "POST":
         data = request.form
-        slot_id = int(data["slot_id"])
-        candidate_id = int(data["candidate_id"])
-        mode = data["mode"]
-        meeting_link = data.get("meeting_link")
-        address = data.get("address")
-
-        slot = InterviewSlot.query.filter_by(id=slot_id, is_booked=False).first()
-
-        if not slot:
-            return redirect("/schedule?message=Slot%20already%20booked.&type=error")
-
-        # Check if candidate already has a scheduled interview
-        existing_candidate = InterviewSchedule.query.filter_by(candidate_id=candidate_id).first()
-        if existing_candidate:
-            return redirect("/schedule?message=Candidate%20already%20scheduled.&type=error")
-
-        # Check if interviewer has another interview at the same time
-        conflict = InterviewSchedule.query.filter(
-            and_(
-                InterviewSchedule.interview_date == slot.slot_datetime,
-                InterviewSchedule.interviewer_email == slot.interviewer.email
-            )
-        ).first()
-        if conflict:
-            return redirect("/schedule?message=Interviewer%20already%20has%20a%20slot%20at%20this%20time.&type=error")
-
         try:
-            # Create interview schedule using slot's details
-            interview = InterviewSchedule(
-                candidate_id=candidate_id,
-                mode=slot.mode,
-                interview_date=slot.slot_datetime,
-                interviewer_name=slot.interviewer.name,
-                interviewer_email=slot.interviewer.email,
-                meeting_link=slot.meeting_link if slot.mode == 'Online' else meeting_link,
-                address=slot.address if slot.mode == 'Offline' else address
-            )
+            db.session.execute(text("""
+                INSERT INTO interview_schedule 
+                (candidate_id, mode, interview_date, interviewer_name, interviewer_email, meeting_link, address)
+                VALUES (:candidate_id, :mode, :interview_date, :interviewer_name, :interviewer_email, :meeting_link, :address)
+            """), {
+                "candidate_id": data["candidate_id"],
+                "mode": data["mode"],
+                "interview_date": data["interview_datetime"],
+                "interviewer_name": data["interviewer_name"],
+                "interviewer_email": data["interviewer_email"],
+                "meeting_link": data.get("meeting_link"),
+                "address": data.get("address")
+            })
 
-            slot.is_booked = True
-            db.session.add(interview)
+            result = db.session.execute(text("SELECT applicant_email FROM application WHERE id = :id"),
+                                        {"id": data["candidate_id"]}).mappings().first()
+            if result:
+                send_schedule_email(result['applicant_email'], data["interview_datetime"], data["mode"],
+                                    data["interviewer_name"], data.get("meeting_link"), data.get("address"))
+                send_schedule_email(data["interviewer_email"], data["interview_datetime"], data["mode"],
+                                    data["interviewer_name"], data.get("meeting_link"), data.get("address"), True)
             db.session.commit()
-            return redirect("/schedule?message=Interview%20scheduled%20successfully!&type=success")
-
-        except IntegrityError as e:
-            db.session.rollback()
-            return redirect(f"/schedule?message=Integrity%20error.&type=error")
         except Exception as e:
             db.session.rollback()
-            return redirect(f"/schedule?message=Error:%20{str(e)}&type=error")
+            return f"Error: {e}", 500
+        return redirect("/schedule")
 
-    # GET request
-    # Use ORM queries instead of raw SQL
-    candidates = db.session.query(Application.id, Application.applicant_name)\
-        .filter(Application.status == 'Accepted')\
-        .filter(~Application.id.in_(
-            db.session.query(InterviewSchedule.candidate_id)
-            .filter(InterviewSchedule.candidate_id.isnot(None))
-        ))\
-        .order_by(Application.applied_at.desc()).all()
+    candidates = db.session.execute(text("SELECT id, applicant_name FROM application WHERE status = 'Accepted'"))
+    return render_template("schedule.html", candidates=candidates)
 
-    available_slots = InterviewSlot.query.filter_by(is_booked=False).order_by(InterviewSlot.slot_datetime).all()
-
-    return render_template("schedule.html", candidates=candidates, slots=available_slots)
 
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
