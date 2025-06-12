@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>Applications</h1>
+    <a href="/admin/dashboard" class="btn">Back to Dashboard</a>
+</div>
+
+<div style="margin-bottom: 20px;">
+    <form method="GET">
+        <label for="status">Filter by Status:</label>
+        <select name="status" id="status" onchange="this.form.submit()">
+            <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>All</option>
+            <option value="Pending" {{ 'selected' if status_filter == 'Pending' else '' }}>Pending</option>
+            <option value="Accepted" {{ 'selected' if status_filter == 'Accepted' else '' }}>Accepted</option>
+            <option value="Rejected" {{ 'selected' if status_filter == 'Rejected' else '' }}>Rejected</option>
+        </select>
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Job</th>
+            <th>Status</th>
+            <th>Applied At</th>
+            <th>Eligibility Score</th>
+            <th>Assessment Score</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app in applications.items %}
+        <tr>
+            <td>{{ app.id }}</td>
+            <td>{{ app.applicant_name }}</td>
+            <td>{{ app.applicant_email }}</td>
+            <td>{{ app.job.title if app.job else 'N/A' }}</td>
+            <td>{{ app.status }}</td>
+            <td>{{ app.applied_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ app.eligibility_score or 'N/A' }}</td>
+            <td>{{ app.assessment_score or 'N/A' }}</td>
+            <td>
+                <a href="/admin/applications/{{ app.id }}" class="btn" style="padding: 5px 10px;">View Details</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if applications.has_prev %}
+        <a href="{{ url_for('admin_applications', page=applications.prev_num, status=status_filter) }}">&laquo; Previous</a>
+    {% endif %}
+    
+    {% for page_num in applications.iter_pages() %}
+        {% if page_num %}
+            {% if page_num != applications.page %}
+                <a href="{{ url_for('admin_applications', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+            {% else %}
+                <a href="#" class="current">{{ page_num }}</a>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    
+    {% if applications.has_next %}
+        <a href="{{ url_for('admin_applications', page=applications.next_num, status=status_filter) }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endblock %}

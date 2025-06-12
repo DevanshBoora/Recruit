@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Interviews{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Interview Management</h2>
+    <div>
+        <a href="/schedule" class="btn btn-success">Schedule Interview</a>
+        <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<!-- Filter Options -->
+<div class="card">
+    <h4>Filter Interviews</h4>
+    <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+        <div class="form-group" style="min-width: 150px;">
+            <label for="status">Status</label>
+            <select name="status" id="status" onchange="this.form.submit()">
+                <option value="all" {% if request.args.get('status', 'all') == 'all' %}selected{% endif %}>All Interviews</option>
+                <option value="upcoming" {% if request.args.get('status') == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="today" {% if request.args.get('status') == 'today' %}selected{% endif %}>Today</option>
+            </select>
+        </div>
+        <div class="form-group" style="min-width: 150px;">
+            <label for="interviewer">Interviewer</label>
+            <select name="interviewer" id="interviewer" onchange="this.form.submit()">
+                <option value="all">All Interviewers</option>
+                <!-- This would be populated from the backend -->
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- Interview Statistics -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+    <div class="card text-center">
+        <h4>Total Scheduled</h4>
+        <h2 style="color: #007bff;">{{ interviews.total if interviews.total else 0 }}</h2>
+    </div>
+    <div class="card text-center">
+        <h4>Upcoming Today</h4>
+        {% set today_interviews = interviews.items|selectattr('interview_date', 'between', moment().start_of('day'), moment().end_of('day'))|list|length if interviews.items else 0 %}
+        <h2 style="color: #28a745;">{{ today_interviews }}</h2>
+    </div>
+    <div class="card text-center">
+        <h4>This Week</h4>
+        {% set week_interviews = interviews.items|selectattr('interview_date', '>=', moment().start_of('week'))|list|length if interviews.items else 0 %}
+        <h2 style="color: #ffc107;">{{ week_interviews }}</h2>
+    </div>
+    <div class="card text-center">
+        <h4>Completed</h4>
+        {% set completed_interviews = interviews.items|selectattr('interview_date', '<', moment().now())|list|length if interviews.items else 0 %}
+        <h2 style="color: #6c757d;">{{ completed_interviews }}</h2>
+    </div>
+</div>
+
+<!-- Interviews Table -->
+<div class="card">
+    <h3>Scheduled Interviews</h3>
+    
+    {% if interviews.items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Candidate</th>
+                    <th>Interviewer</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Feedback</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interview in interviews.items %}
+                <tr>
+                    <td>
+                        <strong>{{ interview.interview_date.strftime('%Y-%m-%d') }}</strong><br>
+                        <small>{{ interview.interview_date.strftime('%H:%M') }}</small>
+                        {% if interview.interview_date < moment().now() %}
+                            <span style="color: #6c757d; font-size: 12px;">(Completed)</span>
+                        {% elif interview.interview_date.date() == moment().now().date() %}
+                            <span style="color: #28a745; font-size: 12px;">(Today)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if interview.application %}
+                            <strong>{{ interview.application.applicant_name }}</strong><br>
+                            <small>{{ interview.application.applicant_email }}</small>
+                        {% else %}
+                            <span style="color: #dc3545;">Candidate not found</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ interview.interviewer_name }}</strong><br>
+                        <small>{{ interview.interviewer_email }}</small>
+                    </td>
+                    <td>
+                        <span class="btn {{ 'btn-success' if interview.mode == 'Online' else 'btn-secondary' }}" 
+                              style="font-size: 12px; padding: 4px 8px;">
+                            {{ interview.mode }}
+                        </span>
+                        {% if interview.mode == 'Online' and interview.meeting_link %}
+                            <br><small><a href="{{ interview.meeting_link }}" target="_blank">Meeting Link</a></small>
+                        {% elif interview.mode == 'Offline' and interview.address %}
+                            <br><small title="{{ interview.address }}">{{ interview.address[:30] }}...</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if interview.interview_date < moment().now() %}
+                            <span class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">Completed</span>
+                        {% elif interview.interview_date.date() == moment().now().date() %}
+                            <span class="btn btn-success" style="font-size: 12px; padding: 4px 8px;">Today</span>
+                        {% else %}
+                            <span class="btn" style="font-size: 12px; padding: 4px 8px;">Scheduled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if interview.feedback %}
+                            <span class="btn btn-success" style="font-size: 12px; padding: 4px 8px;">
+                                {{ interview.feedback.decision }}
+                            </span>
+                        {% elif interview.interview_date < moment().now() %}
+                            <span class="btn btn-danger" style="font-size: 12px; padding: 4px 8px;">Pending</span>
+                        {% else %}
+                            <span class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/admin/applications/{{ interview.candidate_id }}" class="btn" style="font-size: 12px; padding: 4px 8px;">
+                            View Details
+                        </a>
+                        {% if interview.interview_date > moment().now() %}
+                            <button onclick="sendReminder({{ interview.id }}, '{{ interview.application.applicant_email if interview.application else '' }}')" 
+                                    class="btn btn-success" style="font-size: 12px; padding: 4px 8px; margin-top: 2px;">
+                                Send Reminder
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        {% if interviews.pages > 1 %}
+            <div class="pagination">
+                {% if interviews.has_prev %}
+                    <a href="{{ url_for('admin_interviews', page=interviews.prev_num, **request.args) }}">&laquo; Previous</a>
+                {% endif %}
+                
+                {% for page_num in interviews.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != interviews.page %}
+                            <a href="{{ url_for('admin_interviews', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        {% else %}
+                            <span class="current">{{ page_num }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span>...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if interviews.has_next %}
+                    <a href="{{ url_for('admin_interviews', page=interviews.next_num, **request.args) }}">Next &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <p>No interviews scheduled yet.</p>
+        <div class="text-center" style="margin: 20px 0;">
+            <a href="/schedule" class="btn btn-success">Schedule First Interview</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <h4>Quick Actions</h4>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/schedule" class="btn btn-success">Schedule New Interview</a>
+        <a href="/feedback" class="btn">Submit Feedback</a>
+        <a href="/admin/applications?status=Accepted" class="btn btn-secondary">View Accepted Candidates</a>
+        <button onclick="exportInterviews()" class="btn btn-secondary">Export Schedule</button>
+    </div>
+</div>
+
+<script>
+function sendReminder(interviewId, email) {
+    if (confirm('Send reminder email to ' + email + '?')) {
+        // You would implement an AJAX call here to send reminder
+        fetch('/admin/interviews/' + interviewId + '/reminder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Reminder sent successfully!');
+            } else {
+                alert('Error sending reminder: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error sending reminder');
+        });
+    }
+}
+
+function exportInterviews() {
+    // Simple export functionality
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('export', 'csv');
+    window.location.href = currentUrl.toString();
+}
+
+// Auto-refresh for today's interviews
+if (window.location.search.includes('status=today') || window.location.search.includes('status=upcoming')) {
+    setTimeout(() => {
+        location.reload();
+    }, 60000); // Refresh every minute
+}
+</script>
+{% endblock %}

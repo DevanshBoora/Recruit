@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Interviewers{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Interviewer Management</h2>
+    <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <h3>All Interviewers</h3>
+    
+    {% if interviewers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Registered At</th>
+                    <th>Total Slots</th>
+                    <th>Scheduled Interviews</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interviewer in interviewers %}
+                <tr>
+                    <td>{{ interviewer.id }}</td>
+                    <td>{{ interviewer.name }}</td>
+                    <td>{{ interviewer.email }}</td>
+                    <td>{{ interviewer.created_at.strftime('%Y-%m-%d %H:%M') if interviewer.created_at else 'N/A' }}</td>
+                    <td>
+                        <span class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">
+                            {{ interviewer.slots|length if interviewer.slots else 0 }}
+                        </span>
+                    </td>
+                    <td>
+                        {% set scheduled_count = interviewer.slots|selectattr('is_booked')|list|length %}
+                        <span class="btn btn-success" style="font-size: 12px; padding: 4px 8px;">
+                            {{ scheduled_count }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="#" class="btn" style="font-size: 12px; padding: 4px 8px;" 
+                           onclick="viewInterviewerDetails({{ interviewer.id }}, '{{ interviewer.name }}', '{{ interviewer.email }}')">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No interviewers registered yet.</p>
+    {% endif %}
+</div>
+
+<!-- Statistics Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+    <div class="card">
+        <h4>Total Interviewers</h4>
+        <h2 style="color: #007bff;">{{ interviewers|length }}</h2>
+    </div>
+    
+    <div class="card">
+        <h4>Active Slots</h4>
+        {% set active_slots = interviewers|sum(attribute='slots')|selectattr('slot_datetime', '>', moment().utcnow())|selectattr('is_booked', 'equalto', false)|list|length %}
+        <h2 style="color: #28a745;">{{ active_slots if active_slots else 0 }}</h2>
+    </div>
+    
+    <div class="card">
+        <h4>Scheduled Interviews</h4>
+        {% set scheduled_interviews = interviewers|sum(attribute='slots')|selectattr('is_booked')|list|length %}
+        <h2 style="color: #ffc107;">{{ scheduled_interviews if scheduled_interviews else 0 }}</h2>
+    </div>
+</div>
+
+<!-- Interviewer Details Modal -->
+<div id="interviewerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 id="modalTitle">Interviewer Details</h3>
+            <button onclick="closeModal()" class="btn btn-secondary" style="padding: 5px 10px;">×</button>
+        </div>
+        <div id="modalContent">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+function viewInterviewerDetails(interviewerId, name, email) {
+    document.getElementById('modalTitle').textContent = name + ' - Details';
+    document.getElementById('modalContent').innerHTML = `
+        <div style="margin-bottom: 15px;">
+            <strong>Email:</strong> ${email}<br>
+            <strong>Interviewer ID:</strong> ${interviewerId}
+        </div>
+        <div style="text-align: center; padding: 20px;">
+            <p>Loading interviewer details...</p>
+        </div>
+    `;
+    document.getElementById('interviewerModal').style.display = 'block';
+    
+    // You can add AJAX call here to fetch detailed information
+    // For now, showing basic info
+    setTimeout(() => {
+        document.getElementById('modalContent').innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <strong>Name:</strong> ${name}<br>
+                <strong>Email:</strong> ${email}<br>
+                <strong>Interviewer ID:</strong> ${interviewerId}
+            </div>
+            <div class="card">
+                <h4>Recent Activity</h4>
+                <p>This feature can be enhanced to show:</p>
+                <ul>
+                    <li>Interview slots created</li>
+                    <li>Interviews conducted</li>
+                    <li>Feedback submitted</li>
+                    <li>Upcoming interviews</li>
+                </ul>
+            </div>
+        `;
+    }, 500);
+}
+
+function closeModal() {
+    document.getElementById('interviewerModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.getElementById('interviewerModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}

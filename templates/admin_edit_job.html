@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Job - Admin Dashboard{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .required {
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    select[multiple] {
+        height: 120px;
+    }
+    
+    .job-type-options {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .job-type-options label {
+        display: flex;
+        align-items: center;
+        font-weight: normal;
+        cursor: pointer;
+    }
+    
+    .job-type-options input[type="radio"] {
+        width: auto;
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Edit Job</h2>
+        <a href="{{ url_for('admin_jobs') }}" class="btn btn-secondary">Back to Jobs</a>
+    </div>
+    
+    <div class="card">
+        <form method="POST" action="{{ url_for('admin_edit_job', job_id=job.id) }}">
+            <div class="form-group">
+                <label for="title">Job Title <span class="required">*</span></label>
+                <input type="text" id="title" name="title" value="{{ job.title }}" required>
+                <div class="help-text">Enter a clear and descriptive job title</div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="job_type">Job Type <span class="required">*</span></label>
+                    <div class="job-type-options">
+                        <label>
+                            <input type="radio" name="job_type" value="Full-time" 
+                                   {% if job.job_type == 'Full-time' %}checked{% endif %} required>
+                            Full-time
+                        </label>
+                        <label>
+                            <input type="radio" name="job_type" value="Part-time" 
+                                   {% if job.job_type == 'Part-time' %}checked{% endif %} required>
+                            Part-time
+                        </label>
+                        <label>
+                            <input type="radio" name="job_type" value="Contract" 
+                                   {% if job.job_type == 'Contract' %}checked{% endif %} required>
+                            Contract
+                        </label>
+                        <label>
+                            <input type="radio" name="job_type" value="Internship" 
+                                   {% if job.job_type == 'Internship' %}checked{% endif %} required>
+                            Internship
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location <span class="required">*</span></label>
+                    <input type="text" id="location" name="location" value="{{ job.location }}" required>
+                    <div class="help-text">e.g., New York, NY or Remote</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Job Description <span class="required">*</span></label>
+                <textarea id="description" name="description" rows="6" required>{{ job.description }}</textarea>
+                <div class="help-text">Provide a detailed description of the role and what the candidate will be doing</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="qualifications">Required Qualifications <span class="required">*</span></label>
+                <textarea id="qualifications" name="qualifications" rows="5" required>{{ job.qualifications }}</textarea>
+                <div class="help-text">List the essential skills, experience, and qualifications required</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="responsibilities">Key Responsibilities <span class="required">*</span></label>
+                <textarea id="responsibilities" name="responsibilities" rows="5" required>{{ job.responsibilities }}</textarea>
+                <div class="help-text">Outline the main duties and responsibilities of this position</div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="required_experience">Required Experience <span class="required">*</span></label>
+                    <select id="required_experience" name="required_experience" required>
+                        <option value="">Select Experience Level</option>
+                        <option value="Entry Level" {% if job.required_experience == 'Entry Level' %}selected{% endif %}>Entry Level (0-1 years)</option>
+                        <option value="Junior" {% if job.required_experience == 'Junior' %}selected{% endif %}>Junior (1-3 years)</option>
+                        <option value="Mid Level" {% if job.required_experience == 'Mid Level' %}selected{% endif %}>Mid Level (3-5 years)</option>
+                        <option value="Senior" {% if job.required_experience == 'Senior' %}selected{% endif %}>Senior (5-8 years)</option>
+                        <option value="Lead" {% if job.required_experience == 'Lead' %}selected{% endif %}>Lead (8+ years)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="assessment_timer">Assessment Timer (minutes) <span class="required">*</span></label>
+                    <input type="number" id="assessment_timer" name="assessment_timer" 
+                           value="{{ job.assessment_timer }}" min="5" max="180" required>
+                    <div class="help-text">Time limit for the assessment (5-180 minutes)</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="assessment_questions">Assessment Questions <span class="required">*</span></label>
+                <textarea id="assessment_questions" name="assessment_questions" rows="8" required>{{ job.assessment_questions }}</textarea>
+                <div class="help-text">Enter assessment questions separated by new lines. These will be used to evaluate candidates.</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="min_assessment_score">Minimum Assessment Score <span class="required">*</span></label>
+                <input type="number" id="min_assessment_score" name="min_assessment_score" 
+                       value="{{ job.min_assesment_score }}" min="0" max="100" required>
+                <div class="help-text">Minimum score (0-100) required to pass the assessment</div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('admin_jobs') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-success">Update Job</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    const assessmentTimer = document.getElementById('assessment_timer');
+    const minScore = document.getElementById('min_assessment_score');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Validate assessment timer
+        if (assessmentTimer.value < 5 || assessmentTimer.value > 180) {
+            isValid = false;
+            errorMessage += 'Assessment timer must be between 5 and 180 minutes.\n';
+        }
+        
+        // Validate minimum score
+        if (minScore.value < 0 || minScore.value > 100) {
+            isValid = false;
+            errorMessage += 'Minimum assessment score must be between 0 and 100.\n';
+        }
+        
+        // Check if assessment questions are provided
+        const assessmentQuestions = document.getElementById('assessment_questions').value.trim();
+        if (!assessmentQuestions) {
+            isValid = false;
+            errorMessage += 'Assessment questions are required.\n';
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix the following errors:\n\n' + errorMessage);
+        }
+    });
+    
+    // Auto-resize textareas
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    });
+    
+    // Character count for description
+    const description = document.getElementById('description');
+    const descriptionContainer = description.parentNode;
+    const charCount = document.createElement('div');
+    charCount.className = 'help-text';
+    charCount.style.textAlign = 'right';
+    descriptionContainer.appendChild(charCount);
+    
+    function updateCharCount() {
+        const length = description.value.length;
+        charCount.textContent = `${length} characters`;
+        
+        if (length > 1000) {
+            charCount.style.color = '#dc3545';
+        } else if (length > 800) {
+            charCount.style.color = '#ffc107';
+        } else {
+            charCount.style.color = '#6c757d';
+        }
+    }
+    
+    description.addEventListener('input', updateCharCount);
+    updateCharCount(); // Initial count
+    
+    // Confirm before leaving if form is dirty
+    let formChanged = false;
+    const formElements = form.querySelectorAll('input, textarea, select');
+    
+    formElements.forEach(element => {
+        element.addEventListener('change', () => {
+            formChanged = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
+            e.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+    });
+    
+    // Reset form changed flag on successful submit
+    form.addEventListener('submit', function() {
+        formChanged = false;
+    });
+});
+</script>
+{% endblock %}

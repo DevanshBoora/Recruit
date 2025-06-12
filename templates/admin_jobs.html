@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>Manage Jobs</h1>
+    <div>
+        <a href="/admin/jobs/create" class="btn btn-success">Create New Job</a>
+        <a href="/admin/dashboard" class="btn">Back to Dashboard</a>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Location</th>
+            <th>Posted At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs.items %}
+        <tr>
+            <td>{{ job.id }}</td>
+            <td>{{ job.title }}</td>
+            <td>{{ job.job_type }}</td>
+            <td>{{ job.location }}</td>
+            <td>{{ job.posted_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+                <a href="/admin/jobs/{{ job.id }}/edit" class="btn" style="padding: 5px 10px;">Edit</a>
+                <form method="POST" action="/admin/jobs/{{ job.id }}/delete" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" style="padding: 5px 10px;" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if jobs.has_prev %}
+        <a href="{{ url_for('admin_jobs', page=jobs.prev_num) }}">&laquo; Previous</a>
+    {% endif %}
+    
+    {% for page_num in jobs.iter_pages() %}
+        {% if page_num %}
+            {% if page_num != jobs.page %}
+                <a href="{{ url_for('admin_jobs', page=page_num) }}">{{ page_num }}</a>
+            {% else %}
+                <a href="#" class="current">{{ page_num }}</a>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    
+    {% if jobs.has_next %}
+        <a href="{{ url_for('admin_jobs', page=jobs.next_num) }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endblock %}

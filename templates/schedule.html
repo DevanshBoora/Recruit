@@ -1,41 +1,118 @@
-<form method="POST">
-  <div class="mb-3">
-    <label for="candidate_id">Select Candidate</label>
-    <select name="candidate_id" class="form-control" required>
-      {% for c in candidates %}
-        <option value="{{ c.id }}">{{ c.applicant_name }}</option>
-      {% endfor %}
-    </select>
-  </div>
+{% extends "base.html" %}
 
-  <div class="mb-3">
-    <label for="slot_id">Select Slot</label>
-    <select name="slot_id" class="form-control" required>
-      {% for s in slots %}
-        <option value="{{ s.id }}">
-          {{ s.slot_datetime.strftime('%Y-%m-%d %H:%M') }} - {{ s.interviewer.name }} ({{ s.interviewer.email }})
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+{% block title %}Schedule Interview - Job Application System{% endblock %}
 
-  <div class="mb-3">
-    <label for="mode">Mode</label>
-    <select name="mode" class="form-control" required>
-      <option value="Online">Online</option>
-      <option value="Offline">Offline</option>
-    </select>
-  </div>
+{% block content %}
+<h1>Schedule Interview</h1>
 
-  <div class="mb-3">
-    <label for="meeting_link">Meeting Link (for Online)</label>
-    <input type="text" name="meeting_link" class="form-control">
-  </div>
+<div class="card">
+    <h3>Schedule New Interview</h3>
+    {% if candidates and slots %}
+        <form method="POST">
+            <div class="form-group">
+                <label for="candidate_id">Select Candidate:</label>
+                <select id="candidate_id" name="candidate_id" required>
+                    <option value="">Choose a candidate...</option>
+                    {% for candidate in candidates %}
+                        <option value="{{ candidate.id }}">
+                            {{ candidate.applicant_name }} ({{ candidate.applicant_email }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="slot_id">Select Available Slot:</label>
+                <select id="slot_id" name="slot_id" required>
+                    <option value="">Choose a slot...</option>
+                    {% for slot in slots %}
+                        <option value="{{ slot.id }}">
+                            {{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }} - 
+                            {{ slot.mode }} 
+                            {% if slot.interviewer %}
+                                ({{ slot.interviewer.name }})
+                            {% endif %}
+                            {% if slot.mode == 'Online' and slot.meeting_link %}
+                                - {{ slot.meeting_link }}
+                            {% elif slot.mode == 'Offline' and slot.address %}
+                                - {{ slot.address }}
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-success">Schedule Interview</button>
+        </form>
+    {% else %}
+        <div class="alert warning">
+            {% if not candidates %}
+                <p>No accepted candidates available for scheduling.</p>
+            {% endif %}
+            {% if not slots %}
+                <p>No available interview slots. Please ask interviewers to create slots.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
 
-  <div class="mb-3">
-    <label for="address">Address (for Offline)</label>
-    <input type="text" name="address" class="form-control">
-  </div>
+<div class="card">
+    <h3>Available Candidates</h3>
+    {% if candidates %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Candidate ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for candidate in candidates %}
+                <tr>
+                    <td>{{ candidate.id }}</td>
+                    <td>{{ candidate.applicant_name }}</td>
+                    <td>{{ candidate.applicant_email }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No accepted candidates available for scheduling.</p>
+    {% endif %}
+</div>
 
-  <button type="submit" class="btn btn-primary">Schedule Interview</button>
-</form>
+<div class="card">
+    <h3>Available Interview Slots</h3>
+    {% if slots %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Interviewer</th>
+                    <th>Mode</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in slots %}
+                <tr>
+                    <td>{{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ slot.interviewer.name if slot.interviewer else 'N/A' }}</td>
+                    <td>{{ slot.mode }}</td>
+                    <td>
+                        {% if slot.mode == 'Online' %}
+                            <strong>Meeting Link:</strong> {{ slot.meeting_link or 'Not provided' }}
+                        {% else %}
+                            <strong>Address:</strong> {{ slot.address or 'Not provided' }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No available interview slots.</p>
+    {% endif %}
+</div>
+{% endblock %}

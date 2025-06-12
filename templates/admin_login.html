@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Interviewer Login</h1>
+<h1>Admin Login</h1>
 
 <div style="max-width: 400px; margin: 0 auto;">
     <form method="POST">
         <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
         </div>
         
         <div class="form-group">
@@ -19,9 +19,5 @@
             <button type="submit" class="btn">Login</button>
         </div>
     </form>
-    
-    <div style="text-align: center; margin-top: 20px;">
-        <p>Don't have an account? <a href="/interviewer/register">Register here</a></p>
-    </div>
 </div>
 {% endblock %}

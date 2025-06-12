@@ -1,43 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Interviewer Dashboard</title>
-</head>
-<body>
-    <h1>Welcome, {{ interviewer.name }}</h1>
+{% extends "base.html" %}
 
-    <h2>Your Interview Slots</h2>
-    {% if slots %}
-        <ul>
-            {% for slot in slots %}
-                <li>
-                    {{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }} | 
-                    Mode: {{ slot.mode }} | 
-                    {% if slot.is_booked %}<strong>Booked</strong>{% else %}Available{% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+{% block title %}Interviewer Dashboard - Job Application System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Welcome, {{ interviewer.name }}!</h1>
+    <div>
+        <a href="{{ url_for('add_slot') }}" class="btn btn-success">Manage Slots</a>
+        <a href="{{ url_for('logout_interviewer') }}" class="btn btn-secondary">Logout</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    <div class="card">
+        <h3>Quick Stats</h3>
+        <p><strong>Total Slots:</strong> {{ upcoming_slots|length + past_slots|length }}</p>
+        <p><strong>Upcoming Slots:</strong> {{ upcoming_slots|length }}</p>
+        <p><strong>Scheduled Interviews:</strong> {{ interviews|length }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Upcoming Interview Slots</h3>
+    {% if upcoming_slots %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in upcoming_slots %}
+                <tr>
+                    <td>{{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ slot.mode }}</td>
+                    <td>
+                        {% if slot.is_booked %}
+                            <span style="color: #dc3545; font-weight: bold;">Booked</span>
+                        {% else %}
+                            <span style="color: #28a745; font-weight: bold;">Available</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if slot.mode == 'Online' %}
+                            Meeting Link: {{ slot.meeting_link or 'Not provided' }}
+                        {% else %}
+                            Address: {{ slot.address or 'Not provided' }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not slot.is_booked %}
+                            <form method="POST" action="{{ url_for('delete_slot', slot_id=slot.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this slot?')">Delete</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
-        <p>No slots added yet.</p>
+        <p>No upcoming slots available. <a href="{{ url_for('add_slot') }}">Create a new slot</a></p>
     {% endif %}
-    <a href="/interviewer/slots">+ Add Slots</a>
+</div>
 
-    <h2>Scheduled Interviews</h2>
+<div class="card">
+    <h3>Scheduled Interviews</h3>
     {% if interviews %}
-        <ul>
-            {% for interview in interviews %}
-                <li>
-                    {{ interview.interview_date.strftime('%Y-%m-%d %H:%M') }} - 
-                    Candidate ID: {{ interview.candidate_id }} - 
-                    Mode: {{ interview.mode }}
-                </li>
-            {% endfor %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>Candidate ID</th>
+                    <th>Interview Date</th>
+                    <th>Mode</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interview in interviews %}
+                <tr>
+                    <td>{{ interview.candidate_id }}</td>
+                    <td>{{ interview.interview_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ interview.mode }}</td>
+                    <td>
+                        {% if interview.mode == 'Online' %}
+                            Meeting Link: {{ interview.meeting_link or 'Not provided' }}
+                        {% else %}
+                            Address: {{ interview.address or 'Not provided' }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
-        <p>No interviews scheduled yet.</p>
+        <p>No scheduled interviews.</p>
     {% endif %}
+</div>
 
-    <p><a href="/interviewer/logout">Logout</a></p>
-</body>
-</html>
+<div class="card">
+    <h3>Recent Past Slots</h3>
+    {% if past_slots %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in past_slots %}
+                <tr>
+                    <td>{{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ slot.mode }}</td>
+                    <td>
+                        {% if slot.is_booked %}
+                            <span style="color: #dc3545; font-weight: bold;">Was Booked</span>
+                        {% else %}
+                            <span style="color: #6c757d;">Expired</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if slot.mode == 'Online' %}
+                            Meeting Link: {{ slot.meeting_link or 'Not provided' }}
+                        {% else %}
+                            Address: {{ slot.address or 'Not provided' }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No past slots.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>Admin Dashboard</h1>
+    <div>
+        <span>Welcome, {{ session.admin_username }}!</span>
+        <a href="/admin/logout" class="btn btn-danger">Logout</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.total_jobs }}</h3>
+        <p>Total Jobs</p>
+    </div>
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.total_applications }}</h3>
+        <p>Total Applications</p>
+    </div>
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.pending_applications }}</h3>
+        <p>Pending Applications</p>
+    </div>
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.accepted_applications }}</h3>
+        <p>Accepted Applications</p>
+    </div>
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.rejected_applications }}</h3>
+        <p>Rejected Applications</p>
+    </div>
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.total_interviewers }}</h3>
+        <p>Total Interviewers</p>
+    </div>
+    <div style="border: 1px solid #ddd; padding: 20px; text-align: center;">
+        <h3>{{ stats.scheduled_interviews }}</h3>
+        <p>Scheduled Interviews</p>
+    </div>
+</div>
+
+<div style="margin: 30px 0;">
+    <h2>Quick Actions</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/admin/jobs" class="btn">Manage Jobs</a>
+        <a href="/admin/applications" class="btn">View Applications</a>
+        <a href="/admin/interviewers" class="btn">Manage Interviewers</a>
+        <a href="/admin/interviews" class="btn">View Interviews</a>
+        <a href="/admin/analytics" class="btn">Analytics</a>
+        <a href="/admin/settings" class="btn">Settings</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
+    <div>
+        <h3>Recent Applications</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Applied At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in recent_applications %}
+                <tr>
+                    <td>{{ app.applicant_name }}</td>
+                    <td>{{ app.applicant_email }}</td>
+                    <td>{{ app.status }}</td>
+                    <td>{{ app.applied_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div>
+        <h3>Upcoming Interviews</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Date</th>
+                    <th>Interviewer</th>
+                    <th>Mode</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interview in upcoming_interviews %}
+                <tr>
+                    <td>{{ interview.candidate.applicant_name if interview.candidate else 'N/A' }}</td>
+                    <td>{{ interview.interview_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ interview.interviewer_name }}</td>
+                    <td>{{ interview.mode }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

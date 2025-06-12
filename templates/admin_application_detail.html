@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Application Details - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1>Application Details</h1>
+    <a href="{{ url_for('admin_applications') }}" class="btn btn-secondary">← Back to Applications</a>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 20px;">
+    <!-- Main Application Details -->
+    <div class="card">
+        <h3>Applicant Information</h3>
+        <table style="margin: 0;">
+            <tr>
+                <td><strong>Name:</strong></td>
+                <td>{{ application.applicant_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Email:</strong></td>
+                <td>{{ application.applicant_email }}</td>
+            </tr>
+            <tr>
+                <td><strong>Age:</strong></td>
+                <td>{{ application.applicant_age }}</td>
+            </tr>
+            <tr>
+                <td><strong>Experience:</strong></td>
+                <td>{{ application.applicant_experience }}</td>
+            </tr>
+            <tr>
+                <td><strong>Education:</strong></td>
+                <td>{{ application.education }}</td>
+            </tr>
+            <tr>
+                <td><strong>Applied Date:</strong></td>
+                <td>{{ application.applied_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            <tr>
+                <td><strong>Status:</strong></td>
+                <td>
+                    <span class="status-badge status-{{ application.status.lower() }}">
+                        {{ application.status }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 20px;">
+            <h4>Resume</h4>
+            {% if application.resume_path %}
+                <a href="{{ url_for('serve_resume', filename=application.resume_path.split('/')[-1]) }}" 
+                   class="btn" target="_blank">📄 View Resume</a>
+            {% else %}
+                <p>No resume uploaded</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status and Actions -->
+    <div class="card">
+        <h3>Application Status</h3>
+        <form method="POST" action="{{ url_for('update_application_status', app_id=application.id) }}" 
+              onsubmit="return confirm('Are you sure you want to update the status?');">
+            <div class="form-group">
+                <label for="status">Update Status:</label>
+                <select name="status" id="status" required>
+                    <option value="Pending" {% if application.status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Accepted" {% if application.status == 'Accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="Rejected" {% if application.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Update Status</button>
+        </form>
+
+        <div style="margin-top: 20px;">
+            <h4>Email Status</h4>
+            <p><strong>Rejection Email Sent:</strong> 
+                {{ 'Yes' if application.rejection_email_sent else 'No' }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details -->
+<div class="card">
+    <h3>Job Details</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h4>{{ job.title }}</h4>
+            <p><strong>Type:</strong> {{ job.job_type }}</p>
+            <p><strong>Location:</strong> {{ job.location }}</p>
+            <p><strong>Experience Required:</strong> {{ job.required_experience }}</p>
+            <p><strong>Posted:</strong> {{ job.posted_at.strftime('%Y-%m-%d') }}</p>
+        </div>
+        <div>
+            <p><strong>Assessment Timer:</strong> {{ job.assessment_timer }} minutes</p>
+            <p><strong>Min Assessment Score:</strong> {{ job.min_assesment_score }}%</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 15px;">
+        <h4>Description</h4>
+        <p>{{ job.description }}</p>
+    </div>
+
+    <div style="margin-top: 15px;">
+        <h4>Qualifications</h4>
+        <p>{{ job.qualifications }}</p>
+    </div>
+
+    <div style="margin-top: 15px;">
+        <h4>Responsibilities</h4>
+        <p>{{ job.responsibilities }}</p>
+    </div>
+</div>
+
+<!-- Scores -->
+<div class="card">
+    <h3>Assessment Scores</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h4>Eligibility Score</h4>
+            <div class="score-container">
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ application.eligibility_score or 0 }}%"></div>
+                </div>
+                <span class="score-text">{{ application.eligibility_score or 0 }}%</span>
+            </div>
+        </div>
+        <div>
+            <h4>Assessment Score</h4>
+            <div class="score-container">
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ application.assessment_score or 0 }}%"></div>
+                </div>
+                <span class="score-text">{{ application.assessment_score or 0 }}%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interview Information -->
+{% if interview_schedule %}
+<div class="card">
+    <h3>Interview Schedule</h3>
+    <table style="margin: 0;">
+        <tr>
+            <td><strong>Date & Time:</strong></td>
+            <td>{{ interview_schedule.interview_date.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        <tr>
+            <td><strong>Mode:</strong></td>
+            <td>{{ interview_schedule.mode }}</td>
+        </tr>
+        <tr>
+            <td><strong>Interviewer:</strong></td>
+            <td>{{ interview_schedule.interviewer_name }} ({{ interview_schedule.interviewer_email }})</td>
+        </tr>
+        {% if interview_schedule.meeting_link %}
+        <tr>
+            <td><strong>Meeting Link:</strong></td>
+            <td><a href="{{ interview_schedule.meeting_link }}" target="_blank">{{ interview_schedule.meeting_link }}</a></td>
+        </tr>
+        {% endif %}
+        {% if interview_schedule.address %}
+        <tr>
+            <td><strong>Address:</strong></td>
+            <td>{{ interview_schedule.address }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td><strong>Reminders:</strong></td>
+            <td>
+                1-day: {{ 'Sent' if interview_schedule.reminder_1day_sent else 'Not sent' }}<br>
+                1-hour: {{ 'Sent' if interview_schedule.reminder_1hour_sent else 'Not sent' }}
+            </td>
+        </tr>
+    </table>
+</div>
+{% endif %}
+
+<!-- Feedback -->
+{% if feedback %}
+<div class="card">
+    <h3>Interview Feedback</h3>
+    <table style="margin: 0;">
+        <tr>
+            <td><strong>Decision:</strong></td>
+            <td>
+                <span class="status-badge status-{{ feedback.decision.lower() }}">
+                    {{ feedback.decision }}
+                </span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Communication Score:</strong></td>
+            <td>{{ feedback.communication_score }}/10</td>
+        </tr>
+        <tr>
+            <td><strong>Technical Score:</strong></td>
+            <td>{{ feedback.technical_score }}/10</td>
+        </tr>
+        <tr>
+            <td><strong>Problem Solving Score:</strong></td>
+            <td>{{ feedback.problem_solving_score }}/10</td>
+        </tr>
+        <tr>
+            <td><strong>Rejection Email Sent:</strong></td>
+            <td>{{ 'Yes' if feedback.rejection_email_sent else 'No' }}</td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 15px;">
+        <h4>Comments</h4>
+        <p>{{ feedback.comments or 'No comments provided' }}</p>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-accepted {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.score-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.score-bar {
+    flex: 1;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+    transition: width 0.3s ease;
+}
+
+.score-text {
+    font-weight: bold;
+    min-width: 40px;
+}
+
+@media (max-width: 768px) {
+    div[style*="grid-template-columns: 2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+{% endblock %}
