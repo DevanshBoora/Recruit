@@ -6,11 +6,6 @@ from dotenv import load_dotenv
 
 from routes import register_blueprints
 from models import db,Job,Application
-import logging
-from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 

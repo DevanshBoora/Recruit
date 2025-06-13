@@ -22,10 +22,15 @@
             --card-bg-light: #3a3a3a; /* Lighter shade for builder container */
             --input-bg-dark: #444;
             --input-border-dark: #666;
+
+            /* Chat Overlay specific colors */
+            --chat-bubble-user: #007bff; /* Primary color for user messages */
+            --chat-bubble-bot: #555;    /* Dark gray for bot messages */
+            --chat-bg-light: #333; /* Slightly lighter background for chat messages area */
         }
 
         body {
-            font-family: 'Open Sans', sans-serif; /* Applied new font */
+            font-family: 'Open Sans', sans-serif;
             margin: 0;
             padding: 0;
             background-color: var(--bg-color-dark);
@@ -41,6 +46,8 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px var(--shadow-color-dark);
+            position: relative;
+            z-index: 100;
         }
 
         .logo {
@@ -89,7 +96,7 @@
         }
 
         .form-card {
-          max-width: 800px; /* Adjusted for assessment builder */
+          max-width: 800px;
         }
 
         .form-card h2 {
@@ -117,17 +124,17 @@
             margin-bottom: 20px;
             border: 1px solid var(--border-color-dark);
             border-radius: 5px;
-            background-color: var(--input-bg-dark); /* Using dark input background */
+            background-color: var(--input-bg-dark);
             color: var(--text-color-light);
             font-size: 1em;
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            box-sizing: border-box;
         }
         .form-card form textarea {
-            resize: vertical; /* Allow vertical resizing */
+            resize: vertical;
             min-height: 80px;
         }
         .form-card form input[type="file"] {
-            padding: 8px; /* Adjust padding for file input */
+            padding: 8px;
         }
 
         .form-card form button[type="submit"] {
@@ -140,7 +147,7 @@
             font-size: 1.1em;
             font-weight: 600;
             transition: background-color 0.3s ease;
-            display: block; /* Make button take full width if desired */
+            display: block;
             width: 100%;
             box-sizing: border-box;
         }
@@ -184,13 +191,13 @@
         #globalMessageContainer.error {
             background-color: var(--error-color);
         }
-        #globalMessageContainer.warning { /* Added a warning style too */
+        #globalMessageContainer.warning {
             background-color: orange;
         }
 
         /* New styles for the Assessment Questions Builder */
         .secondary-button {
-            background-color: #4CAF50; /* Example green color */
+            background-color: #4CAF50;
             color: white;
             padding: 10px 15px;
             border: none;
@@ -199,29 +206,29 @@
             font-size: 0.9em;
             transition: background-color 0.3s ease;
             margin-right: 10px;
-            margin-bottom: 10px; /* Spacing between buttons */
+            margin-bottom: 10px;
         }
         .secondary-button:hover {
             background-color: #45a049;
         }
         .assessment-builder-controls {
             display: flex;
-            flex-wrap: wrap; /* Allow buttons to wrap */
-            gap: 10px; /* Space between buttons */
+            flex-wrap: wrap;
+            gap: 10px;
             margin-bottom: 20px;
         }
         .question-block {
-            background-color: var(--card-bg-light); /* Lighter shade for builder container */
+            background-color: var(--card-bg-light);
             border: 1px solid var(--border-color-dark);
             padding: 15px;
             margin-bottom: 15px;
             border-radius: 8px;
-            position: relative; /* For delete button positioning */
+            position: relative;
         }
         .question-block h3 {
             margin-top: 0;
             color: var(--accent-color);
-            display: flex; /* For aligning delete button */
+            display: flex;
             justify-content: space-between;
             align-items: center;
         }
@@ -233,25 +240,25 @@
             padding: 5px 10px;
             cursor: pointer;
             font-size: 0.8em;
-            margin-left: 10px; /* Space from title */
+            margin-left: 10px;
         }
         .question-block .delete-question-btn:hover {
             background-color: #a71d2a;
         }
         .question-block label {
-            margin-top: 15px; /* Space between fields */
+            margin-top: 15px;
             margin-bottom: 5px;
             display: block;
         }
         .question-block textarea,
         .question-block input[type="text"] {
-            width: calc(100% - 20px); /* Adjust for padding */
+            width: calc(100% - 20px);
             padding: 10px;
             border: 1px solid var(--input-border-dark);
             background-color: var(--input-bg-dark);
             color: var(--text-color-light);
             border-radius: 5px;
-            box-sizing: border-box; /* Include padding in width */
+            box-sizing: border-box;
         }
         .question-block textarea.question-text {
             min-height: 80px;
@@ -268,7 +275,7 @@
         .option-item input[type="text"] {
             flex-grow: 1;
             margin-right: 10px;
-            margin-bottom: 0; /* Override default margin */
+            margin-bottom: 0;
         }
         .option-item .delete-option-btn {
             background-color: #f44336;
@@ -278,7 +285,7 @@
             padding: 3px 8px;
             cursor: pointer;
             font-size: 0.7em;
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
         .option-item .delete-option-btn:hover {
             background-color: #d32f2f;
@@ -286,7 +293,208 @@
 
         /* Specific for 'correct-option' input */
         .question-block input.correct-option {
-            width: 80px; /* Smaller width for single character like 'A' */
+            width: 80px;
+        }
+
+        /* --- CHAT OVERLAY STYLES --- */
+        #chatOverlayToggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 2.2em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow-color-dark);
+            z-index: 1001;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        #chatOverlayToggle:hover {
+            background-color: var(--button-hover-dark);
+            transform: scale(1.05);
+        }
+
+        #chatOverlay {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 350px;
+            height: 450px; /* Fixed height for the entire overlay */
+            background-color: var(--surface-color-dark);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px var(--shadow-color-dark);
+            border: 1px solid var(--border-color-dark);
+            display: flex; /* Make it a flex container */
+            flex-direction: column; /* Arrange children vertically */
+            overflow: hidden; /* Important: Prevents content from overflowing the *entire* chat window */
+            z-index: 1000;
+            transform: translateY(100%) scale(0.8);
+            opacity: 0;
+            visibility: hidden;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out, visibility 0.3s ease-out;
+            transform-origin: bottom right;
+        }
+
+        #chatOverlay.open {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .chat-overlay-header {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px 15px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            flex-shrink: 0; /* Header should not shrink */
+            height: 45px; 
+            line-height: 25px; /* Vertically center text */
+            cursor: grab;
+            box-sizing: border-box;
+        }
+
+        .chat-overlay-messages {
+            flex: 1; /* Take up remaining space */
+            padding: 15px;
+            overflow-y: auto; /* Enable scrolling when content overflows */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            background-color: var(--chat-bg-light);
+            color: var(--text-color-light);
+            display: flex;
+            flex-direction: column;
+            gap: 5px; /* Add some spacing between messages */
+            min-height: 0; /* Critical for flex children with overflow */
+            max-height: 100%; /* Ensure it doesn't exceed parent */
+            box-sizing: border-box;
+            /* Webkit scrollbar styling for better appearance */
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color-dark) transparent;
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        .chat-overlay-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-overlay-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-overlay-messages::-webkit-scrollbar-thumb {
+            background-color: var(--border-color-dark);
+            border-radius: 3px;
+        }
+
+        .chat-overlay-messages::-webkit-scrollbar-thumb:hover {
+            background-color: var(--text-color-faded);
+        }
+
+        .chat-overlay-input-area {
+            display: flex;
+            padding: 10px 15px;
+            background-color: var(--surface-color-dark);
+            border-top: 1px solid var(--border-color-dark);
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            flex-shrink: 0; /* Input area should not shrink */
+            height: 60px; 
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .chat-overlay-input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--input-border-dark);
+            border-radius: 20px;
+            background-color: var(--input-bg-dark);
+            color: var(--text-color-light);
+            font-size: 0.9em;
+            margin-right: 8px;
+            outline: none;
+            box-sizing: border-box;
+            height: 36px;
+        }
+
+        .chat-overlay-input-area input[type="text"]:focus {
+            border-color: var(--accent-color);
+        }
+
+        .chat-overlay-input-area button {
+            background-color: var(--button-bg-dark);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-shrink: 0;
+            height: 36px;
+            box-sizing: border-box;
+        }
+
+        .chat-overlay-input-area button:hover {
+            background-color: var(--button-hover-dark);
+        }
+
+        /* Message bubble styles - Updated for better spacing */
+        .message-bubble {
+            margin-bottom: 5px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.4;
+            font-size: 0.9em;
+            display: block;
+            align-self: flex-start; /* Default alignment */
+        }
+
+        .message-bubble.user {
+            background-color: var(--chat-bubble-user);
+            color: white;
+            align-self: flex-end; /* Align to right */
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-bubble.bot {
+            background-color: var(--chat-bubble-bot);
+            color: white;
+            align-self: flex-start; /* Align to left */
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-timestamp {
+            font-size: 0.7em;
+            color: var(--text-color-faded);
+            margin-bottom: 10px;
+            align-self: flex-end; /* Default for user timestamps */
+        }
+
+        .message-timestamp.bot {
+            align-self: flex-start; /* Align bot timestamp to left */
+        }
+
+        /* For the initial "No messages" text in overlay */
+        .chat-overlay-messages .placeholder-text {
+            text-align: center;
+            color: var(--text-color-faded);
+            margin: auto;
+            font-size: 0.9em;
+            align-self: center;
         }
     </style>
     {% block head_extra %}{% endblock %}
@@ -309,34 +517,260 @@
         {% block content %}{% endblock %}
     </main>
 
+    <button id="chatOverlayToggle">💬</button>
+    <div id="chatOverlay">
+        <div class="chat-overlay-header" id="chatOverlayHeader">Spryle ChatBot</div>
+        <div class="chat-overlay-messages" id="chatOverlayMessages">
+            <p class="placeholder-text">Loading chat history...</p>
+        </div>
+        <div class="chat-overlay-input-area">
+            <input type="text" id="chatOverlayInput" placeholder="Type your message..." autocomplete="off">
+            <button id="sendOverlayMessageBtn">Send</button>
+        </div>
+    </div>
     <script>
         function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
             const msgContainer = document.getElementById('globalMessageContainer');
             msgContainer.textContent = message;
-            msgContainer.className = `show ${type}`; // Add show and type class
+            msgContainer.className = `show ${type}`;
 
             setTimeout(() => {
-                msgContainer.classList.add('hide'); // Start fade out
-                // Remove classes after transition ends to allow new messages
+                msgContainer.classList.add('hide');
                 msgContainer.addEventListener('transitionend', function handler() {
-                    msgContainer.className = ''; // Reset classes
+                    msgContainer.className = '';
                     msgContainer.removeEventListener('transitionend', handler);
                     if (redirectUrl) {
                         window.location.href = redirectUrl;
                     }
-                }, { once: true }); // Ensure event listener is removed after first use
+                }, { once: true });
             }, delay);
 
-            // If a redirect is specified, set a slightly longer timeout for it
-            // to allow message to be seen before redirect
             if (redirectUrl) {
                 setTimeout(() => {
-                    if (window.location.href !== redirectUrl) { // Only redirect if not already there
+                    if (window.location.href !== redirectUrl) {
                         window.location.href = redirectUrl;
                     }
-                }, delay + 500); // 500ms after message disappears
+                }, delay + 500);
             }
         }
+
+        // --- CHAT OVERLAY JAVASCRIPT ---
+        const chatOverlayToggle = document.getElementById('chatOverlayToggle');
+        const chatOverlay = document.getElementById('chatOverlay');
+        const chatOverlayMessages = document.getElementById('chatOverlayMessages');
+        const chatOverlayInput = document.getElementById('chatOverlayInput');
+        const sendOverlayMessageBtn = document.getElementById('sendOverlayMessageBtn');
+        const chatOverlayHeader = document.getElementById('chatOverlayHeader');
+
+        let currentConversationId = null;
+        let isChatOpen = false;
+
+        // --- Drag functionality ---
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        if (chatOverlayHeader) {
+            chatOverlayHeader.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - chatOverlay.getBoundingClientRect().left;
+                offsetY = e.clientY - chatOverlay.getBoundingClientRect().top;
+                chatOverlay.style.cursor = 'grabbing';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const newLeft = e.clientX - offsetX;
+                const newTop = e.clientY - offsetY;
+
+                const clampedLeft = clamp(newLeft, 0, window.innerWidth - chatOverlay.offsetWidth);
+                const clampedTop = clamp(newTop, 0, window.innerHeight - chatOverlay.offsetHeight);
+
+                chatOverlay.style.left = `${clampedLeft}px`;
+                chatOverlay.style.top = `${clampedTop}px`;
+                chatOverlay.style.right = 'auto';
+                chatOverlay.style.bottom = 'auto';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    chatOverlay.style.cursor = 'grab';
+                    sessionStorage.setItem('chatOverlayLeft', chatOverlay.style.left);
+                    sessionStorage.setItem('chatOverlayTop', chatOverlay.style.top);
+                    sessionStorage.removeItem('chatOverlayRight');
+                    sessionStorage.removeItem('chatOverlayBottom');
+                }
+            });
+        }
+
+        // --- Toggle Chat Overlay ---
+        chatOverlayToggle.addEventListener('click', () => {
+            isChatOpen = !isChatOpen;
+            if (isChatOpen) {
+                chatOverlay.classList.add('open');
+                sessionStorage.setItem('isChatOverlayOpen', 'true');
+                chatOverlayInput.focus();
+            } else {
+                chatOverlay.classList.remove('open');
+                sessionStorage.setItem('isChatOverlayOpen', 'false');
+            }
+        });
+
+        // --- Add Message to Chat (Overlay Version) - FIXED ---
+        function addOverlayMessageToChat(message) {
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `message-bubble ${message.sender}`;
+            messageBubble.textContent = message.content;
+
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = `message-timestamp ${message.sender}`;
+            const date = new Date(message.timestamp);
+            timestampDiv.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            chatOverlayMessages.appendChild(messageBubble);
+            chatOverlayMessages.appendChild(timestampDiv);
+            
+            // Auto-scroll to bottom after adding message
+            setTimeout(() => {
+                chatOverlayMessages.scrollTop = chatOverlayMessages.scrollHeight;
+            }, 10);
+        }
+
+        // --- Load Conversation for Overlay ---
+        async function loadOverlayConversation(convId) {
+            currentConversationId = convId;
+            sessionStorage.setItem('lastActiveConversationId', convId);
+
+            chatOverlayMessages.innerHTML = '<p class="placeholder-text">Loading messages...</p>';
+
+            try {
+                const response = await fetch(`/api/chat/history/${convId}`);
+                if (response.ok) {
+                    const conversationData = await response.json();
+                    chatOverlayMessages.innerHTML = '';
+                    if (conversationData.messages && conversationData.messages.length > 0) {
+                        conversationData.messages.forEach(msg => addOverlayMessageToChat(msg));
+                    } else {
+                        chatOverlayMessages.innerHTML = '<p class="placeholder-text">Say hello to start the conversation!</p>';
+                    }
+                } else {
+                    console.error('Failed to load overlay conversation history:', response.statusText);
+                    chatOverlayMessages.innerHTML = '<p class="placeholder-text" style="color: var(--error-color);">Error loading chat.</p>';
+                    showGlobalMessage('Failed to load chat history.', 'error');
+                }
+            } catch (error) {
+                console.error('Network error loading overlay conversation history:', error);
+                chatOverlayMessages.innerHTML = '<p class="placeholder-text" style="color: var(--error-color);">Network error.</p>';
+                showGlobalMessage('Network error loading chat history.', 'error');
+            }
+        }
+
+        // --- Send Message from Overlay ---
+        async function sendOverlayMessage() {
+            const messageText = chatOverlayInput.value.trim();
+            if (!messageText) return;
+
+            chatOverlayInput.value = '';
+            sendOverlayMessageBtn.disabled = true;
+
+            const placeholder = chatOverlayMessages.querySelector('.placeholder-text');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            addOverlayMessageToChat({ sender: 'user', content: messageText, timestamp: new Date().toISOString() });
+
+            try {
+                if (!currentConversationId) {
+                    const newConvResponse = await fetch('/api/chat/start_new', { method: 'POST' });
+                    const newConvResult = await newConvResponse.json();
+                    if (newConvResponse.ok) {
+                        currentConversationId = newConvResult.conversation_id;
+                        sessionStorage.setItem('lastActiveConversationId', currentConversationId);
+                    } else {
+                        throw new Error(newConvResult.message || 'Failed to start new conversation.');
+                    }
+                }
+
+                const response = await fetch('/api/chat/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText, conversation_id: currentConversationId })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addOverlayMessageToChat(result.bot_message);
+                } else {
+                    showGlobalMessage(result.message || 'Failed to send message.', 'error');
+                    if (result.bot_message) {
+                        addOverlayMessageToChat(result.bot_message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error sending overlay message:', error);
+                showGlobalMessage('Network error sending message. Please try again.', 'error');
+                addOverlayMessageToChat({ sender: 'bot', content: "I'm sorry, I couldn't connect. Please check your internet connection.", timestamp: new Date().toISOString() });
+            } finally {
+                sendOverlayMessageBtn.disabled = false;
+                chatOverlayInput.focus();
+            }
+        }
+
+        // --- Overlay Event Listeners ---
+        sendOverlayMessageBtn.addEventListener('click', sendOverlayMessage);
+        chatOverlayInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendOverlayMessage();
+            }
+        });
+
+        // --- Initialize Chat Overlay on Page Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const lastActiveConvId = sessionStorage.getItem('lastActiveConversationId');
+            const wasChatOpen = sessionStorage.getItem('isChatOverlayOpen') === 'true';
+
+            const savedLeft = sessionStorage.getItem('chatOverlayLeft');
+            const savedTop = sessionStorage.getItem('chatOverlayTop');
+            const savedRight = sessionStorage.getItem('chatOverlayRight');
+            const savedBottom = sessionStorage.getItem('chatOverlayBottom');
+
+            if (savedLeft && savedTop) {
+                chatOverlay.style.left = savedLeft;
+                chatOverlay.style.top = savedTop;
+                chatOverlay.style.right = 'auto';
+                chatOverlay.style.bottom = 'auto';
+                chatOverlay.style.transform = 'none';
+            } else if (savedRight && savedBottom) {
+                chatOverlay.style.right = savedRight;
+                chatOverlay.style.bottom = savedBottom;
+                chatOverlay.style.transform = 'none';
+            } else {
+                chatOverlay.style.right = '20px';
+                chatOverlay.style.bottom = '90px';
+            }
+
+            if (lastActiveConvId) {
+                loadOverlayConversation(parseInt(lastActiveConvId));
+            } else {
+                chatOverlayMessages.innerHTML = '<p class="placeholder-text">How can I help you today?</p>';
+            }
+
+            if (wasChatOpen) {
+                isChatOpen = true;
+                chatOverlay.classList.add('open');
+                chatOverlayInput.focus();
+            } else {
+                chatOverlay.classList.remove('open');
+            }
+        });
     </script>
     {% block scripts %}{% endblock %}
 

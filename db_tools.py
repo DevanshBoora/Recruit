@@ -1,7 +1,9 @@
-# db_tools.py
-from models import db, Job, Application
+# db_tools.py (ADD THIS NEW FUNCTION)
+from models import db, Job, Application, Conversation, Message # Ensure all models are imported if needed elsewhere
 from sqlalchemy import func
 import logging
+from datetime import datetime # Import datetime for default posted_at
+from fuzzywuzzy import fuzz # Import for fuzzy matching
 
 # Configure logging for db_tools
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -9,18 +11,7 @@ logger = logging.getLogger(__name__)
 
 # --- Tool 1: Get Applicant Information by Name or Email ---
 def get_applicant_info(applicant_identifier: str = None, applicant_email: str = None):
-    """
-    Retrieves detailed information about an applicant by their name or email.
-    Use fuzzy matching for names and exact matching for emails.
-
-    Args:
-        applicant_identifier (str): The name or partial name of the applicant.
-        applicant_email (str): The exact email of the applicant.
-
-    Returns:
-        list[dict]: A list of dictionaries, each containing details of a matching applicant.
-                    Returns an empty list if no applicant is found.
-    """
+    
     logger.info(f"Tool call: get_applicant_info(identifier='{applicant_identifier}', email='{applicant_email}')")
     
     query = Application.query
@@ -126,7 +117,110 @@ def get_applications_by_status(status: str):
     logger.info(f"Found {len(results)} applications with status '{status}'.")
     return results
 
+# --- Tool 5: Create Job Posting ---
+def create_job_posting(
+    title: str,
+    description: str,
+    qualifications: str,
+    responsibilities: str,
+    job_type: str,
+    location: str,
+    required_experience: str,
+    assessment_timer: int = 0,
+    assessment_questions: str = None,
+    min_assesment_score: int = 0
+):
+    """
+    Creates a new job posting in the database.
+    This tool should be used when the user provides a full job description
+    and expresses intent to 'post', 'create', or 'add' a new job.
+
+    Args:
+        title (str): The title of the job.
+        description (str): A detailed description of the job.
+        qualifications (str): The required qualifications for the job.
+        responsibilities (str): The key responsibilities of the role.
+        job_type (str): The type of employment (e.g., 'full-time', 'part-time', 'contract').
+        location (str): The geographical location of the job (e.g., 'Hyderabad', 'Remote').
+        required_experience (str): The required experience level (e.g., '2-4 years', 'Entry-level').
+        assessment_timer (int, optional): Timer for the assessment in minutes. Defaults to 0.
+        assessment_questions (str, optional): JSON string of assessment questions. Defaults to None.
+        min_assesment_score (int, optional): Minimum score for the assessment. Defaults to 0.
+
+    Returns:
+        dict: A dictionary indicating success or failure, and the job title if successful.
+              Returns {'status': 'success', 'job_title': title} or {'status': 'error', 'message': '...'}.
+    """
+    logger.info(f"Tool call: create_job_posting(title='{title}', job_type='{job_type}', location='{location}', ...)")
+    
+    try:
+        new_job = Job(
+            title=title,
+            description=description,
+            qualifications=qualifications,
+            responsibilities=responsibilities,
+            job_type=job_type,
+            location=location,
+            required_experience=required_experience,
+            posted_at=datetime.utcnow(), # Ensure datetime is used for default
+            assessment_timer=assessment_timer,
+            assessment_questions=assessment_questions,
+            min_assesment_score=min_assesment_score
+        )
+        db.session.add(new_job)
+        db.session.commit()
+        logger.info(f"Successfully created new job posting: {title}")
+        return {"status": "success", "job_id": new_job.id, "job_title": title}
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to create job posting '{title}': {e}")
+        return {"status": "error", "message": str(e)}
+
+# --- NEW TOOL: Open Specific Web Page ---
+def open_web_page(name: str):
+    """
+    Opens a specific web page in the current browser tab based on a given page name.
+    Uses fuzzy matching to identify the page.
+
+    Args:
+        name (str): The name or partial name of the page to open (e.g., 'application', 'job').
+
+    Returns:
+        dict: A dictionary indicating success or failure and the URL to open.
+              Returns {'status': 'success', 'url': '...', 'message': 'Opening ...'}
+              or {'status': 'error', 'message': 'Page not found.'}.
+    """
+    logger.info(f"Tool call: open_web_page(name='{name}')")
+
+    # Define your dictionary of page names and URLs
+    page_urls = {
+        "application page": "https://spryple.com/careers/apply",
+        "job page": "https://spryple.com/careers/jobs",
+        # Add more pages as needed
+        "home page": "https://spryple.com/",
+        "contact us": "https://spryple.com/contact"
+    }
+
+    best_match_name = None
+    highest_score = 0
+    FUZZY_MATCH_THRESHOLD = 75 # Adjust this threshold as needed (0-100)
+
+    for page_name, url in page_urls.items():
+        score = fuzz.ratio(name.lower(), page_name.lower())
+        if score > highest_score and score >= FUZZY_MATCH_THRESHOLD:
+            highest_score = score
+            best_match_name = page_name
+
+    if best_match_name:
+        url_to_open = page_urls[best_match_name]
+        message = f"Opening the {best_match_name} for you."
+        logger.info(f"Successfully matched '{name}' to '{best_match_name}'. Opening URL: {url_to_open}")
+        return {"status": "success", "url": url_to_open, "message": message}
+    else:
+        message = f"Sorry, I couldn't find a page matching '{name}'. Please try a different name."
+        logger.warning(f"No page found matching '{name}' with fuzzy threshold {FUZZY_MATCH_THRESHOLD}.")
+        return {"status": "error", "message": message}
+
 # You can add more tools here as needed, e.g.:
-# - create_job_posting(title, description, ...)
 # - update_applicant_status(applicant_email, new_status)
 # - get_job_applicants(job_title)

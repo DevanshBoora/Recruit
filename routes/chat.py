@@ -5,7 +5,7 @@ from flask import current_app as app
 from models import Conversation, Message, db
 import google.generativeai as genai
 import logging
-from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
+from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status,create_job_posting,open_web_page
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -51,6 +51,22 @@ model = genai.GenerativeModel(
         "If a question is outside the scope of Spryple Solutions, its jobs, or applications, or you don't have the information based on the facts provided, "
         "politely state that you only have information about Spryple and cannot answer questions on other topics or details you haven't been given."
     
+         "- **Create New Job Posting/post a job  (create_job_posting):** Use this to add a brand new job opening to the database. Trigger this when the user provides a *full job description* and indicates an intent to 'post', 'create', 'add', or 'list' a new job opportunity. **You must extract ALL required parameters (title, description, qualifications, responsibilities, job_type, location, required_experience) accurately from the provided text.** If any required parameter is missing or unclear, ask the user for clarification before calling the tool. For optional parameters like `assessment_timer`, `assessment_questions`, `min_assesment_score`, use defaults (0 or None) if not explicitly provided by the user.\n"
+        "  * **Input Extraction Guidelines:**\n" 
+        "  Even if i give the just job title , you should be able to create a job posting by creatign your own sutiable job desciption , the qulaification should be generally btech if not mentioned any ,"
+        "    * **`title`**: Look for a clear job title, usually at the beginning or explicitly stated (e.g., 'We're hiring a **Senior Software Engineer**').\n"
+        "    * **`description`**: This should be the main body of the job ad, summarizing the role. Extract the core purpose and what the role entails.\n"
+        "    * **`qualifications`**: Look for sections like 'Requirements', 'Qualifications', 'Must-haves', 'Skills needed'. Summarize them concisely.\n"
+        "    * **`responsibilities`**: Look for sections like 'Responsibilities', 'What you'll do', 'Key tasks'. Summarize them concisely.\n"
+        "    * **`job_type`**: Infer from terms like 'full-time', 'part-time', 'contract', 'internship'. Default to 'Full-time' if not specified but implies a standard role.\n"
+        "    * **`location`**: Look for city, state, country, or 'Remote', 'Hybrid'. Default to 'Remote' or 'Anywhere' if not specified but implies flexibility.\n"
+        "    * **`required_experience`**: Look for phrases like 'X years of experience', 'Entry-level', 'Mid-level', 'Senior'. Default to 'Not specified' if not found.\n"
+        "Important  , dont trouble user to provide this or that , ,just create a job posting with the best possibtle parameters and description "
+
+        "- **Open Web Page (open_web_page):** Use this to open a specific web page (like the job application page or the main jobs page) in the current browser tab. Trigger this when the user asks to 'open', 'go to', 'show me', or 'take me to' a specific page, and identifies the page by name (e.g., 'application page', 'job page', 'home page', 'contact us'). This tool takes only one parameter: `name`.\n"
+        "  * **Input:** Extract the page name from the user's request and pass it as `name`. For example, if the user says 'open the jobs page', pass `name='job page'`. If they say 'take me to the apply page', pass `name='application page'`.\n"
+        "  * **Output Handling:** If the tool successfully identifies and returns a URL, respond by saying you are opening the page and provide the URL directly (e.g., 'Sure, opening the Application page for you: [URL]'). If the tool indicates an error (page not found), inform the user accordingly (e.g., 'Sorry, I couldn't find a page matching that name.')."
+        "\n"
         # If you've added get_applicants_by_job_title:
         # "- **Applicants for a Specific Job (get_applicants_by_job_title):** Use this to find applicants who applied for a particular job title. Trigger this if the user asks 'who applied for [job title]?' or 'list candidates for [job title]'.\n"
         # "  *Example Usage:* `get_applicants_by_job_title(job_title='HR Manager')`\n"
@@ -62,7 +78,7 @@ model = genai.GenerativeModel(
         "If a question is outside the scope of Spryple Solutions, its jobs, or applications, or you don't have the information based on the facts provided, "
         "politely state that you only have information about Spryple and cannot answer questions on other topics or details you haven't been given."
 ),
-    tools=[get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status] # Register your tools here
+    tools=[get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status,create_job_posting , open_web_page] # Register your tools here
  )
 
 
@@ -82,7 +98,9 @@ available_tools = {
     'get_applicant_info': get_applicant_info,
     'get_job_details': get_job_details,
     'get_jobs_by_type': get_jobs_by_type,
-    'get_applications_by_status': get_applications_by_status
+    'get_applications_by_status': get_applications_by_status,
+    'create_job_posting': create_job_posting,
+    'open_web_page': open_web_page # ADD THIS LINE
 }
 
 
