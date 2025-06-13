@@ -43,6 +43,47 @@
     text-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
   }
 
+  /* Page-specific navigation styles */
+  .page-nav {
+    background-color: var(--card-color-dark);
+    border: 1px solid var(--border-color-dark);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto 30px auto;
+    max-width: 5000px;
+    text-align: center;
+  }
+
+  .page-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .page-nav ul li a {
+    background-color: var(--accent-color);
+    color: var(--surface-color-dark);
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+  }
+
+  .page-nav ul li a:hover {
+    filter: var(--button-hover-darken);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+  }
+
   .applications-table {
     width: 50%;
     border-collapse: separate; /* Use separate to allow border-radius on cells */
@@ -195,12 +236,48 @@
     height: 600px; /* Adjust height as needed */
     border: none;
   }
+
+  /* Loading spinner for accept button */
+  .accept-btn.loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+  }
+
+  .accept-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Page-specific navigation - outside the main wrapper -->
+<div class="page-nav">
+    <ul>
+        <li><a href="/schedule">Schedule Interview</a></li>
+        <li><a href="/feedback">Feedback</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+    </ul>
+</div>
+
 <div class="applications-wrapper">
     <h1>All Job Applications</h1>
+    
     <div id="applicationsListings">
         <table id="applicationsTable" class="applications-table">
             <thead>
@@ -259,17 +336,19 @@
         applicationRow.dataset.applicationId = application.id;
 
         applicationRow.innerHTML = `
-            <td>${application.job_title}</td>
-            <td>${application.applicant_name}</td>
-            <td>${application.applicant_email}</td>
-            <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td> <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td> <td>${application.education !== null ? application.education : 'N/A'}</td> <td>${new Date(application.applied_at).toLocaleString()}</td>
-            <td>${application.eligibility_score.toFixed(2)}</td>
-            <td>${application.assessment_score.toFixed(2)}</td>
-            <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
-            <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
-            <td class="actions-cell">
-                </td>
-        `;
+    <td>${application.job_title}</td>
+    <td>${application.applicant_name}</td>
+    <td>${application.applicant_email}</td>
+    <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td>
+    <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td>
+    <td>${application.education !== null ? application.education : 'N/A'}</td>
+    <td>${new Date(application.applied_at).toLocaleString()}</td>
+    <td>${application.eligibility_score != null ? application.eligibility_score.toFixed(2) : 'N/A'}</td>
+    <td>${application.assessment_score != null ? application.assessment_score.toFixed(2) : 'N/A'}</td>
+    <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
+    <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
+    <td class="actions-cell"></td>
+`;
 
         // Initial button setup
         updateApplicationRowInTable(application.id, application.status);
@@ -290,7 +369,15 @@
     }
   }
 
-  async function updateApplicationStatus(appId, newStatus) {
+  async function updateApplicationStatus(appId, newStatus, navigateToSchedule = false) {
+    const acceptButton = document.querySelector(`[data-application-id="${appId}"] .accept-btn`);
+    
+    // Add loading state to accept button if it's an acceptance
+    if (newStatus === 'Accepted' && acceptButton) {
+      acceptButton.classList.add('loading');
+      acceptButton.disabled = true;
+    }
+
     try {
       const response = await fetch(`/applications/${appId}/status`, {
         method: 'PUT',
@@ -305,12 +392,29 @@
       if (response.ok) {
         showGlobalMessage(result.message, 'success');
         updateApplicationRowInTable(appId, newStatus); // Update the specific row
+        
+        // Navigate to schedule page if it's an acceptance
+        if (navigateToSchedule && newStatus === 'Accepted') {
+          setTimeout(() => {
+            window.location.href = '/schedule';
+          }, 1000); // Small delay to show success message
+        }
       } else {
         showGlobalMessage(result.message, 'error');
+        // Remove loading state on error
+        if (acceptButton) {
+          acceptButton.classList.remove('loading');
+          acceptButton.disabled = false;
+        }
       }
     } catch (error) {
       console.error('Error updating application status:', error);
       showGlobalMessage('Failed to update application status. Please try again.', 'error');
+      // Remove loading state on error
+      if (acceptButton) {
+        acceptButton.classList.remove('loading');
+        acceptButton.disabled = false;
+      }
     }
   }
 
@@ -330,12 +434,12 @@
         const acceptBtn = document.createElement('button');
         acceptBtn.textContent = 'Accept';
         acceptBtn.classList.add('accept-btn');
-        acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted'));
+        acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted', true)); // Pass true for navigation
 
         const rejectBtn = document.createElement('button');
         rejectBtn.textContent = 'Reject';
         rejectBtn.classList.add('reject-btn');
-        rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected'));
+        rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected', false));
 
         actionsCell.appendChild(acceptBtn);
         actionsCell.appendChild(rejectBtn);
@@ -357,6 +461,42 @@
     const pdfViewer = document.getElementById('pdfViewer');
     pdfViewer.src = `/resumes/${resumePath}`; // Set the source of the iframe
     resumeModal.style.display = 'block'; // Show the modal
+  }
+
+  // Add a global message function if it doesn't exist
+  function showGlobalMessage(message, type) {
+    // Create or update a message element
+    let messageElement = document.getElementById('globalMessage');
+    if (!messageElement) {
+      messageElement = document.createElement('div');
+      messageElement.id = 'globalMessage';
+      messageElement.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        transition: opacity 0.3s ease;
+      `;
+      document.body.appendChild(messageElement);
+    }
+    
+    messageElement.textContent = message;
+    messageElement.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
+    messageElement.style.opacity = '1';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      messageElement.style.opacity = '0';
+      setTimeout(() => {
+        if (messageElement.parentNode) {
+          messageElement.parentNode.removeChild(messageElement);
+        }
+      }, 300);
+    }, 3000);
   }
 
   // Modal close logic

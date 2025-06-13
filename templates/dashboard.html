@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Dashboard - DevOrks{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* Feedback Dashboard Specific Styles */
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    .dashboard-nav {
+        background-color: var(--surface-color-dark);
+        border: 1px solid var(--border-color-dark);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 4px 15px var(--shadow-color-dark);
+    }
+
+    .dashboard-nav a {
+        color: var(--text-color-light);
+        text-decoration: none;
+        margin: 0 15px;
+        padding: 12px 25px;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+        display: inline-block;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+        background-color: var(--button-bg-dark);
+    }
+
+    .dashboard-nav a::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .dashboard-nav a:hover::before {
+        left: 100%;
+    }
+
+    .dashboard-nav a:hover {
+        background-color: var(--button-hover-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .dashboard-title {
+        text-align: center;
+        margin: 40px 0;
+        font-size: 2.5em;
+        color: var(--accent-color);
+        font-weight: 700;
+        position: relative;
+    }
+
+    .dashboard-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 3px;
+        background: var(--accent-color);
+        border-radius: 2px;
+    }
+
+    .table-container {
+        background-color: var(--surface-color-dark);
+        border: 1px solid var(--border-color-dark);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px var(--shadow-color-dark);
+        margin: 20px 0;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        padding: 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface-color-dark);
+        min-width: 1000px;
+    }
+
+    th {
+        background: linear-gradient(135deg, var(--accent-color), #0097a7);
+        color: white;
+        padding: 20px 15px;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9em;
+        position: relative;
+        overflow: hidden;
+    }
+
+    th::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.8s ease;
+    }
+
+    td {
+        padding: 18px 15px;
+        border-bottom: 1px solid var(--border-color-dark);
+        color: var(--text-color-light);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+        background-color: var(--surface-color-dark);
+    }
+
+    tr:hover td {
+        background-color: #333;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Decision Column Styling */
+    .decision-accepted {
+        color: var(--success-color) !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        background: rgba(40, 167, 69, 0.1) !important;
+        border-radius: 8px;
+        border-left: 4px solid var(--success-color);
+    }
+
+    .decision-accepted::before {
+        content: '✓ ';
+        margin-right: 0.5rem;
+        font-size: 1.2em;
+        color: var(--success-color);
+    }
+
+    .decision-rejected {
+        color: var(--error-color) !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        background: rgba(220, 53, 69, 0.1) !important;
+        border-radius: 8px;
+        border-left: 4px solid var(--error-color);
+    }
+
+    .decision-rejected::before {
+        content: '✗ ';
+        margin-right: 0.5rem;
+        font-size: 1.2em;
+        color: var(--error-color);
+    }
+
+    /* Row-level styling */
+    .row-accepted {
+        background: rgba(40, 167, 69, 0.05) !important;
+    }
+
+    .row-rejected {
+        background: rgba(220, 53, 69, 0.05) !important;
+    }
+
+    .status-true {
+        color: var(--success-color) !important;
+        font-weight: 700;
+        position: relative;
+    }
+
+    .status-true::before {
+        content: '✓ ';
+        margin-right: 0.5rem;
+        font-size: 1.2em;
+    }
+
+    .status-false {
+        color: var(--error-color) !important;
+        font-weight: 700;
+        position: relative;
+    }
+
+    .status-false::before {
+        content: '✗ ';
+        margin-right: 0.5rem;
+        font-size: 1.2em;
+    }
+
+    /* Score columns */
+    td:nth-child(4), td:nth-child(5), td:nth-child(6) {
+        font-weight: 700;
+        text-align: center;
+        background: rgba(0, 188, 212, 0.1);
+        color: var(--accent-color);
+        border-radius: 8px;
+        position: relative;
+    }
+
+    /* Candidate name styling */
+    td:nth-child(1) {
+        font-weight: 600;
+        color: var(--accent-color);
+        position: relative;
+    }
+
+    td:nth-child(1)::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--accent-color);
+    }
+
+    /* Comments column */
+    td:nth-child(3) {
+        color: var(--text-color-faded);
+        font-style: italic;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Animations */
+    @keyframes pulseGreen {
+        0%, 100% { box-shadow: 0 0 5px rgba(40, 167, 69, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
+    }
+
+    @keyframes pulseRed {
+        0%, 100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.6); }
+    }
+
+    /* Status indicators */
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-indicator.accepted {
+        background: var(--success-color);
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+    }
+
+    .status-indicator.rejected {
+        background: var(--error-color);
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    }
+
+    /* Responsive design */
+    @media (max-width: 1024px) {
+        .dashboard-nav a {
+            margin: 5px;
+            padding: 10px 20px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-title {
+            font-size: 2em;
+            margin: 25px 0;
+        }
+        
+        .dashboard-nav a {
+            display: block;
+            margin: 5px 0;
+        }
+        
+        th, td {
+            padding: 12px 8px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    
+    <h1 class="dashboard-title">
+        <i class="fas fa-chart-bar"></i> Interview Feedback Dashboard
+    </h1>
+    
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user"></i> Candidate Name</th>
+                        <th><i class="fas fa-gavel"></i> Decision</th>
+                        <th><i class="fas fa-comment"></i> Comments</th>
+                        <th><i class="fas fa-comments"></i> Communication</th>
+                        <th><i class="fas fa-code"></i> Technical</th>
+                        <th><i class="fas fa-lightbulb"></i> Problem Solving</th>
+                        <th><i class="fas fa-envelope"></i> Rejection Email Sent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in feedback %}
+                    <tr class="{% if row.decision.lower() == 'accepted' or row.decision.lower() == 'accept' %}row-accepted{% elif row.decision.lower() == 'rejected' or row.decision.lower() == 'reject' %}row-rejected{% endif %}">
+                        <td>
+                            <span class="status-indicator {% if row.decision.lower() == 'accepted' or row.decision.lower() == 'accept' %}accepted{% elif row.decision.lower() == 'rejected' or row.decision.lower() == 'reject' %}rejected{% endif %}"></span>
+                            {{ row.applicant_name }}
+                        </td>
+                        <td class="{% if row.decision.lower() == 'accepted' or row.decision.lower() == 'accept' %}decision-accepted{% elif row.decision.lower() == 'rejected' or row.decision.lower() == 'reject' %}decision-rejected{% endif %}">
+                            {{ row.decision }}
+                        </td>
+                        <td title="{{ row.comments }}">{{ row.comments }}</td>
+                        <td>{{ row.communication_score if row.communication_score is not none else 'N/A' }}</td>
+                        <td>{{ row.technical_score if row.technical_score is not none else 'N/A' }}</td>
+                        <td>{{ row.problem_solving_score if row.problem_solving_score is not none else 'N/A' }}</td>
+                        <td class="status-{{ row.rejection_email_sent | lower }}">
+                            {{ 'Sent' if row.rejection_email_sent else 'Not Sent' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Show success message if needed
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success')) {
+        showGlobalMessage('Dashboard loaded successfully!', 'success');
+    }
+</script>
+{% endblock %}

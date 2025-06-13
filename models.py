@@ -1,28 +1,25 @@
-# my_app_with_models/models.py
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
-
-# Initialize SQLAlchemy here, but DO NOT pass the app instance yet.
-# The 'db' object will be bound to the app in app.py using db.init_app(app).
+from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
-
-
 class Job(db.Model):
-    __tablename__ = 'jobs'
+    __tablename__ = 'job'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    qualifications = db.Column(db.Text, nullable=False)
-    responsibilities = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text)
+    qualifications = db.Column(db.Text)
+    responsibilities = db.Column(db.Text)
     posted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    job_type = db.Column(db.String(50), nullable=False)
-    location = db.Column(db.String(255), nullable=False)
-    required_experience = db.Column(db.String(50), nullable=False)
-    assessment_timer = db.Column(db.Integer, nullable=True, default=0)
-    assessment_questions = db.Column(db.Text, nullable=True)
-    min_assesment_score = db.Column(db.Integer, nullable=True, default=0)
+    job_type = db.Column(db.String(50))
+    location = db.Column(db.String(255))
+    required_experience = db.Column(db.String(50))
+    assessment_timer = db.Column(db.Integer)
+    assessment_questions = db.Column(db.Text)
+    min_assesment_score = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -32,28 +29,35 @@ class Job(db.Model):
             'job_type': self.job_type,
             'required_experience': self.required_experience,
             'responsibilities': self.responsibilities,
-            'qualifications': self.qualifications
+            'qualifications': self.qualifications,
+            'assessment_timer': self.assessment_timer,
+            'min_assesment_score': self.min_assesment_score,
+            'posted_at': self.posted_at.isoformat()
         }
     def __repr__(self):
         return f'<Job {self.title}>'
 
 class Application(db.Model):
-    __tablename__ = 'applications'
-    id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id', ondelete='CASCADE'), nullable=False) # ADD ondelete='CASCADE'
-    applicant_name = db.Column(db.String(255), nullable=False)
-    applicant_age = db.Column(db.Integer, nullable=True)
-    applicant_email = db.Column(db.String(255), nullable=False)
-    applicant_experience = db.Column(db.Text, nullable=True)
-    education = db.Column(db.Text, nullable=True)
-    resume_path = db.Column(db.String(255), nullable=False)
-    resume_plain_text = db.Column(db.Text, nullable=True)
-    eligibility_score = db.Column(db.Float, default=0.0)
-    assessment_score = db.Column(db.Float, nullable=True, default=0.0)
-    status = db.Column(db.String(50), default='Pending')
-    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __tablename__ = 'application'
 
-    job = db.relationship('Job', backref=db.backref('applications', lazy=True, cascade='all, delete-orphan'))
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    applicant_name = db.Column(db.String(255), nullable=False)
+    applicant_email = db.Column(db.String(255), nullable=False)
+    applicant_age = db.Column(db.Integer)
+    applicant_experience = db.Column(db.Float)
+    education = db.Column(db.String(255))
+    resume_path = db.Column(db.String(500))
+    resume_plain_text=db.Column(db.String(1024))
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # These belong here (moved from Message class)
+    eligibility_score = db.Column(db.Float)
+    assessment_score = db.Column(db.Float)
+    status = db.Column(db.String(50), default="Pending")
+    rejection_email_sent = db.Column(db.Boolean, default=False)
+
+    job = db.relationship('Job', backref=db.backref('applications', lazy=True))
 
     def to_dict(self):
         return {
@@ -73,43 +77,40 @@ class Application(db.Model):
     def __repr__(self):
         return f'<Application {self.applicant_name} for Job {self.job_id}>'
 
-
-class Conversation(db.Model):
-    __tablename__ = 'conversations'
+class InterviewSchedule(db.Model):
+    __tablename__ = 'interview_schedule'
     id = db.Column(db.Integer, primary_key=True)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # Renamed 'metadata' to 'conversation_info' to avoid conflict
-    conversation_info = db.Column(db.Text, nullable=True) # Storing JSON string
+    candidate_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=False)
+    mode = db.Column(db.String(50), nullable=False)
+    interview_date = db.Column(db.DateTime, nullable=False)
+    interviewer_name = db.Column(db.String(255), nullable=False)
+    interviewer_email = db.Column(db.String(255), nullable=False)
+    meeting_link = db.Column(db.String(1000))
+    address = db.Column(db.String(1000))
+    reminder_1day_sent = db.Column(db.Boolean, default=False)
+    reminder_1hour_sent = db.Column(db.Boolean, default=False)
+    candidate = db.relationship('Application', backref=db.backref('interview_schedule', lazy=True))
 
-    messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
 
-    def __repr__(self):
-        return f'<Conversation {self.id} started at {self.started_at}>'
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+    feedback_id = db.Column(db.Integer, primary_key=True)
+    candidate_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=False)
+    comments = db.Column(db.Text)
+    decision = db.Column(db.String(50))
+    communication_score = db.Column(db.Float)
+    technical_score = db.Column(db.Float)
+    problem_solving_score = db.Column(db.Float)
+    rejection_email_sent = db.Column(db.Boolean, default=False)
+    candidate = db.relationship('Application', backref=db.backref('feedback', lazy=True))
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'started_at': self.started_at.isoformat(),
-            'conversation_info': json.loads(self.conversation_info) if self.conversation_info else None, # Use new name here
-            'messages': [msg.to_dict() for msg in self.messages]
-        }
 
-class Message(db.Model):
-    __tablename__ = 'messages'
+class AcceptedCandidate(db.Model):
+    __tablename__ = 'accepted_candidates'
     id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
-    sender = db.Column(db.String(50), nullable=False) # 'user' or 'bot'
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    candidate_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=False)
+    applicant_name = db.Column(db.String(255), nullable=False)
+    applicant_email = db.Column(db.String(255), nullable=False)
+    candidate = db.relationship('Application', backref=db.backref('accepted_entry', lazy=True))
 
-    def __repr__(self):
-        return f'<Message {self.id} from {self.sender} in convo {self.conversation_id}>'
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'conversation_id': self.conversation_id,
-            'sender': self.sender,
-            'content': self.content,
-            'timestamp': self.timestamp.isoformat()
-        }
