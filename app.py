@@ -254,139 +254,10 @@ def dashboard():
     
     return render_template("dashboard.html", feedback=feedback_data)
 
-'''@app.route('/interviewer/login', methods=['GET', 'POST'])
-def interviewer_login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-
-        interviewer = Interviewer.query.filter_by(email=email).first()
-        if interviewer and interviewer.check_password(password):
-            session['interviewer_id'] = interviewer.id
-            session['interviewer_name'] = interviewer.name
-            return redirect('/interviewer/slots')  # or dashboard
-        else:
-            return "Invalid credentials", 401
-
-    return render_template('interviewer_login.html')
-
-@app.route('/interviewer/register', methods=['GET', 'POST'])
-def register_interviewer():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-
-        existing = Interviewer.query.filter_by(email=email).first()
-        if existing:
-            return "Interviewer with this email already exists.", 400
-
-        new_interviewer = Interviewer(name=name, email=email)
-        new_interviewer.set_password(password)
-
-        try:
-            db.session.add(new_interviewer)
-            db.session.commit()
-            return redirect('/interviewer/login')  # or show success
-        except Exception as e:
-            db.session.rollback()
-            return f"Error: {e}", 500
-
-    return render_template('interviewer_register.html')
-
-@app.route("/interviewer/slots", methods=["GET", "POST"])
-def add_slot():
-    if 'interviewer_id' not in session:
-        return redirect("/interviewer/login")
-
-    if request.method == "POST":
-        slot_datetime = request.form["slot_datetime"]
-        mode = request.form["mode"]
-        meeting_link = request.form.get("meeting_link", "").strip()
-        address = request.form.get("address", "").strip()
-
-        # Validate mode selection
-        if mode not in ['Online', 'Offline']:
-            return "Invalid mode selected", 400
-
-        # Validate required fields based on mode
-        if mode == 'Online' and not meeting_link:
-            return "Meeting link is required for online interviews", 400
-        
-        if mode == 'Offline' and not address:
-            return "Address is required for offline interviews", 400
-
-        # Convert string to datetime object
-        try:
-            slot_datetime = datetime.strptime(slot_datetime, '%Y-%m-%dT%H:%M')
-        except ValueError:
-            return "Invalid date format", 400
-
-        new_slot = InterviewSlot(
-            interviewer_id=session['interviewer_id'],
-            slot_datetime=slot_datetime,
-            mode=mode,
-            meeting_link=meeting_link if mode == 'Online' else None,
-            address=address if mode == 'Offline' else None
-        )
-
-        try:
-            db.session.add(new_slot)
-            db.session.commit()
-            return redirect("/interviewer/slots?message=Slot%20added%20successfully!&type=success")
-        except IntegrityError:
-            db.session.rollback()
-            return "Slot already exists for this time", 400
-        except Exception as e:
-            db.session.rollback()
-            return f"Error: {e}", 500
-
-    # GET request - show existing slots
-    interviewer_slots = InterviewSlot.query.filter_by(
-        interviewer_id=session['interviewer_id']
-    ).order_by(InterviewSlot.slot_datetime.desc()).all()
-
-    return render_template("add_slot.html", slots=interviewer_slots)
-
-@app.route('/logout_interviewer')
-def logout_interviewer():
-    # Remove interviewer-specific session keys
-    session.pop('interviewer_id', None)
-    session.pop('interviewer_email', None)
-    session.pop('interviewer_name', None)
-    
-    # Redirect to a login or home page
-    return redirect('/interviewer/login')  # Fixed redirect
-
-@app.route('/interviewer/dashboard')
-def interviewer_dashboard():
-    if 'interviewer_id' not in session:
-        return redirect('/interviewer/login')
-
-    interviewer = Interviewer.query.get(session['interviewer_id'])
-
-    # Get upcoming slots
-    upcoming_slots = InterviewSlot.query.filter_by(
-        interviewer_id=interviewer.id
-    ).order_by(InterviewSlot.slot_datetime).all()
-
-    # Get interviews scheduled with this interviewer
-    scheduled_interviews = InterviewSchedule.query.filter_by(
-        interviewer_email=interviewer.email
-    ).order_by(InterviewSchedule.interview_date).all()
-
-    return render_template(
-        'interviewer_dashboard.html',
-        interviewer=interviewer,
-        slots=upcoming_slots,
-        interviews=scheduled_interviews
-    )'''
-
 # ------------------ Background Tasks ------------------ #
 
 def send_feedback_rejections():
     with app.app_context():
-        # Use ORM instead of raw SQL
         rejected_feedback = db.session.query(
             Feedback.feedback_id,
             Feedback.comments,
@@ -398,26 +269,26 @@ def send_feedback_rejections():
         
         for feedback in rejected_feedback:
             try:
-                # Double-check before sending to prevent race conditions
-                feedback_obj = Feedback.session.get(feedback.feedback_id)
+                # ✅ FIXED: Use db.session.get
+                feedback_obj = db.session.get(Feedback, feedback.feedback_id)
                 if feedback_obj.rejection_email_sent:
                     continue
                     
                 send_rejection_email(feedback.applicant_email, feedback.applicant_name, feedback.comments)
                 
-                # Mark as sent immediately after sending
                 feedback_obj.rejection_email_sent = True
                 db.session.commit()
-                print(f"Sent rejection email to {feedback.applicant_name} ({feedback.applicant_email})")
+                print(f"✅ Sent rejection email to {feedback.applicant_name} ({feedback.applicant_email})")
                 
             except Exception as e:
-                print(f"Error sending feedback rejection to {feedback.applicant_name}: {e}")
+                print(f"❌ Error sending feedback rejection to {feedback.applicant_name}: {e}")
                 db.session.rollback()
+
 
 def send_reminders():
     with app.app_context():
         now = datetime.now()
-        # Use ORM instead of raw SQL
+
         interviews = db.session.query(
             InterviewSchedule.id,
             InterviewSchedule.interview_date,
@@ -439,9 +310,10 @@ def send_reminders():
             time_diff = interview_time - now
             
             try:
-                interview_obj = InterviewSchedule.session.get(interview.id)
-                
-                # --- 1 day reminder ---
+                # ✅ FIXED: Use db.session.get
+                interview_obj = db.session.get(InterviewSchedule, interview.id)
+
+                # 1-day reminder
                 if time_diff <= timedelta(days=1) and time_diff > timedelta(hours=23):
                     if not interview_obj.reminder_1day_sent:
                         send_reminder_email(interview.applicant_email, interview_time, interview.applicant_name,
@@ -454,7 +326,7 @@ def send_reminders():
                         db.session.commit()
                         print(f"✅ Sent 1-day reminder for {interview.applicant_name}")
 
-                # --- 1 hour reminder ---
+                # 1-hour reminder
                 elif time_diff <= timedelta(hours=1) and time_diff > timedelta(minutes=30):
                     if not interview_obj.reminder_1hour_sent:
                         send_reminder_email(interview.applicant_email, interview_time, interview.applicant_name,
