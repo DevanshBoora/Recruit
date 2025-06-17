@@ -144,7 +144,7 @@ def schedule_interview():
 
             if result:
                 send_schedule_email(
-                    result["applicant_email"],
+                    result["applicant_email"],#fksdhgsufsdiugsdiugisdgdgisdgiusd
                     data["interview_datetime"],
                     data["mode"],
                     data["interviewer_name"],
