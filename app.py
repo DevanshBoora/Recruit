@@ -142,7 +142,7 @@ def email_dashboard():
     if not is_streamlit_running(): 
         if start_streamlit_process(): 
             # Wait a moment for Streamlit to start
-            time.sleep(3)
+            time.sleep(2)
         else:
             flash("Failed to start email automation dashboard", "error")
             return redirect('/') 
