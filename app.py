@@ -140,12 +140,12 @@ atexit.register(cleanup_processes)
 def email_dashboard():
     """Route to access the Streamlit email automation dashboard."""
     if not is_streamlit_running():
-        if start_streamlit_process():
+        if start_streamlit_process(): 
             # Wait a moment for Streamlit to start
             time.sleep(3)
         else:
             flash("Failed to start email automation dashboard", "error")
-            return redirect('/')
+            return redirect('/') 
     
     # Redirect to the Streamlit app
     streamlit_url = f"http://localhost:{streamlit_port}"
