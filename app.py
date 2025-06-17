@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect,flash
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash
 from flask_cors import CORS
 import os
 import json
@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 import threading
 import time
 import schedule
+import subprocess
+import signal
+import atexit
 from datetime import datetime
 from routes import register_blueprints
 from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate
@@ -31,11 +34,15 @@ app = Flask(__name__)
 CORS(app)
 register_blueprints(app)
 
+# Global variables for Streamlit process management
+streamlit_process = None
+streamlit_port = 8501
+
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:12345678@localhost/jobapplications'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -49,6 +56,130 @@ GEMINI_API_KEY = os.getenv("GEMINI_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is not set.")
 genai.configure(api_key=GEMINI_API_KEY)
+
+# ==================== STREAMLIT PROCESS MANAGEMENT ====================
+
+def start_streamlit_process():
+    """Start the Streamlit email automation dashboard as a subprocess."""
+    global streamlit_process
+    
+    if streamlit_process and streamlit_process.poll() is None:
+        logging.info("Streamlit process is already running")
+        return True
+    
+    try:
+        # Path to your streamlit app file
+        streamlit_app_path = os.path.join(os.path.dirname(__file__), 'streamlit_app.py')
+        
+        if not os.path.exists(streamlit_app_path):
+            logging.error(f"Streamlit app file not found: {streamlit_app_path}")
+            return False
+        
+        # Command to run Streamlit
+        cmd = [
+            'streamlit', 'run', streamlit_app_path,
+            '--server.port', str(streamlit_port),
+            '--server.address', 'localhost',
+            '--server.headless', 'true',
+            '--browser.gatherUsageStats', 'false'
+        ]
+        
+        # Start the process
+        streamlit_process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=os.setsid if os.name != 'nt' else None
+        )
+        
+        logging.info(f"Streamlit process started with PID: {streamlit_process.pid}")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to start Streamlit process: {e}")
+        return False
+
+def stop_streamlit_process():
+    """Stop the Streamlit process."""
+    global streamlit_process
+    
+    if streamlit_process and streamlit_process.poll() is None:
+        try:
+            if os.name == 'nt':  # Windows
+                streamlit_process.terminate()
+            else:  # Unix/Linux
+                os.killpg(os.getpgid(streamlit_process.pid), signal.SIGTERM)
+            
+            streamlit_process.wait(timeout=10)
+            logging.info("Streamlit process stopped successfully")
+        except subprocess.TimeoutExpired:
+            if os.name == 'nt':
+                streamlit_process.kill()
+            else:
+                os.killpg(os.getpgid(streamlit_process.pid), signal.SIGKILL)
+            logging.warning("Streamlit process force killed")
+        except Exception as e:
+            logging.error(f"Error stopping Streamlit process: {e}")
+    
+    streamlit_process = None
+
+def is_streamlit_running():
+    """Check if Streamlit process is running."""
+    global streamlit_process
+    return streamlit_process and streamlit_process.poll() is None
+
+def cleanup_processes():
+    """Clean up processes when the application shuts down."""
+    stop_streamlit_process()
+
+atexit.register(cleanup_processes)
+
+# ==================== STREAMLIT INTEGRATION ROUTES ====================
+
+@app.route('/email-dashboard')
+def email_dashboard():
+    """Route to access the Streamlit email automation dashboard."""
+    if not is_streamlit_running():
+        if start_streamlit_process(): 
+            # Wait a moment for Streamlit to start
+            time.sleep(3)
+        else:
+            flash("Failed to start email automation dashboard", "error")
+            return redirect('/') 
+    
+    # Redirect to the Streamlit app
+    streamlit_url = f"http://localhost:{streamlit_port}"
+    return render_template('streamlit_redirect.html', streamlit_url=streamlit_url)
+
+@app.route('/email-dashboard/start', methods=['POST'])
+def start_email_dashboard():
+    """API endpoint to start the Streamlit dashboard."""
+    success = start_streamlit_process()
+    return jsonify({
+        "success": success,
+        "message": "Email dashboard started successfully" if success else "Failed to start email dashboard",
+        "url": f"http://localhost:{streamlit_port}" if success else None
+    })
+
+@app.route('/email-dashboard/stop', methods=['POST'])
+def stop_email_dashboard():
+    """API endpoint to stop the Streamlit dashboard."""
+    stop_streamlit_process()
+    return jsonify({
+        "success": True,
+        "message": "Email dashboard stopped successfully"
+    })
+
+@app.route('/email-dashboard/status')
+def email_dashboard_status():
+    """Check the status of the Streamlit dashboard."""
+    is_running = is_streamlit_running()
+    return jsonify({
+        "running": is_running,
+        "url": f"http://localhost:{streamlit_port}" if is_running else None
+    })
+
+# ==================== EXISTING ROUTES (KEEP ALL YOUR ORIGINAL ROUTES) ====================
 
 @app.route('/assessment/<int:job_id>/<int:application_id>', methods=['GET'])
 def assessment_page_route(job_id, application_id):
@@ -118,7 +249,7 @@ def schedule_interview():
             existing = db.session.execute(text("""
                 SELECT 1 FROM interview_schedule WHERE candidate_id = :candidate_id
             """), {"candidate_id": data["candidate_id"]}).first()
-
+            
             if existing:
                 return "Interview already scheduled for this candidate.", 400
 
@@ -238,7 +369,6 @@ def feedback():
     except Exception as e:
         return f"Error loading feedback page: {e}", 500
 
-
 @app.route("/dashboard")
 def dashboard():
     # Use ORM join instead of raw SQL
@@ -254,7 +384,7 @@ def dashboard():
     
     return render_template("dashboard.html", feedback=feedback_data)
 
-# ------------------ Background Tasks ------------------ #
+# ==================== BACKGROUND TASKS ====================
 
 def send_feedback_rejections():
     with app.app_context():
@@ -269,7 +399,6 @@ def send_feedback_rejections():
         
         for feedback in rejected_feedback:
             try:
-                # ✅ FIXED: Use db.session.get
                 feedback_obj = db.session.get(Feedback, feedback.feedback_id)
                 if feedback_obj.rejection_email_sent:
                     continue
@@ -283,7 +412,6 @@ def send_feedback_rejections():
             except Exception as e:
                 print(f"❌ Error sending feedback rejection to {feedback.applicant_name}: {e}")
                 db.session.rollback()
-
 
 def send_reminders():
     with app.app_context():
@@ -310,7 +438,6 @@ def send_reminders():
             time_diff = interview_time - now
             
             try:
-                # ✅ FIXED: Use db.session.get
                 interview_obj = db.session.get(InterviewSchedule, interview.id)
 
                 # 1-day reminder
@@ -343,18 +470,18 @@ def send_reminders():
                 print(f"❌ Reminder error for {interview.applicant_name}: {e}")
                 db.session.rollback()
 
-# Reduce frequency to prevent excessive checking
+# Schedule background tasks
 schedule.every(2).minutes.do(send_feedback_rejections)
 schedule.every(2).minutes.do(send_reminders)
 
 def run_scheduler():
     while True:
         schedule.run_pending()
-        time.sleep(60)  # Check every minute instead of every 10 seconds
+        time.sleep(60)
 
 threading.Thread(target=run_scheduler, daemon=True).start()
 
-# ------------------ Main ------------------ #
+# ==================== MAIN ====================
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
