@@ -139,7 +139,7 @@ atexit.register(cleanup_processes)
 @app.route('/email-dashboard')
 def email_dashboard():
     """Route to access the Streamlit email automation dashboard."""
-    if not is_streamlit_running():
+    if not is_streamlit_running(): 
         if start_streamlit_process(): 
             # Wait a moment for Streamlit to start
             time.sleep(3)
