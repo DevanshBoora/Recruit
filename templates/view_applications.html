@@ -4,280 +4,245 @@
 
 {% block head_extra %}
 <style>
-  :root {
-    --background-color-dark: #121212;
-    --surface-color-dark: #1e1e1e;
-    --card-color-dark: #2a2a2a;
-    --text-color-light: #e0e0e0;
-    --text-color-faded: #a0a0a0;
-    --border-color-dark: #3a3a3a;
-    --shadow-color-dark: rgba(0, 0, 0, 0.4);
-    --accent-color: #00bcd4; /* Cyan/Turquoise for primary actions/highlights */
-    --success-color: #4CAF50; /* Green for accept */
-    --error-color: #f44336; /* Red for reject */
-    --button-hover-darken: brightness(0.8); /* Darken on hover */
-  }
+    :root {
+        --background-color-dark: #121212;
+        --surface-color-dark: #1e1e1e;
+        --card-color-dark: #2a2a2a;
+        --text-color-light: #e0e0e0;
+        --text-color-faded: #a0a0a0;
+        --border-color-dark: #3a3a3a;
+        --shadow-color-dark: rgba(0, 0, 0, 0.4);
+        --accent-color: #00bcd4;
+        /* Cyan/Turquoise for primary actions/highlights */
+        --success-color: #4CAF50;
+        /* Green for accept */
+        --error-color: #f44336;
+        /* Red for reject */
+        --button-hover-darken: brightness(0.8);
+        /* Darken on hover */
+    }
 
-  body {
-    background-color: var(--background-color-dark);
-    color: var(--text-color-light);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
+    body {
+        background-color: var(--background-color-dark);
+        color: var(--text-color-light);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-  .applications-wrapper {
-    max-width: 5000px;
-    padding: 30px;
-    margin: 40px auto;
-    background-color: var(--surface-color-dark);
-    border-radius: 12px;
-    box-shadow: 0 8px 25px var(--shadow-color-dark);
-    border: 1px solid var(--border-color-dark);
-  }
+    .applications-wrapper {
+        max-width: 5000px;
+        padding: 30px;
+        margin: 40px auto;
+        background-color: var(--surface-color-dark);
+        border-radius: 12px;
+        box-shadow: 0 8px 25px var(--shadow-color-dark);
+        border: 1px solid var(--border-color-dark);
+    }
 
-  .applications-wrapper h1 {
-    text-align: center;
-    margin-bottom: 35px;
-    font-size: 2.8em;
-    color: var(--accent-color);
-    letter-spacing: 1px;
-    text-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
-  }
+    .applications-wrapper h1 {
+        text-align: center;
+        margin-bottom: 35px;
+        font-size: 2.8em;
+        color: var(--accent-color);
+        letter-spacing: 1px;
+        text-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
+    }
 
-  /* Page-specific navigation styles */
-  .page-nav {
-    background-color: var(--card-color-dark);
-    border: 1px solid var(--border-color-dark);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px auto 30px auto;
-    max-width: 5000px;
-    text-align: center;
-  }
+    .applications-table {
+        width: 100%; /* Changed to 100% for better responsiveness */
+        border-collapse: separate;
+        /* Use separate to allow border-radius on cells */
+        border-spacing: 0;
+        /* Remove space between borders */
+        margin-top: 20px;
+        overflow: hidden;
+        /* Ensures rounded corners are applied */
+        border-radius: 8px;
+        /* Slightly rounded corners for the table itself */
+    }
 
-  .page-nav ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
+    .applications-table th,
+    .applications-table td {
+        border: 1px solid var(--border-color-dark);
+        padding: 14px 18px;
+        text-align: left;
+        color: var(--text-color-light);
+    }
 
-  .page-nav ul li a {
-    background-color: var(--accent-color);
-    color: var(--surface-color-dark);
-    padding: 12px 24px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    display: inline-block;
-    text-transform: uppercase;
-    font-size: 0.9em;
-    letter-spacing: 0.5px;
-  }
+    .applications-table th {
+        background-color: var(--card-color-dark);
+        color: var(--text-color-light);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9em;
+        letter-spacing: 0.5px;
+    }
 
-  .page-nav ul li a:hover {
-    filter: var(--button-hover-darken);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
-  }
+    #applicationsListings {
+        overflow-x: auto;
+        /* This is the key change */
+        -webkit-overflow-scrolling: touch;
+        /* Improves scrolling on touch devices */
+    }
 
-  .applications-table {
-    width: 50%;
-    border-collapse: separate; /* Use separate to allow border-radius on cells */
-    border-spacing: 0; /* Remove space between borders */
-    margin-top: 20px;
-    overflow: hidden; /* Ensures rounded corners are applied */
-    border-radius: 8px; /* Slightly rounded corners for the table itself */
-  }
+    /* Optional: Add some padding to the right of the table for better scroll experience */
+    .applications-table {
+        padding-right: 1px;
+        /* Small right padding */
+    }
 
-  .applications-table th,
-  .applications-table td {
-    border: 1px solid var(--border-color-dark);
-    padding: 14px 18px;
-    text-align: left;
-    color: var(--text-color-light);
-  }
+    .applications-table tbody tr:nth-child(even) {
+        background-color: #242424;
+        /* Slightly different shade for even rows */
+    }
 
-  .applications-table th {
-    background-color: var(--card-color-dark);
-    color: var(--text-color-light);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.9em;
-    letter-spacing: 0.5px;
-  }
-  #applicationsListings {
-  overflow-x: auto; /* This is the key change */
-  -webkit-overflow-scrolling: touch; /* Improves scrolling on touch devices */
-}
+    .applications-table tbody tr:hover {
+        background-color: #333333;
+        /* Lighter shade on hover */
+        transition: background-color 0.2s ease;
+    }
 
-/* Optional: Add some padding to the right of the table for better scroll experience */
-.applications-table {
-  padding-right: 1px; /* Small right padding */
-}
-  .applications-table tbody tr:nth-child(even) {
-    background-color: #242424; /* Slightly different shade for even rows */
-  }
+    /* Specific styling for the first and last cells in a row/header for rounded corners */
+    .applications-table thead tr:first-child th:first-child {
+        border-top-left-radius: 8px;
+    }
 
-  .applications-table tbody tr:hover {
-    background-color: #333333; /* Lighter shade on hover */
-    transition: background-color 0.2s ease;
-  }
+    .applications-table thead tr:first-child th:last-child {
+        border-top-right-radius: 8px;
+    }
 
-  /* Specific styling for the first and last cells in a row/header for rounded corners */
-  .applications-table thead tr:first-child th:first-child {
-    border-top-left-radius: 8px;
-  }
-  .applications-table thead tr:first-child th:last-child {
-    border-top-right-radius: 8px;
-  }
-  .applications-table tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 8px;
-  }
-  .applications-table tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 8px;
-  }
+    .applications-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 8px;
+    }
 
-  .status-cell {
-    font-weight: bold;
-    text-align: center;
-    padding: 10px 15px;
-    border-radius: 5px;
-  }
-  .status-pending {
-    color: #ffc107;
-    background-color: rgba(255, 193, 7, 0.15);
-  }
-  .status-accepted {
-    color: var(--success-color);
-    background-color: rgba(76, 175, 80, 0.15);
-  }
-  .status-rejected {
-    color: var(--error-color);
-    background-color: rgba(244, 67, 54, 0.15);
-  }
+    .applications-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 8px;
+    }
 
-  .actions-cell button {
-    margin-right: 8px;
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-  }
-  .actions-cell .accept-btn {
-    background-color: var(--success-color);
-    color: white;
-  }
-  .actions-cell .accept-btn:hover {
-    filter: var(--button-hover-darken);
-  }
-  .actions-cell .reject-btn {
-    background-color: var(--error-color);
-    color: white;
-  }
-  .actions-cell .reject-btn:hover {
-    filter: var(--button-hover-darken);
-  }
-  .view-resume-btn {
-    background-color: var(--accent-color);
-    color: var(--surface-color-dark);
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-  }
-  .view-resume-btn:hover {
-    filter: var(--button-hover-darken);
-  }
-  .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
-    left: 0;
-    top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
-    padding-top: 60px;
-  }
-  .modal-content {
-    background-color: var(--surface-color-dark);
-    margin: 5% auto; /* 15% from the top and centered */
-    padding: 20px;
-    border: 1px solid var(--border-color-dark);
-    width: 80%; /* Could be more or less, depending on screen size */
-    max-width: 900px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    position: relative;
-  }
-  .close-button {
-    color: var(--text-color-light);
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  .close-button:hover,
-  .close-button:focus {
-    color: var(--accent-color);
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .pdf-viewer {
-    width: 100%;
-    height: 600px; /* Adjust height as needed */
-    border: none;
-  }
+    .status-cell {
+        font-weight: bold;
+        text-align: center;
+        padding: 10px 15px;
+        border-radius: 5px;
+    }
 
-  /* Loading spinner for accept button */
-  .accept-btn.loading {
-    position: relative;
-    color: transparent;
-    pointer-events: none;
-  }
+    .status-pending {
+        color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.15);
+    }
 
-  .accept-btn.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 16px;
-    height: 16px;
-    margin: -8px 0 0 -8px;
-    border: 2px solid transparent;
-    border-top: 2px solid white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
+    .status-accepted {
+        color: var(--success-color);
+        background-color: rgba(76, 175, 80, 0.15);
+    }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+    .status-rejected {
+        color: var(--error-color);
+        background-color: rgba(244, 67, 54, 0.15);
+    }
+
+    .actions-cell button {
+        margin-right: 8px;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .actions-cell .accept-btn {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .actions-cell .accept-btn:hover {
+        filter: var(--button-hover-darken);
+    }
+
+    .actions-cell .reject-btn {
+        background-color: var(--error-color);
+        color: white;
+    }
+
+    .actions-cell .reject-btn:hover {
+        filter: var(--button-hover-darken);
+    }
+
+    .view-resume-btn {
+        background-color: var(--accent-color);
+        color: var(--surface-color-dark);
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .view-resume-btn:hover {
+        filter: var(--button-hover-darken);
+    }
+
+    .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        /* Stay in place */
+        z-index: 1;
+        /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%;
+        /* Full width */
+        height: 100%;
+        /* Full height */
+        overflow: auto;
+        /* Enable scroll if needed */
+        background-color: rgba(0, 0, 0, 0.8);
+        /* Black w/ opacity */
+        padding-top: 60px;
+    }
+
+    .modal-content {
+        background-color: var(--surface-color-dark);
+        margin: 5% auto;
+        /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid var(--border-color-dark);
+        width: 80%;
+        /* Could be more or less, depending on screen size */
+        max-width: 900px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        position: relative;
+    }
+
+    .close-button {
+        color: var(--text-color-light);
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: var(--accent-color);
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .pdf-viewer {
+        width: 100%;
+        height: 600px;
+        /* Adjust height as needed */
+        border: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Page-specific navigation - outside the main wrapper -->
-<div class="page-nav">
-    <ul>
-        <li><a href="/schedule">Schedule Interview</a></li>
-        <li><a href="/feedback">Feedback</a></li>
-        <li><a href="/dashboard">Dashboard</a></li>
-    </ul>
-</div>
-
 <div class="applications-wrapper">
     <h1>All Job Applications</h1>
-    
     <div id="applicationsListings">
         <table id="applicationsTable" class="applications-table">
             <thead>
@@ -285,7 +250,10 @@
                     <th>Job Title</th>
                     <th>Applicant Name</th>
                     <th>Email</th>
-                    <th>Age</th>             <th>Experience</th>      <th>Education</th>       <th>Applied At</th>
+                    <th>Age</th>
+                    <th>Experience</th>
+                    <th>Education</th>
+                    <th>Applied At</th>
                     <th>Eligibility Score</th>
                     <th>Assessment Score</th>
                     <th>Status</th>
@@ -294,229 +262,192 @@
                 </tr>
             </thead>
             <tbody>
-                </tbody>
+            </tbody>
         </table>
-        <p id="noApplicationsMessage" style="text-align: center; color: var(--text-color-faded); display: none;">No applications found.</p>
+        <p id="noApplicationsMessage" style="text-align: center; color: var(--text-color-faded); display: none;">No
+            applications found.</p>
     </div>
 </div>
 
 <div id="resumeModal" class="modal">
-  <div class="modal-content">
-    <span class="close-button">&times;</span>
-    <iframe id="pdfViewer" class="pdf-viewer"></iframe>
-  </div>
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <iframe id="pdfViewer" class="pdf-viewer"></iframe>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', fetchApplications);
+    document.addEventListener('DOMContentLoaded', fetchApplications);
 
-  const applicationsTableBody = document.querySelector('#applicationsTable tbody');
-  const noApplicationsMessage = document.getElementById('noApplicationsMessage');
+    const applicationsTableBody = document.querySelector('#applicationsTable tbody');
+    const noApplicationsMessage = document.getElementById('noApplicationsMessage');
 
-  async function fetchApplications() {
-    try {
-      const response = await fetch('/applications');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const applications = await response.json();
-      console.log(applications)
-      applicationsTableBody.innerHTML = ''; // Clear existing rows
-      if (applications.length === 0) {
-        noApplicationsMessage.style.display = 'block';
-        return;
-      }
-      noApplicationsMessage.style.display = 'none';
+    async function fetchApplications() {
+        const userName = localStorage.getItem('name');
+        const userRole = localStorage.getItem('response'); // Assuming 'role' is stored as 'response' in local storage
 
-      applications.forEach(application => {
-        const applicationRow = applicationsTableBody.insertRow();
-        console.log(application.id)
-        applicationRow.dataset.applicationId = application.id;
-
-        applicationRow.innerHTML = `
-    <td>${application.job_title}</td>
-    <td>${application.applicant_name}</td>
-    <td>${application.applicant_email}</td>
-    <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td>
-    <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td>
-    <td>${application.education !== null ? application.education : 'N/A'}</td>
-    <td>${new Date(application.applied_at).toLocaleString()}</td>
-    <td>${application.eligibility_score != null ? application.eligibility_score.toFixed(2) : 'N/A'}</td>
-    <td>${application.assessment_score != null ? application.assessment_score.toFixed(2) : 'N/A'}</td>
-    <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
-    <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
-    <td class="actions-cell"></td>
-`;
-
-        // Initial button setup
-        updateApplicationRowInTable(application.id, application.status);
-      });
-
-      // Add event listener for view resume buttons
-      document.querySelectorAll('.view-resume-btn').forEach(button => {
-        button.addEventListener('click', function() {
-          const resumePath = this.dataset.resumePath;
-          openResumeModal(resumePath);
-        });
-      });
-
-    } catch (error) {
-      console.error('Error fetching applications:', error);
-      noApplicationsMessage.textContent = 'Failed to load applications. Please try again later.';
-      noApplicationsMessage.style.display = 'block';
-    }
-  }
-
-  async function updateApplicationStatus(appId, newStatus, navigateToSchedule = false) {
-    const acceptButton = document.querySelector(`[data-application-id="${appId}"] .accept-btn`);
-    
-    // Add loading state to accept button if it's an acceptance
-    if (newStatus === 'Accepted' && acceptButton) {
-      acceptButton.classList.add('loading');
-      acceptButton.disabled = true;
-    }
-
-    try {
-      const response = await fetch(`/applications/${appId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        showGlobalMessage(result.message, 'success');
-        updateApplicationRowInTable(appId, newStatus); // Update the specific row
-        
-        // Navigate to schedule page if it's an acceptance
-        if (navigateToSchedule && newStatus === 'Accepted') {
-          setTimeout(() => {
-            window.location.href = '/schedule';
-          }, 1000); // Small delay to show success message
+        if (!userName || !userRole) {
+            console.warn("Name or Role not found in localStorage. Cannot filter applications.");
+            noApplicationsMessage.textContent = 'User data (Name/Role) not found. Please login or ensure data is available.';
+            noApplicationsMessage.style.display = 'block';
+            return;
         }
-      } else {
-        showGlobalMessage(result.message, 'error');
-        // Remove loading state on error
-        if (acceptButton) {
-          acceptButton.classList.remove('loading');
-          acceptButton.disabled = false;
+
+        try {
+            const response = await fetch('/applications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: userName, // Sending 'name' as job title filter
+                    role: userRole // Sending 'role' as job responsibility filter
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const applications = await response.json();
+            console.log("Fetched applications:", applications); // For debugging
+
+            applicationsTableBody.innerHTML = ''; // Clear existing rows
+            if (applications.length === 0) {
+                noApplicationsMessage.style.display = 'block';
+                return;
+            }
+            noApplicationsMessage.style.display = 'none';
+
+            applications.forEach(application => {
+                const applicationRow = applicationsTableBody.insertRow();
+                applicationRow.dataset.applicationId = application.id;
+
+                applicationRow.innerHTML = `
+                    <td>${application.job_title}</td>
+                    <td>${application.applicant_name}</td>
+                    <td>${application.applicant_email}</td>
+                    <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td>
+                    <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td>
+                    <td>${application.education !== null ? application.education : 'N/A'}</td>
+                    <td>${new Date(application.applied_at).toLocaleString()}</td>
+                    <td>${application.eligibility_score.toFixed(2)}</td>
+                    <td>${application.assessment_score.toFixed(2)}</td>
+                    <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
+                    <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
+                    <td class="actions-cell"></td>
+                `;
+
+                // Initial button setup - ensure these are added to the dynamically created row
+                updateApplicationRowInTable(application.id, application.status);
+            });
+
+            // Add event listener for view resume buttons
+            document.querySelectorAll('.view-resume-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const resumePath = this.dataset.resumePath;
+                    openResumeModal(resumePath);
+                });
+            });
+
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            noApplicationsMessage.textContent = 'Failed to load applications. Please try again later.';
+            noApplicationsMessage.style.display = 'block';
         }
-      }
-    } catch (error) {
-      console.error('Error updating application status:', error);
-      showGlobalMessage('Failed to update application status. Please try again.', 'error');
-      // Remove loading state on error
-      if (acceptButton) {
-        acceptButton.classList.remove('loading');
-        acceptButton.disabled = false;
-      }
     }
-  }
 
-  function updateApplicationRowInTable(appId, newStatus) {
-    const row = document.querySelector(`[data-application-id="${appId}"]`);
-    if (row) {
-      const statusCell = row.querySelector('.status-cell');
-      const actionsCell = row.querySelector('.actions-cell');
+    async function updateApplicationStatus(appId, newStatus) {
+        try {
+            const response = await fetch(`/applications/${appId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            });
 
-      // Update status cell classes and text
-      statusCell.className = `status-cell status-${newStatus.toLowerCase()}`;
-      statusCell.textContent = newStatus;
+            const result = await response.json();
 
-      // Update action buttons based on new status
-      actionsCell.innerHTML = ''; // Clear existing buttons
-      if (newStatus === 'Pending') {
-        const acceptBtn = document.createElement('button');
-        acceptBtn.textContent = 'Accept';
-        acceptBtn.classList.add('accept-btn');
-        acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted', true)); // Pass true for navigation
-
-        const rejectBtn = document.createElement('button');
-        rejectBtn.textContent = 'Reject';
-        rejectBtn.classList.add('reject-btn');
-        rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected', false));
-
-        actionsCell.appendChild(acceptBtn);
-        actionsCell.appendChild(rejectBtn);
-      } else {
-        // Remove buttons if status is Accepted or Rejected
-        const acceptBtn = actionsCell.querySelector('.accept-btn');
-        const rejectBtn = actionsCell.querySelector('.reject-btn');
-        if (acceptBtn) acceptBtn.remove();
-        if (rejectBtn) rejectBtn.remove();
-      }
-    } else {
-      // If row not found, re-fetch all applications to ensure consistency
-      fetchApplications();
+            if (response.ok) {
+                // Assuming showGlobalMessage is defined elsewhere for notifications
+                // showGlobalMessage(result.message, 'success');
+                alert(result.message); // Simple alert for demonstration
+                updateApplicationRowInTable(appId, newStatus); // Update the specific row
+            } else {
+                // showGlobalMessage(result.message, 'error');
+                alert(result.message); // Simple alert for demonstration
+            }
+        } catch (error) {
+            console.error('Error updating application status:', error);
+            // showGlobalMessage('Failed to update application status. Please try again.', 'error');
+            alert('Failed to update application status. Please try again.'); // Simple alert for demonstration
+        }
     }
-  }
 
-  function openResumeModal(resumePath) {
+    function updateApplicationRowInTable(appId, newStatus) {
+        const row = document.querySelector(`[data-application-id="${appId}"]`);
+        if (row) {
+            const statusCell = row.querySelector('.status-cell');
+            const actionsCell = row.querySelector('.actions-cell');
+
+            // Update status cell classes and text
+            statusCell.className = `status-cell status-${newStatus.toLowerCase()}`;
+            statusCell.textContent = newStatus;
+
+            // Clear existing buttons
+            actionsCell.innerHTML = '';
+
+            // Only add buttons if the current user is an admin ('a') AND the status is 'Pending'
+            const currentUserRole = localStorage.getItem('role'); // Get the user's role again
+            if (currentUserRole === 'a' && newStatus === 'Pending') {
+                const acceptBtn = document.createElement('button');
+                acceptBtn.textContent = 'Accept';
+                acceptBtn.classList.add('accept-btn');
+                acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted'));
+
+                const rejectBtn = document.createElement('button');
+                rejectBtn.textContent = 'Reject';
+                rejectBtn.classList.add('reject-btn');
+                rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected'));
+
+                actionsCell.appendChild(acceptBtn);
+                actionsCell.appendChild(rejectBtn);
+            }
+        } else {
+            // If row not found, re-fetch all applications to ensure consistency
+            fetchApplications();
+        }
+    }
+
+    function openResumeModal(resumePath) {
+        const resumeModal = document.getElementById('resumeModal');
+        const pdfViewer = document.getElementById('pdfViewer');
+        pdfViewer.src = `/resumes/${resumePath}`; // Set the source of the iframe
+        resumeModal.style.display = 'block'; // Show the modal
+    }
+
+    // Modal close logic
     const resumeModal = document.getElementById('resumeModal');
-    const pdfViewer = document.getElementById('pdfViewer');
-    pdfViewer.src = `/resumes/${resumePath}`; // Set the source of the iframe
-    resumeModal.style.display = 'block'; // Show the modal
-  }
+    const closeModalButton = document.querySelector('#resumeModal .close-button');
+    const pdfViewer = document.getElementById('pdfViewer'); // Get the iframe
 
-  // Add a global message function if it doesn't exist
-  function showGlobalMessage(message, type) {
-    // Create or update a message element
-    let messageElement = document.getElementById('globalMessage');
-    if (!messageElement) {
-      messageElement = document.createElement('div');
-      messageElement.id = 'globalMessage';
-      messageElement.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 5px;
-        color: white;
-        font-weight: bold;
-        z-index: 1000;
-        transition: opacity 0.3s ease;
-      `;
-      document.body.appendChild(messageElement);
-    }
-    
-    messageElement.textContent = message;
-    messageElement.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
-    messageElement.style.opacity = '1';
-    
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      messageElement.style.opacity = '0';
-      setTimeout(() => {
-        if (messageElement.parentNode) {
-          messageElement.parentNode.removeChild(messageElement);
+    closeModalButton.addEventListener('click', function() {
+        resumeModal.style.display = 'none';
+        pdfViewer.src = ''; // Clear iframe source to stop loading
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target == resumeModal) {
+            resumeModal.style.display = 'none';
+            pdfViewer.src = ''; // Clear iframe source
         }
-      }, 300);
-    }, 3000);
-  }
+    });
 
-  // Modal close logic
-  const resumeModal = document.getElementById('resumeModal');
-  const closeModalButton = document.querySelector('#resumeModal .close-button');
-  const pdfViewer = document.getElementById('pdfViewer'); // Get the iframe
-
-  closeModalButton.addEventListener('click', function() {
-    resumeModal.style.display = 'none';
-    pdfViewer.src = ''; // Clear iframe source to stop loading
-  });
-
-  window.addEventListener('click', function(event) {
-    if (event.target == resumeModal) {
-      resumeModal.style.display = 'none';
-      pdfViewer.src = ''; // Clear iframe source
-    }
-  });
-
-  // Fetch applications when the page loads
-  window.addEventListener('load', fetchApplications);
+    // Fetch applications when the page loads
+    window.addEventListener('load', fetchApplications);
 </script>
 {% endblock %}
