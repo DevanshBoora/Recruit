@@ -105,15 +105,19 @@
         Don't have an account? <a href="/signup">Sign Up here</a>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up form listener');
+    
     document.getElementById('loginForm').addEventListener('submit', async function(event) {
+        console.log('Form submitted');
         event.preventDefault();
 
         const name = document.getElementById('name').value;
         const password = document.getElementById('password').value;
+        
+        console.log('Sending POST request to /login');
 
         try {
             const response = await fetch('/login', {
@@ -125,14 +129,15 @@
             });
 
             const result = await response.json();
+            console.log('Response:', result);
 
             if (response.ok) {
                 // Store user data in localStorage
-                localStorage.setItem('name', result.company_name || ''); // Store empty string if null
-                localStorage.setItem('response', result.role|| ''); // Store empty string if null
-                localStorage.setItem('role', "a");
+                localStorage.setItem('name', result.name);
+                localStorage.setItem('company_name', result.company_name || '');
+                localStorage.setItem('role', result.role);
 
-                showGlobalMessage(result.message, 'success', '/'); // Redirect to home page
+                showGlobalMessage(result.message, 'success', '/');
             } else {
                 showGlobalMessage(result.message, 'error');
             }
@@ -141,5 +146,6 @@
             showGlobalMessage('Network error. Please try again.', 'error');
         }
     });
+});
 </script>
 {% endblock %}
