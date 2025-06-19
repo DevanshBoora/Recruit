@@ -251,7 +251,7 @@
             <div class="form-group">
                 <label for="role">Role:</label>
                 <input type="text" id="role" name="role" maxlength="100">
-            </div>
+                <div class="error-message" id="roleError"></div> </div>
             <button type="submit" id="submitBtn">Register</button>
         </form>
         <div class="form-link">
@@ -293,6 +293,18 @@
             const field = document.getElementById(fieldId);
             const errorDiv = document.getElementById(errorId);
             
+            // Crucial check: Ensure both elements exist before trying to access properties
+            if (!field) {
+                console.error(`Validation Error: Field with ID '${fieldId}' not found.`);
+                return false; 
+            }
+            if (!errorDiv) {
+                console.error(`Validation Error: Error div with ID '${errorId}' not found for field '${fieldId}'.`);
+                // If the error div is missing, we can't display the error, but we can still return validation result.
+                // For robustness, you might choose to throw an error or handle this more gracefully.
+                return validator(field.value); // Just return the validation result without displaying error
+            }
+
             if (!validator(field.value)) {
                 errorDiv.textContent = errorMessage;
                 errorDiv.style.display = 'block';
@@ -314,9 +326,10 @@
                 (value) => value.length >= 6, 
                 'Password must be at least 6 characters');
             
+            // For the role input, it's just a text input, so an empty string check is appropriate
             const roleValid = validateField('role', 'roleError', 
-                (value) => value !== '', 
-                'Please select a role');
+                (value) => value.trim() !== '', // Use trim() to handle spaces
+                'Role cannot be empty'); // Changed message to reflect input text
             
             const companyNameValid = validateField('companyName', 'companyNameError', 
                 (value) => value.length <= 100, 
@@ -338,12 +351,13 @@
                 'Password must be at least 6 characters');
         });
 
-        document.getElementById('role').addEventListener('change', () => {
+        // Changed 'change' event to 'blur' for text input
+        document.getElementById('role').addEventListener('blur', () => {
             validateField('role', 'roleError', 
-                (value) => value !== '', 
-                'Please select a role');
+                (value) => value.trim() !== '', 
+                'Role cannot be empty');
         });
-
+        
         document.getElementById('companyName').addEventListener('blur', () => {
             validateField('companyName', 'companyNameError', 
                 (value) => value.length <= 100, 
@@ -371,7 +385,7 @@
             const name = document.getElementById('name').value.trim();
             const password = document.getElementById('password').value;
             const companyName = document.getElementById('companyName').value.trim();
-            const role = document.getElementById('role').value;
+            const role = document.getElementById('role').value.trim();
 
             try {
                 const response = await fetch('/signup', {
@@ -408,8 +422,16 @@
         // Clear errors when user starts typing
         document.querySelectorAll('input, select').forEach(field => {
             field.addEventListener('input', () => {
+                // Check if the field itself is causing a border color change, not just an associated error div
                 if (field.style.borderColor === 'var(--error-color)') {
                     field.style.borderColor = 'var(--border-color-dark)';
+                }
+                // Also, hide the associated error message div if it exists and is visible
+                const errorDivId = field.id + 'Error';
+                const errorDiv = document.getElementById(errorDivId);
+                if (errorDiv && errorDiv.style.display === 'block') {
+                    errorDiv.style.display = 'none';
+                    errorDiv.textContent = ''; // Clear text as well
                 }
             });
         });
