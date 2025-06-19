@@ -48,7 +48,8 @@
     }
 
     .applications-table {
-        width: 100%; /* Changed to 100% for better responsiveness */
+        width: 100%;
+        /* Changed to 100% for better responsiveness */
         border-collapse: separate;
         /* Use separate to allow border-radius on cells */
         border-spacing: 0;
@@ -286,6 +287,10 @@
         const userName = localStorage.getItem('name');
         const userRole = localStorage.getItem('response'); // Assuming 'role' is stored as 'response' in local storage
 
+        console.log("Attempting to fetch applications...");
+        console.log("User Name from localStorage:", userName);
+        console.log("User Role from localStorage (response):", userRole);
+
         if (!userName || !userRole) {
             console.warn("Name or Role not found in localStorage. Cannot filter applications.");
             noApplicationsMessage.textContent = 'User data (Name/Role) not found. Please login or ensure data is available.';
@@ -294,6 +299,9 @@
         }
 
         try {
+            // It seems your backend is expecting a POST request for fetching,
+            // which is unconventional but we'll stick to it if that's the setup.
+            // Ensure your Flask route for /applications expects POST and processes JSON body.
             const response = await fetch('/applications', {
                 method: 'POST',
                 headers: {
@@ -305,11 +313,16 @@
                 })
             });
 
+            console.log("Fetch response received:", response);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text(); // Get raw response text for debugging
+                console.error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
+
             const applications = await response.json();
-            console.log("Fetched applications:", applications); // For debugging
+            console.log("Fetched applications (parsed JSON):", applications);
 
             applicationsTableBody.innerHTML = ''; // Clear existing rows
             if (applications.length === 0) {
@@ -338,10 +351,12 @@
                 `;
 
                 // Initial button setup - ensure these are added to the dynamically created row
+                // We pass `application.status` directly here
                 updateApplicationRowInTable(application.id, application.status);
             });
 
             // Add event listener for view resume buttons
+            // This needs to be done *after* the rows are added to the DOM
             document.querySelectorAll('.view-resume-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const resumePath = this.dataset.resumePath;
@@ -351,12 +366,13 @@
 
         } catch (error) {
             console.error('Error fetching applications:', error);
-            noApplicationsMessage.textContent = 'Failed to load applications. Please try again later.';
+            noApplicationsMessage.textContent = `Failed to load applications: ${error.message}. Please check console for details.`;
             noApplicationsMessage.style.display = 'block';
         }
     }
 
     async function updateApplicationStatus(appId, newStatus) {
+        console.log(`Attempting to update application ${appId} status to ${newStatus}`);
         try {
             const response = await fetch(`/applications/${appId}/status`, {
                 method: 'PUT',
@@ -369,20 +385,29 @@
             });
 
             const result = await response.json();
+            console.log("Update status response:", result);
 
             if (response.ok) {
-                // Assuming showGlobalMessage is defined elsewhere for notifications
-                // showGlobalMessage(result.message, 'success');
-                alert(result.message); // Simple alert for demonstration
+                if (typeof showGlobalMessage === 'function') {
+                    showGlobalMessage(result.message, 'success');
+                } else {
+                    alert(result.message); // Simple alert for demonstration
+                }
                 updateApplicationRowInTable(appId, newStatus); // Update the specific row
             } else {
-                // showGlobalMessage(result.message, 'error');
-                alert(result.message); // Simple alert for demonstration
+                if (typeof showGlobalMessage === 'function') {
+                    showGlobalMessage(result.message, 'error');
+                } else {
+                    alert(result.message); // Simple alert for demonstration
+                }
             }
         } catch (error) {
             console.error('Error updating application status:', error);
-            // showGlobalMessage('Failed to update application status. Please try again.', 'error');
-            alert('Failed to update application status. Please try again.'); // Simple alert for demonstration
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage('Failed to update application status. Please try again.', 'error');
+            } else {
+                alert('Failed to update application status. Please try again.'); // Simple alert for demonstration
+            }
         }
     }
 
@@ -400,7 +425,7 @@
             actionsCell.innerHTML = '';
 
             // Only add buttons if the current user is an admin ('a') AND the status is 'Pending'
-            const currentUserRole = localStorage.getItem('role'); // Get the user's role again
+            const currentUserRole = localStorage.getItem('response'); // Get the user's role again (using 'response' key)
             if (currentUserRole === 'a' && newStatus === 'Pending') {
                 const acceptBtn = document.createElement('button');
                 acceptBtn.textContent = 'Accept';
@@ -416,15 +441,16 @@
                 actionsCell.appendChild(rejectBtn);
             }
         } else {
-            // If row not found, re-fetch all applications to ensure consistency
-            fetchApplications();
+            console.warn(`Row with application ID ${appId} not found in table for status update. Re-fetching all applications.`);
+            fetchApplications(); // Fallback: re-fetch all applications to ensure consistency
         }
     }
 
     function openResumeModal(resumePath) {
         const resumeModal = document.getElementById('resumeModal');
         const pdfViewer = document.getElementById('pdfViewer');
-        pdfViewer.src = `/resumes/${resumePath}`; // Set the source of the iframe
+        // Construct the full path to the resume. Assuming Flask serves static files from /resumes.
+        pdfViewer.src = `/resumes/${resumePath}`;
         resumeModal.style.display = 'block'; // Show the modal
     }
 

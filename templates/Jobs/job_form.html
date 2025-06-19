@@ -6,6 +6,7 @@
   <style>
     .form-card {
       max-width: 800px;
+      max-width: 800px;
     }
     .form-card h2 {
       text-align: center;
@@ -23,11 +24,14 @@
       <label for="jobTitle">Job Title:</label>
       <input type="text" id="jobTitle" required />
 
+
       <label for="jobDescription">Job Description:</label>
       <textarea id="jobDescription" rows="6" required></textarea>
 
+
       <label for="qualifications">Qualifications:</label>
       <textarea id="qualifications" rows="4" required></textarea>
+
 
       <label for="responsibilities">Responsibilities:</label>
       <textarea id="responsibilities" rows="4" required></textarea>
@@ -56,6 +60,20 @@
         <option value="Dubai">Dubai</option>
         <option value="Sao Paulo">Sao Paulo</option>
         <option value="Hyderabad">Hyderabad</option>
+        <option value="">Select a City...</option>
+        <option value="New York">New York</option>
+        <option value="San Francisco">San Francisco</option>
+        <option value="London">London</option>
+        <option value="Berlin">Berlin</option>
+        <option value="Paris">Paris</option>
+        <option value="Tokyo">Tokyo</option>
+        <option value="Sydney">Sydney</option>
+        <option value="Singapore">Singapore</option>
+        <option value="Bengaluru">Bengaluru</option>
+        <option value="Toronto">Toronto</option>
+        <option value="Dubai">Dubai</option>
+        <option value="Sao Paulo">Sao Paulo</option>
+        <option value="Hyderabad">Hyderabad</option>
       </select>
 
       <label for="requiredExperience">Required Experience:</label>
@@ -65,11 +83,14 @@
       <input type="number" id="assessmentTimer" name="assessmentTimer" min="0" value="0" />
 
       <label for="minAssessmentScore">Min Assessment Score (number in percentage):</label>
+      <label for="minAssessmentScore">Min Assessment Score (number in percentage):</label>
       <input type="number" id="minAssessmentScore" name="minAssessmentScore" min="0" max="100" value="0" required />
 
       <fieldset class="assessment-builder-fieldset">
         <legend>Assessment Questions (MANDATORY)</legend>
+        <legend>Assessment Questions (MANDATORY)</legend>
         <div class="assessment-question-actions">
+          <button type="button" class="btn" onclick="add('mcu')">Add MCQ</button>
           <button type="button" class="btn" onclick="add('mcu')">Add MCQ</button>
           <button type="button" class="btn" onclick="addQuestion('text')">Add Text Question</button>
           <button type="button" class="btn" onclick="addQuestion('coding')">Add Coding Question</button>
@@ -88,7 +109,11 @@
     document.addEventListener('DOMContentLoaded', function () {
       let questionCounter = 0;
       let questionsData = [];
+    document.addEventListener('DOMContentLoaded', function () {
+      let questionCounter = 0;
+      let questionsData = [];
 
+      function updateNoQuestionsMessage() {
       function updateNoQuestionsMessage() {
         const message = document.getElementById('noQuestionsMessage');
         message.style.display = questionsData.length === 0 ? 'block' : 'none';
@@ -97,16 +122,30 @@
       window.add = function (type) {
         if (type === 'mcu') {
           addQuestion('mcq');
+        message.style.display = questionsData.length === 0 ? 'block' : 'none';
+      }
+
+      window.add = function (type) {
+        if (type === 'mcu') {
+          addQuestion('mcq');
         } else {
+          addQuestion(type);
           addQuestion(type);
         }
       };
+      };
 
       window.addQuestion = function (type) {
+      window.addQuestion = function (type) {
         const container = document.getElementById('questionsBuilderContainer');
-        const questionId = `question-${questionCounter}`;
+        const questionId = question-${questionCounter};
 
         let questionHtml = `
+          <div class="question-card" id="${questionId}" data-question-type="${type}">
+            <button type="button" class="delete-question-btn" onclick="deleteQuestion('${questionId}')">X</button>
+            <h3>Question ${questionCounter + 1} (${type.toUpperCase()})</h3>
+            <label for="q-${questionCounter}-text">Question Text:</label>
+            <textarea id="q-${questionCounter}-text" rows="2" required onchange="updateQuestionData()"></textarea>
           <div class="question-card" id="${questionId}" data-question-type="${type}">
             <button type="button" class="delete-question-btn" onclick="deleteQuestion('${questionId}')">X</button>
             <h3>Question ${questionCounter + 1} (${type.toUpperCase()})</h3>
@@ -126,7 +165,22 @@
             <label for="q-${questionCounter}-correct">Correct Option (A, B, C, D):</label>
             <input type="text" id="q-${questionCounter}-correct" maxlength="1" pattern="[A-Da-d]" required onchange="updateQuestionData()" />
           `;
+          questionHtml += `
+            <div class="mcq-options-container">
+              <label>Options:</label>
+              <input type="text" id="q-${questionCounter}-option-a" placeholder="Option A" required onchange="updateQuestionData()" />
+              <input type="text" id="q-${questionCounter}-option-b" placeholder="Option B" required onchange="updateQuestionData()" />
+              <input type="text" id="q-${questionCounter}-option-c" placeholder="Option C" required onchange="updateQuestionData()" />
+              <input type="text" id="q-${questionCounter}-option-d" placeholder="Option D" required onchange="updateQuestionData()" />
+            </div>
+            <label for="q-${questionCounter}-correct">Correct Option (A, B, C, D):</label>
+            <input type="text" id="q-${questionCounter}-correct" maxlength="1" pattern="[A-Da-d]" required onchange="updateQuestionData()" />
+          `;
         } else if (type === 'text') {
+          questionHtml += `
+            <label for="q-${questionCounter}-expected">Expected Keywords (comma-separated):</label>
+            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
+          `;
           questionHtml += `
             <label for="q-${questionCounter}-expected">Expected Keywords (comma-separated):</label>
             <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
@@ -138,10 +192,17 @@
             <label for="q-${questionCounter}-starter">Starter Code:</label>
             <textarea id="q-${questionCounter}-starter" rows="4" onchange="updateQuestionData()"></textarea>
           `;
+          questionHtml += `
+            <label for="q-${questionCounter}-expected">Expected Keywords in Solution (comma-separated):</label>
+            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
+            <label for="q-${questionCounter}-starter">Starter Code:</label>
+            <textarea id="q-${questionCounter}-starter" rows="4" onchange="updateQuestionData()"></textarea>
+          `;
         }
 
-        questionHtml += `</div>`;
+        questionHtml += </div>;
         container.insertAdjacentHTML('beforeend', questionHtml);
+
 
         questionsData.push({
           id: questionId,
@@ -151,20 +212,34 @@
           correct_option: '',
           expected_keywords: [],
           starter_code: ''
+          id: questionId,
+          type: type,
+          text: '',
+          options: {},
+          correct_option: '',
+          expected_keywords: [],
+          starter_code: ''
         });
+
 
         questionCounter++;
         updateNoQuestionsMessage();
         updateQuestionData();
       };
+        updateQuestionData();
+      };
 
+      window.deleteQuestion = function (questionId) {
       window.deleteQuestion = function (questionId) {
         document.getElementById(questionId).remove();
         questionsData = questionsData.filter(q => q.id !== questionId);
         updateNoQuestionsMessage();
         updateQuestionData();
       };
+        updateQuestionData();
+      };
 
+      window.updateQuestionData = function () {
       window.updateQuestionData = function () {
         questionsData.forEach(q => {
           const index = parseInt(q.id.split('-')[1]);
@@ -194,7 +269,12 @@
 
       document.getElementById('jobForm').addEventListener('submit', async function (event) {
         event.preventDefault();
+      };
 
+      document.getElementById('jobForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        updateQuestionData(); // Ensure the latest data
         updateQuestionData(); // Ensure the latest data
 
         const formData = new FormData();
@@ -208,15 +288,35 @@
         formData.append('assessmentTimer', document.getElementById('assessmentTimer').value);
         formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
         formData.append('assessmentQuestions', document.getElementById('assessmentQuestions').value);
+        formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
+        formData.append('assessmentQuestions', document.getElementById('assessmentQuestions').value);
 
         try {
           const response = await fetch('/jobs', {
             method: 'POST',
             body: formData
           });
+          const response = await fetch('/jobs', {
+            method: 'POST',
+            body: formData
+          });
 
           const result = await response.json();
+          const result = await response.json();
 
+          if (response.ok) {
+            showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
+            document.getElementById('jobForm').reset();
+
+            localStorage.clear();
+
+            document.getElementById('questionsBuilderContainer').innerHTML = '<p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded);">No questions added yet. Use the buttons above to add questions.</p>';
+            questionsData = [];
+            questionCounter = 0;
+            updateNoQuestionsMessage();
+          } else {
+            showGlobalMessage(result.message, 'error');
+          }
           if (response.ok) {
             showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
             document.getElementById('jobForm').reset();
@@ -233,7 +333,10 @@
         } catch (error) {
           console.error('Error submitting job form:', error);
           showGlobalMessage('Failed to submit job. Please try again.', 'error');
+          console.error('Error submitting job form:', error);
+          showGlobalMessage('Failed to submit job. Please try again.', 'error');
         }
+      });
       });
     });
   </script>

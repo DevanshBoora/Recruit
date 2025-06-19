@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash,url_for
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash, url_for
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
@@ -16,9 +16,19 @@ import schedule
 import subprocess
 import signal
 import atexit
-from datetime import datetime
+import pandas as pd
+import smtplib
+import imaplib
+import email
+import re
+import traceback
+import unicodedata
+import requests
+from email.mime.text import MIMEText
+import mysql.connector
+from mysql.connector import Error
 from routes import register_blueprints
-from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate,User
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer
 import logging
 from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
@@ -35,10 +45,8 @@ app = Flask(__name__)
 CORS(app)
 register_blueprints(app)
 bcrypt = Bcrypt(app)
-# Global variables for Streamlit process management
-streamlit_process = None
-streamlit_port = 8501
 
+# Configuration
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -47,6 +55,15 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/Job
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
+
+# Email configuration (add to your config file)
+EMAIL_CONFIG = {
+    "email_address": "your_email@gmail.com",
+    "email_password": "your_app_password"
+}
+SMTP_SERVER = "smtp.gmail.com"
+IMAP_SERVER = "imap.gmail.com"
+TIMEOUT_HOURS = 24  # Hours to wait for offer response
 
 db.init_app(app)
 with app.app_context():
@@ -58,127 +75,280 @@ if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is not set.")
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ==================== STREAMLIT PROCESS MANAGEMENT ====================
+# ==================== INTEGRATED EMAIL OFFER SYSTEM ====================
 
-def start_streamlit_process():
-    """Start the Streamlit email automation dashboard as a subprocess."""
-    global streamlit_process
-    
-    if streamlit_process and streamlit_process.poll() is None:
-        logging.info("Streamlit process is already running")
-        return True
-    
+def normalize_unicode(text):
+    """Normalize unicode characters in text"""
+    normalized = unicodedata.normalize('NFKD', text)
+    replacements = {
+        ''': "'", ''': "'", '"': '"', '"': '"',
+        '…': '...', '–': '-', '—': '--', 'ʼ': "'"
+    }
+    for k, v in replacements.items():
+        normalized = normalized.replace(k, v)
+    return normalized
+
+def clean_email_body(raw_body):
+    """Clean email body by removing signatures and quoted text"""
+    text = normalize_unicode(raw_body)
+    separators = [
+        r"On.wrote:", r"From:\s.", r"Sent:\s.", r"To:\s.", r"Subject:\s.*",
+        r"-----Original Message-----", r"^\s*>", r"^\s*--\s*$", r"Best regards",
+        r"Kind regards", r"Regards", r"Cheers", r"Sincerely"
+    ]
+    lines = text.split('\n')
+    clean_lines = []
+    for line in lines:
+        line = line.strip()
+        if any(re.search(pattern, line, re.IGNORECASE) for pattern in separators):
+            break
+        if line and not line.startswith('>'):
+            clean_lines.append(line)
+    clean_text = ' '.join(clean_lines)
+    return re.sub(r'\s+', ' ', clean_text).strip()
+
+def classify_with_gemini(text):
+    """Classify email response as accepted or rejected using Gemini AI"""
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    prompt = f"""Classify this email response to a job offer as 'accepted' or 'rejected'. 
+    Look for clear acceptance or rejection language. Be strict in classification.
+    Text: "{text}" 
+    Respond with only 'accepted' or 'rejected'."""
     try:
-        # Path to your streamlit app file
-        streamlit_app_path = os.path.join(os.path.dirname(__file__), 'streamlit_app.py')
-        
-        if not os.path.exists(streamlit_app_path):
-            logging.error(f"Streamlit app file not found: {streamlit_app_path}")
-            return False
-        
-        # Command to run Streamlit
-        cmd = [
-            'streamlit', 'run', streamlit_app_path,
-            '--server.port', str(streamlit_port),
-            '--server.address', 'localhost',
-            '--server.headless', 'true',
-            '--browser.gatherUsageStats', 'false'
-        ]
-        
-        # Start the process
-        streamlit_process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            preexec_fn=os.setsid if os.name != 'nt' else None
-        )
-        
-        logging.info(f"Streamlit process started with PID: {streamlit_process.pid}")
-        return True
-        
+        response = model.generate_content(prompt)
+        result = response.text.strip().lower()
+        return "accepted" if "accept" in result and "reject" not in result else "rejected"
     except Exception as e:
-        logging.error(f"Failed to start Streamlit process: {e}")
+        logging.error(f"Gemini classification error: {e}")
+        return "rejected"
+
+def send_job_offer_email(to_email, name, job_position, company_name="Our Company"):
+    """Send job offer email to candidate"""
+    msg = MIMEText(f"""Dear {name},
+
+We are delighted to offer you the position of {job_position} at {company_name}.
+
+We were impressed by your qualifications and believe you would be a valuable addition to our team.
+
+Please reply to this email within 24 hours to confirm your acceptance of this offer.
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+HR Team
+{company_name}""")
+    
+    msg["Subject"] = f"Job Offer - {job_position} Position"
+    msg["From"] = EMAIL_CONFIG["email_address"]
+    msg["To"] = to_email
+
+    try:
+        with smtplib.SMTP(SMTP_SERVER, 587) as server:
+            server.starttls()
+            server.login(EMAIL_CONFIG["email_address"], EMAIL_CONFIG["email_password"])
+            server.send_message(msg)
+        logging.info(f"Job offer email sent to {to_email}")
+        return True
+    except Exception as e:
+        logging.error(f"Email send error: {e}")
         return False
 
-def stop_streamlit_process():
-    """Stop the Streamlit process."""
-    global streamlit_process
-    
-    if streamlit_process and streamlit_process.poll() is None:
-        try:
-            if os.name == 'nt':  # Windows
-                streamlit_process.terminate()
-            else:  # Unix/Linux
-                os.killpg(os.getpgid(streamlit_process.pid), signal.SIGTERM)
-            
-            streamlit_process.wait(timeout=10)
-            logging.info("Streamlit process stopped successfully")
-        except subprocess.TimeoutExpired:
-            if os.name == 'nt':
-                streamlit_process.kill()
+def get_email_responses():
+    """Check for email responses to job offers"""
+    responses = {}
+    try:
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER, 993)
+        mail.login(EMAIL_CONFIG["email_address"], EMAIL_CONFIG["email_password"])
+        mail.select("inbox")
+        
+        # Search for replies to job offers
+        status, data = mail.search(None, '(UNSEEN SUBJECT "Re: Job Offer")')
+        
+        for num in data[0].split():
+            _, msg_data = mail.fetch(num, "(RFC822)")
+            raw_email = msg_data[0][1]
+            msg = email.message_from_bytes(raw_email)
+            sender = email.utils.parseaddr(msg["From"])[1]
+
+            body = ""
+            if msg.is_multipart():
+                for part in msg.walk():
+                    if part.get_content_type() == "text/plain" and "attachment" not in str(part.get("Content-Disposition")):
+                        body = part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8", errors="ignore")
+                        break
             else:
-                os.killpg(os.getpgid(streamlit_process.pid), signal.SIGKILL)
-            logging.warning("Streamlit process force killed")
-        except Exception as e:
-            logging.error(f"Error stopping Streamlit process: {e}")
+                body = msg.get_payload(decode=True).decode(msg.get_content_charset() or "utf-8", errors="ignore")
+
+            clean_body = clean_email_body(body)
+            responses[sender] = classify_with_gemini(clean_body)
+            
+            # Mark email as read
+            mail.store(num, "+FLAGS", "\\Seen")
+            
+        mail.close()
+        mail.logout()
+    except Exception as e:
+        logging.error(f"IMAP error: {e}")
     
-    streamlit_process = None
+    return responses
 
-def is_streamlit_running():
-    """Check if Streamlit process is running."""
-    global streamlit_process
-    return streamlit_process and streamlit_process.poll() is None
+def process_job_offers():
+    """Process job offers and handle responses"""
+    try:
+        # Get email responses
+        email_responses = get_email_responses()
+        
+        # Check for pending offers that need to be sent
+        pending_offers = JobOffer.query.filter_by(status='pending', offer_sent=False).all()
+        
+        for offer in pending_offers:
+            application = Application.query.get(offer.application_id)
+            if application:
+                job = Job.query.get(application.job_id)
+                if send_job_offer_email(application.applicant_email, application.applicant_name, job.title):
+                    offer.offer_sent = True
+                    offer.offer_sent_time = datetime.now()
+                    db.session.commit()
+                    logging.info(f"Offer sent to {application.applicant_name}")
+                    break  # Send one offer at a time
+        
+        # Process email responses
+        for email_addr, response in email_responses.items():
+            application = Application.query.filter_by(applicant_email=email_addr).first()
+            if application:
+                offer = JobOffer.query.filter_by(application_id=application.id, status='pending').first()
+                if offer:
+                    if response == 'accepted':
+                        offer.status = 'accepted'
+                        application.status = 'Hired'
+                        # Create accepted candidate record
+                        accepted_candidate = AcceptedCandidate(
+                            candidate_id=application.id,
+                            applicant_name=application.applicant_name,
+                            applicant_email=application.applicant_email
+                        )
+                        db.session.add(accepted_candidate)
+                        logging.info(f"Offer accepted by {application.applicant_name}")
+                    else:
+                        offer.status = 'rejected'
+                        application.status = 'Rejected'
+                        logging.info(f"Offer rejected by {application.applicant_name}")
+                    
+                    db.session.commit()
+        
+        # Check for timed out offers
+        timeout_threshold = datetime.now() - timedelta(hours=TIMEOUT_HOURS)
+        timed_out_offers = JobOffer.query.filter(
+            JobOffer.status == 'pending',
+            JobOffer.offer_sent == True,
+            JobOffer.offer_sent_time < timeout_threshold
+        ).all()
+        
+        for offer in timed_out_offers:
+            offer.status = 'expired'
+            application = Application.query.get(offer.application_id)
+            if application:
+                application.status = 'Offer Expired'
+            db.session.commit()
+            logging.info(f"Offer expired for application {offer.application_id}")
+            
+    except Exception as e:
+        logging.error(f"Error processing job offers: {e}")
+        db.session.rollback()
 
-def cleanup_processes():
-    """Clean up processes when the application shuts down."""
-    stop_streamlit_process()
+# ==================== NEW ROUTES FOR OFFER MANAGEMENT ====================
 
-atexit.register(cleanup_processes)
-
-# ==================== STREAMLIT INTEGRATION ROUTES ====================
-
-@app.route('/email-dashboard')
-def email_dashboard():
-    """Route to access the Streamlit email automation dashboard."""
-    if not is_streamlit_running():
-        if start_streamlit_process(): 
-            # Wait a moment for Streamlit to start
-            time.sleep(3)
-        else:
-            flash("Failed to start email automation dashboard", "error")
-            return redirect('/') 
+@app.route('/offers', methods=['GET'])
+def view_offers():
+    """View all job offers"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     
-    # Redirect to the Streamlit app
-    streamlit_url = f"http://localhost:{streamlit_port}"
-    return render_template('streamlit_redirect.html', streamlit_url=streamlit_url)
+    offers = db.session.query(
+        JobOffer.id,
+        JobOffer.status,
+        JobOffer.offer_sent,
+        JobOffer.offer_sent_time,
+        JobOffer.created_at,
+        Application.applicant_name,
+        Application.applicant_email,
+        Job.title.label('job_title')
+    ).join(Application, JobOffer.application_id == Application.id)\
+     .join(Job, Application.job_id == Job.id)\
+     .order_by(JobOffer.created_at.desc()).all()
+    
+    return render_template('offers.html', offers=offers)
 
-@app.route('/email-dashboard/start', methods=['POST'])
-def start_email_dashboard():
-    """API endpoint to start the Streamlit dashboard."""
-    success = start_streamlit_process()
-    return jsonify({
-        "success": success,
-        "message": "Email dashboard started successfully" if success else "Failed to start email dashboard",
-        "url": f"http://localhost:{streamlit_port}" if success else None
-    })
+@app.route('/offers/create', methods=['POST'])
+def create_offer():
+    """Create a new job offer"""
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    application_id = data.get('application_id')
+    
+    if not application_id:
+        return jsonify({"message": "Application ID required"}), 400
+    
+    # Check if application exists and is eligible for offer
+    application = Application.query.get(application_id)
+    if not application:
+        return jsonify({"message": "Application not found"}), 404
+    
+    if application.status not in ['Accepted']:
+        return jsonify({"message": "Application not eligible for offer"}), 400
+    
+    # Check if offer already exists
+    existing_offer = JobOffer.query.filter_by(application_id=application_id).first()
+    if existing_offer:
+        return jsonify({"message": "Offer already exists for this application"}), 400
+    
+    # Create new offer
+    new_offer = JobOffer(
+        application_id=application_id,
+        status='pending',
+        offer_sent=False
+    )
+    
+    db.session.add(new_offer)
+    db.session.commit()
+    
+    return jsonify({"message": "Offer created successfully", "offer_id": new_offer.id}), 201
 
-@app.route('/email-dashboard/stop', methods=['POST'])
-def stop_email_dashboard():
-    """API endpoint to stop the Streamlit dashboard."""
-    stop_streamlit_process()
-    return jsonify({
-        "success": True,
-        "message": "Email dashboard stopped successfully"
-    })
+@app.route('/offers/process', methods=['POST'])
+def manual_process_offers():
+    """Manually trigger offer processing"""
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    process_job_offers()
+    return jsonify({"message": "Offers processed successfully"}), 200
 
-@app.route('/email-dashboard/status')
-def email_dashboard_status():
-    """Check the status of the Streamlit dashboard."""
-    is_running = is_streamlit_running()
-    return jsonify({
-        "running": is_running,
-        "url": f"http://localhost:{streamlit_port}" if is_running else None
-    })
+@app.route('/offers/dashboard')
+def offers_dashboard():
+    """Dashboard for job offers"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Get statistics
+    total_offers = JobOffer.query.count()
+    pending_offers = JobOffer.query.filter_by(status='pending').count()
+    accepted_offers = JobOffer.query.filter_by(status='accepted').count()
+    rejected_offers = JobOffer.query.filter_by(status='rejected').count()
+    expired_offers = JobOffer.query.filter_by(status='expired').count()
+    
+    stats = {
+        'total': total_offers,
+        'pending': pending_offers,
+        'accepted': accepted_offers,
+        'rejected': rejected_offers,
+        'expired': expired_offers
+    }
+    
+    return render_template('offers_dashboard.html', stats=stats)
+
+# ==================== EXISTING ROUTES (PRESERVED) ====================
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -187,7 +357,6 @@ def signup():
         name = data.get('name')
         password = data.get('password')
         company_name = data.get('company_name')
-        # Role is now hardcoded to 'u' (applicant) for regular signup
         role = data.get('role') 
 
         if not name or not password:
@@ -197,8 +366,6 @@ def signup():
         if existing_user:
             return jsonify({"message": "Username already exists"}), 409
 
-        # Instantiate User without passing bcrypt_instance explicitly
-        # User model's __init__ will import and use the global `bcrypt`
         new_user = User(name=name, password=password, company_name=company_name, role=role)
         db.session.add(new_user)
         try:
@@ -220,16 +387,13 @@ def login():
             return jsonify({"message": "Name and password are required"}), 400
 
         user = User.query.filter_by(name=name).first()
-        # Check password without passing bcrypt_instance explicitly
         if not user or not user.check_password(password):
             return jsonify({"message": "Invalid username or password"}), 401
 
-        # Successful login: Store user info in Flask session
         session['user_id'] = user.id
         session['username'] = user.name
-        session['role'] = user.role # Store role in session
+        session['role'] = user.role
 
-        # Return user data for client-side localStorage storage
         return jsonify({
             "message": "Login successful!",
             "name": user.name,
@@ -240,104 +404,12 @@ def login():
 
 @app.route('/logout', methods=['GET'])
 def logout():
-    session.clear() # Clear Flask session
-    return redirect(url_for('index')) # Redirect to home page
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    session.clear()
+    return redirect(url_for('index'))
 
 
 
 # ==================== EXISTING ROUTES (KEEP ALL YOUR ORIGINAL ROUTES) ====================
-
-@app.route('/assessment/<int:job_id>/<int:application_id>', methods=['GET'])
-def assessment_page_route(job_id, application_id):
-    job = db.session.get(Job, job_id)
-    application = db.session.get(Application, application_id)
-    if not job or not application or application.job_id != job.id:
-        return render_template('main_page.html', message="Assessment Error."), 400
-    return render_template('assessment_page.html')
-
-@app.route('/applications', methods=['POST'])
-def get_filtered_applications():
-    """
-    Retrieves job applications filtered by job title (name) and job responsibilities (role).
-    Expects a POST request with JSON body containing 'name' and 'role'.
-    """
-    # Basic server-side authentication check
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized access. Please log in."}), 403
-
-    data = request.get_json()
-    name_filter = data.get('name')
-    role_filter = data.get('role')
-    print(f"Filtering by Name: {name_filter}, Role: {role_filter}")
-
-    if not name_filter and not role_filter:
-        return jsonify({"error": "Missing 'name' or 'role' in request body."}), 400
-
-    # Start with a base query on Application
-    applications_query = Application.query
-
-    # Conditionally join Job table only once if either filter is present
-    # and then apply the filters
-    if name_filter or role_filter:
-        applications_query = applications_query.join(Job)
-
-    # Apply title filter if provided
-    if name_filter:
-        applications_query = applications_query.filter(Job.title.ilike(f'%{name_filter}%'))
-
-    # Apply responsibilities filter if provided
-    if role_filter:
-        applications_query = applications_query.filter(Job.responsibilities.ilike(f'%{role_filter}%'))
-
-    applications = applications_query.all()
-
-    filtered_applications_list = []
-    for app_obj in applications:
-        job = db.session.get(Job, app_obj.job_id) # Re-fetch job if not eagerly loaded or for consistency
-        if not job:
-            continue
-
-        job_title = job.title if job else ""
-        job_responsibilities = job.responsibilities if job else ""
-
-        # The filtering is now entirely handled by the SQL query,
-        # these Python-side checks are no longer necessary for correctness,
-        # but don't hurt if you want to keep them for debugging or extra validation.
-        # However, they might be slightly misleading now that the DB does the heavy lifting.
-        # For clarity, you could remove them.
-
-        filtered_applications_list.append({
-            'id': app_obj.id,
-            'job_id': app_obj.job_id,
-            'job_title': job_title,
-            'applicant_name': app_obj.applicant_name,
-            'applicant_email': app_obj.applicant_email,
-            'applicant_age': app_obj.applicant_age,
-            'applicant_experience': app_obj.applicant_experience,
-            'education': app_obj.education,
-            'applied_at': app_obj.applied_at.isoformat(),
-            'resume_path': app_obj.resume_path,
-            'eligibility_score': app_obj.eligibility_score,
-            'assessment_score': app_obj.assessment_score,
-            'status': app_obj.status
-        })
-
-    return jsonify(filtered_applications_list), 200
 
 
 @app.route('/applications/<int:app_id>/status', methods=['PUT'])
@@ -512,6 +584,71 @@ def dashboard():
     
     return render_template("dashboard.html", feedback=feedback_data)
 
+
+
+# [Include all other existing routes from the second file...]
+# (Assessment, applications, schedule, feedback, dashboard routes remain the same)
+
+@app.route('/assessment/<int:job_id>/<int:application_id>', methods=['GET'])
+def assessment_page_route(job_id, application_id):
+    job = db.session.get(Job, job_id)
+    application = db.session.get(Application, application_id)
+    if not job or not application or application.job_id != job.id:
+        return render_template('main_page.html', message="Assessment Error."), 400
+    return render_template('assessment_page.html')
+
+@app.route('/applications', methods=['POST'])
+def get_filtered_applications():
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized access. Please log in."}), 403
+
+    data = request.get_json()
+    name_filter = data.get('name')
+    role_filter = data.get('role')
+    
+    print(name_filter)
+    print(role_filter)
+    
+    if not name_filter and not role_filter:
+        return jsonify({"error": "Missing 'name' or 'role' in request body."}), 400
+
+    applications_query = Application.query
+
+    if name_filter or role_filter:
+        applications_query = applications_query.join(Job)
+
+    if name_filter:
+        applications_query = applications_query.filter(Job.title.ilike(f'%{name_filter}%'))
+
+    if role_filter:
+        applications_query = applications_query.filter(Job.responsibilities.ilike(f'%{role_filter}%'))
+
+    applications = applications_query.all()
+
+    filtered_applications_list = []
+    for app_obj in applications:
+        job = db.session.get(Job, app_obj.job_id)
+        if not job:
+            continue
+
+        filtered_applications_list.append({
+            'id': app_obj.id,
+            'job_id': app_obj.job_id,
+            'job_title': job.title,
+            'applicant_name': app_obj.applicant_name,
+            'applicant_email': app_obj.applicant_email,
+            'applicant_age': app_obj.applicant_age,
+            'applicant_experience': app_obj.applicant_experience,
+            'education': app_obj.education,
+            'applied_at': app_obj.applied_at.isoformat(),
+            'resume_path': app_obj.resume_path,
+            'eligibility_score': app_obj.eligibility_score,
+            'assessment_score': app_obj.assessment_score,
+            'status': app_obj.status
+        })
+
+    return jsonify(filtered_applications_list), 200
+
 # ==================== BACKGROUND TASKS ====================
 
 def send_feedback_rejections():
@@ -568,7 +705,6 @@ def send_reminders():
             try:
                 interview_obj = db.session.get(InterviewSchedule, interview.id)
 
-                # 1-day reminder
                 if time_diff <= timedelta(days=1) and time_diff > timedelta(hours=23):
                     if not interview_obj.reminder_1day_sent:
                         send_reminder_email(interview.applicant_email, interview_time, interview.applicant_name,
@@ -581,7 +717,6 @@ def send_reminders():
                         db.session.commit()
                         print(f"✅ Sent 1-day reminder for {interview.applicant_name}")
 
-                # 1-hour reminder
                 elif time_diff <= timedelta(hours=1) and time_diff > timedelta(minutes=30):
                     if not interview_obj.reminder_1hour_sent:
                         send_reminder_email(interview.applicant_email, interview_time, interview.applicant_name,
@@ -601,15 +736,15 @@ def send_reminders():
 # Schedule background tasks
 schedule.every(2).minutes.do(send_feedback_rejections)
 schedule.every(2).minutes.do(send_reminders)
+schedule.every(5).minutes.do(process_job_offers)  # Process offers every 5 minutes
 
 def run_scheduler():
     while True:
         schedule.run_pending()
         time.sleep(60)
 
+# Start background scheduler
 threading.Thread(target=run_scheduler, daemon=True).start()
-
-# ==================== MAIN ====================
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

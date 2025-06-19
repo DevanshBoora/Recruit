@@ -1,0 +1,11 @@
+<!-- email_logs.html -->
+{% extends 'base.html' %}
+{% block title %}Email Logs{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Email Communication History</h2>
+<ul class="list-disc ml-6">
+  {% for log in email_logs %}
+  <li>{{ log.timestamp }} - {{ log.email }} - {{ log.subject }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}
