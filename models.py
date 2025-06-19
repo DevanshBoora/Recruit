@@ -49,10 +49,8 @@ class Application(db.Model):
     applicant_experience = db.Column(db.Float)
     education = db.Column(db.String(255))
     resume_path = db.Column(db.String(500))
-    resume_plain_text=db.Column(db.String(1024))
+    resume_plain_text = db.Column(db.Text)
     applied_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # These belong here (moved from Message class)
     eligibility_score = db.Column(db.Float)
     assessment_score = db.Column(db.Float)
     status = db.Column(db.String(50), default="Pending")

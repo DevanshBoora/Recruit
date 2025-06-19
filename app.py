@@ -35,9 +35,6 @@ app = Flask(__name__)
 CORS(app)
 register_blueprints(app)
 bcrypt = Bcrypt(app)
-# Global variables for Streamlit process management
-streamlit_process = None
-streamlit_port = 8501
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -57,128 +54,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is not set.")
 genai.configure(api_key=GEMINI_API_KEY)
-
-# ==================== STREAMLIT PROCESS MANAGEMENT ====================
-
-def start_streamlit_process():
-    """Start the Streamlit email automation dashboard as a subprocess."""
-    global streamlit_process
-    
-    if streamlit_process and streamlit_process.poll() is None:
-        logging.info("Streamlit process is already running")
-        return True
-    
-    try:
-        # Path to your streamlit app file
-        streamlit_app_path = os.path.join(os.path.dirname(__file__), 'streamlit_app.py')
-        
-        if not os.path.exists(streamlit_app_path):
-            logging.error(f"Streamlit app file not found: {streamlit_app_path}")
-            return False
-        
-        # Command to run Streamlit
-        cmd = [
-            'streamlit', 'run', streamlit_app_path,
-            '--server.port', str(streamlit_port),
-            '--server.address', 'localhost',
-            '--server.headless', 'true',
-            '--browser.gatherUsageStats', 'false'
-        ]
-        
-        # Start the process
-        streamlit_process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            preexec_fn=os.setsid if os.name != 'nt' else None
-        )
-        
-        logging.info(f"Streamlit process started with PID: {streamlit_process.pid}")
-        return True
-        
-    except Exception as e:
-        logging.error(f"Failed to start Streamlit process: {e}")
-        return False
-
-def stop_streamlit_process():
-    """Stop the Streamlit process."""
-    global streamlit_process
-    
-    if streamlit_process and streamlit_process.poll() is None:
-        try:
-            if os.name == 'nt':  # Windows
-                streamlit_process.terminate()
-            else:  # Unix/Linux
-                os.killpg(os.getpgid(streamlit_process.pid), signal.SIGTERM)
-            
-            streamlit_process.wait(timeout=10)
-            logging.info("Streamlit process stopped successfully")
-        except subprocess.TimeoutExpired:
-            if os.name == 'nt':
-                streamlit_process.kill()
-            else:
-                os.killpg(os.getpgid(streamlit_process.pid), signal.SIGKILL)
-            logging.warning("Streamlit process force killed")
-        except Exception as e:
-            logging.error(f"Error stopping Streamlit process: {e}")
-    
-    streamlit_process = None
-
-def is_streamlit_running():
-    """Check if Streamlit process is running."""
-    global streamlit_process
-    return streamlit_process and streamlit_process.poll() is None
-
-def cleanup_processes():
-    """Clean up processes when the application shuts down."""
-    stop_streamlit_process()
-
-atexit.register(cleanup_processes)
-
-# ==================== STREAMLIT INTEGRATION ROUTES ====================
-
-@app.route('/email-dashboard')
-def email_dashboard():
-    """Route to access the Streamlit email automation dashboard."""
-    if not is_streamlit_running():
-        if start_streamlit_process(): 
-            # Wait a moment for Streamlit to start
-            time.sleep(3)
-        else:
-            flash("Failed to start email automation dashboard", "error")
-            return redirect('/') 
-    
-    # Redirect to the Streamlit app
-    streamlit_url = f"http://localhost:{streamlit_port}"
-    return render_template('streamlit_redirect.html', streamlit_url=streamlit_url)
-
-@app.route('/email-dashboard/start', methods=['POST'])
-def start_email_dashboard():
-    """API endpoint to start the Streamlit dashboard."""
-    success = start_streamlit_process()
-    return jsonify({
-        "success": success,
-        "message": "Email dashboard started successfully" if success else "Failed to start email dashboard",
-        "url": f"http://localhost:{streamlit_port}" if success else None
-    })
-
-@app.route('/email-dashboard/stop', methods=['POST'])
-def stop_email_dashboard():
-    """API endpoint to stop the Streamlit dashboard."""
-    stop_streamlit_process()
-    return jsonify({
-        "success": True,
-        "message": "Email dashboard stopped successfully"
-    })
-
-@app.route('/email-dashboard/status')
-def email_dashboard_status():
-    """Check the status of the Streamlit dashboard."""
-    is_running = is_streamlit_running()
-    return jsonify({
-        "running": is_running,
-        "url": f"http://localhost:{streamlit_port}" if is_running else None
-    })
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
