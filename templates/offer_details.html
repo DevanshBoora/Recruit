@@ -1,0 +1,13 @@
+<!-- offer_details.html -->
+{% extends 'base.html' %}
+{% block title %}Offer Details{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Offer Details</h2>
+<p><strong>Candidate:</strong> {{ offer.applicant_name }}</p>
+<p><strong>Email:</strong> {{ offer.applicant_email }}</p>
+<p><strong>Job Title:</strong> {{ offer.job_title }}</p>
+<p><strong>Status:</strong> {{ offer.status }}</p>
+<p><strong>Sent:</strong> {{ 'Yes' if offer.offer_sent else 'No' }}</p>
+<p><strong>Sent Time:</strong> {{ offer.offer_sent_time or 'N/A' }}</p>
+<p><strong>Created At:</strong> {{ offer.created_at }}</p>
+{% endblock %}

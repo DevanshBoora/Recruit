@@ -2,8 +2,9 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
-db = SQLAlchemy()
 import bcrypt
+
+db = SQLAlchemy()
 
 class Job(db.Model):
     __tablename__ = 'job'
@@ -35,12 +36,12 @@ class Job(db.Model):
             'min_assesment_score': self.min_assesment_score,
             'posted_at': self.posted_at.isoformat()
         }
+
     def __repr__(self):
         return f'<Job {self.title}>'
 
 class Application(db.Model):
     __tablename__ = 'application'
-
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
     applicant_name = db.Column(db.String(255), nullable=False)
@@ -73,6 +74,7 @@ class Application(db.Model):
             'assessment_score': self.assessment_score,
             'status': self.status,
         }
+
     def __repr__(self):
         return f'<Application {self.applicant_name} for Job {self.job_id}>'
 
@@ -88,8 +90,8 @@ class InterviewSchedule(db.Model):
     address = db.Column(db.String(1000))
     reminder_1day_sent = db.Column(db.Boolean, default=False)
     reminder_1hour_sent = db.Column(db.Boolean, default=False)
-    candidate = db.relationship('Application', backref=db.backref('interview_schedule', lazy=True))
 
+    candidate = db.relationship('Application', backref=db.backref('interview_schedule', lazy=True))
 
 class Feedback(db.Model):
     __tablename__ = 'feedback'
@@ -101,8 +103,8 @@ class Feedback(db.Model):
     technical_score = db.Column(db.Float)
     problem_solving_score = db.Column(db.Float)
     rejection_email_sent = db.Column(db.Boolean, default=False)
-    candidate = db.relationship('Application', backref=db.backref('feedback', lazy=True))
 
+    candidate = db.relationship('Application', backref=db.backref('feedback', lazy=True))
 
 class AcceptedCandidate(db.Model):
     __tablename__ = 'accepted_candidates'
@@ -110,15 +112,25 @@ class AcceptedCandidate(db.Model):
     candidate_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=False)
     applicant_name = db.Column(db.String(255), nullable=False)
     applicant_email = db.Column(db.String(255), nullable=False)
+
     candidate = db.relationship('Application', backref=db.backref('accepted_entry', lazy=True))
 
+class JobOffer(db.Model):
+    __tablename__ = 'job_offers'
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=False)
+    status = db.Column(db.String(50), default='pending')
+    offer_sent = db.Column(db.Boolean, default=False)
+    offer_sent_time = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    application = db.relationship('Application', backref=db.backref('job_offer', lazy=True))
 
 class Conversation(db.Model):
     __tablename__ = 'conversations'
     id = db.Column(db.Integer, primary_key=True)
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # Renamed 'metadata' to 'conversation_info' to avoid conflict
-    conversation_info = db.Column(db.Text, nullable=True) # Storing JSON string
+    conversation_info = db.Column(db.Text, nullable=True)
 
     messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
 
@@ -129,7 +141,7 @@ class Conversation(db.Model):
         return {
             'id': self.id,
             'started_at': self.started_at.isoformat(),
-            'conversation_info': json.loads(self.conversation_info) if self.conversation_info else None, # Use new name here
+            'conversation_info': json.loads(self.conversation_info) if self.conversation_info else None,
             'messages': [msg.to_dict() for msg in self.messages]
         }
 
@@ -137,7 +149,7 @@ class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
-    sender = db.Column(db.String(50), nullable=False) # 'user' or 'bot'
+    sender = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -153,24 +165,22 @@ class Message(db.Model):
             'timestamp': self.timestamp.isoformat()
         }
 
-
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False) # Changed to 'name'
+    name = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    company_name = db.Column(db.String(255), nullable=True) # Can be null for applicants
-    role = db.Column(db.String(50), nullable=False, default='u') # 'a' for admin, 'u' for regular user/applicant
+    company_name = db.Column(db.String(255), nullable=True)
+    role = db.Column(db.String(50), nullable=False, default='u')
 
     def __init__(self, name, password, company_name=None, role='u'):
         self.name = name
-        self.password_hash =bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         self.company_name = company_name
         self.role = role
 
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
-
 
     def to_dict(self):
         return {
