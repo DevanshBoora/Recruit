@@ -15,7 +15,7 @@
             --button-bg-dark: #007bff;
             --button-hover-dark: #0056b3;
             --border-color-dark: #444;
-            --shadow-color-dark: rgba(0, 0, 0, 0.51);
+            --shadow-color-dark: rgba(0, 0, 0, 0.5);
             --success-color: #28a745;
             --error-color: #dc3545;
             /* NEW: Colors for assessment builder */
@@ -297,6 +297,16 @@
         }
 
         /* --- CHAT OVERLAY STYLES --- */
+        #chatOverlayToggle, #chatOverlay {
+            /* Hide by default until JS determines role */
+            display: none;
+        }
+
+        #chatOverlayToggle.visible, #chatOverlay.visible {
+             display: flex; /* Or whatever display property it should have */
+        }
+
+
         #chatOverlayToggle {
             position: fixed;
             bottom: 20px;
@@ -308,8 +318,7 @@
             width: 60px;
             height: 60px;
             font-size: 2.2em;
-            display: flex;
-            justify-content: center;
+            justify-content: center; /* Use flex properties here because it's set to display: flex later */
             align-items: center;
             cursor: pointer;
             box-shadow: 0 4px 15px var(--shadow-color-dark);
@@ -332,7 +341,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 20px var(--shadow-color-dark);
             border: 1px solid var(--border-color-dark);
-            display: flex; /* Make it a flex container */
+            display: flex; /* Make it a flex container (overrides display:none when .visible is added) */
             flex-direction: column; /* Arrange children vertically */
             overflow: hidden; /* Important: Prevents content from overflowing the *entire* chat window */
             z-index: 1000;
@@ -359,7 +368,7 @@
             font-weight: bold;
             text-align: center;
             flex-shrink: 0; /* Header should not shrink */
-            height: 45px; 
+            height: 45px;
             line-height: 25px; /* Vertically center text */
             cursor: grab;
             box-sizing: border-box;
@@ -409,7 +418,7 @@
             border-bottom-left-radius: 10px;
             border-bottom-right-radius: 10px;
             flex-shrink: 0; /* Input area should not shrink */
-            height: 60px; 
+            height: 60px;
             align-items: center;
             box-sizing: border-box;
         }
@@ -497,40 +506,19 @@
             align-self: center;
         }
 
-        /* Page-specific navigation styles */
-        .page-nav {
-            background-color: var(--surface-color-dark);
-            border: 1px solid var(--border-color-dark);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: center;
+        /* Class to hide elements that should only be visible for 'admin' roles */
+        .admin-only {
+            display: none;
         }
 
-        .page-nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
+        /* Class to hide login/signup for logged-in users, and show logout */
+        .logged-in-only {
+            display: none;
         }
-
-        .page-nav ul li a {
-            background-color: var(--button-bg-dark);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-            display: inline-block;
+        .logged-out-only {
+            display: none;
         }
-
-        .page-nav ul li a:hover {
-            background-color: var(--button-hover-dark);
-        }
+        
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -542,8 +530,14 @@
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/jobs/job_post.html">Job Postings</a></li>
-                <li><a href="/jobs/post_job.html">Post a Job</a></li>
-                <li><a href="/view_applications.html">View Applications</a></li>
+                <!-- These elements are always rendered but hidden by default via CSS if not admin -->
+                <li class="admin-only"><a href="/jobs/post_job.html">Post a Job</a></li>
+                <li class="admin-only"><a href="/view_applications.html">View Applications</a></li>
+                
+                <!-- Login/Signup/Logout links managed by JS -->
+                <li id="loginLink" class="logged-out-only"><a href="/login">Login</a></li>
+                <li id="signupLink" class="logged-out-only"><a href="/signup">Sign Up</a></li>
+                <li id="logoutLink" class="logged-in-only"><a href="/logout">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -552,9 +546,10 @@
         {% block content %}{% endblock %}
     </main>
 
-    <button id="chatOverlayToggle">💬</button>
-    <div id="chatOverlay">
-        <div class="chat-overlay-header" id="chatOverlayHeader">Spryle ChatBot</div>
+    <!-- Chat Overlay elements are always rendered but hidden by default via CSS if not admin -->
+    <button id="chatOverlayToggle" class="admin-only">💬</button>
+    <div id="chatOverlay" class="admin-only">
+        <div class="chat-overlay-header" id="chatOverlayHeader">Spryple ChatBot</div>
         <div class="chat-overlay-messages" id="chatOverlayMessages">
             <p class="placeholder-text">Loading chat history...</p>
         </div>
@@ -563,7 +558,9 @@
             <button id="sendOverlayMessageBtn">Send</button>
         </div>
     </div>
+
     <script>
+        // Global function for messages
         function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
             const msgContainer = document.getElementById('globalMessageContainer');
             msgContainer.textContent = message;
@@ -589,6 +586,50 @@
             }
         }
 
+        // --- AUTHENTICATION UI LOGIC ---
+        function updateAuthNav() {
+            const userName = localStorage.getItem('name');
+            const userRole = localStorage.getItem('role');
+
+            const loginLink = document.getElementById('loginLink');
+            const signupLink = document.getElementById('signupLink');
+            const logoutLink = document.getElementById('logoutLink');
+
+            // Hide all by default for safety or manage visibility based on state
+            if (loginLink) loginLink.style.display = 'none';
+            if (signupLink) signupLink.style.display = 'none';
+            if (logoutLink) logoutLink.style.display = 'none';
+
+            if (userName) { // User is logged in
+                if (logoutLink) logoutLink.style.display = 'list-item'; // Show logout
+            } else { // User is logged out
+                if (loginLink) loginLink.style.display = 'list-item'; // Show login
+                if (signupLink) signupLink.style.display = 'list-item'; // Show signup
+            }
+
+            // Also manage admin-only links and chat overlay based on role
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                if (userRole === 'a') {
+                    if (el.tagName === 'LI') {
+                        el.style.display = 'list-item';
+                    } else if (el.id === 'chatOverlayToggle' || el.id === 'chatOverlay') {
+                        el.style.display = 'flex';
+                        // For the chat overlay div, ensure its initial state doesn't conflict with transition
+                        if (el.id === 'chatOverlay') {
+                            el.style.opacity = '0'; // Keep it hidden until 'open' class is applied later
+                            el.style.visibility = 'hidden';
+                            el.style.transform = 'translateY(100%) scale(0.8)';
+                        }
+                    } else {
+                        el.style.display = 'block'; // General fallback
+                    }
+                } else {
+                    el.style.display = 'none'; // Hide for non-admins
+                }
+            });
+        }
+
         // --- CHAT OVERLAY JAVASCRIPT ---
         const chatOverlayToggle = document.getElementById('chatOverlayToggle');
         const chatOverlay = document.getElementById('chatOverlay');
@@ -608,6 +649,7 @@
             return Math.min(Math.max(value, min), max);
         }
 
+        // Only add drag listeners if chatOverlayHeader exists (i.e., if role is admin and element is visible)
         if (chatOverlayHeader) {
             chatOverlayHeader.addEventListener('mousedown', (e) => {
                 isDragging = true;
@@ -644,20 +686,7 @@
             });
         }
 
-        // --- Toggle Chat Overlay ---
-        chatOverlayToggle.addEventListener('click', () => {
-            isChatOpen = !isChatOpen;
-            if (isChatOpen) {
-                chatOverlay.classList.add('open');
-                sessionStorage.setItem('isChatOverlayOpen', 'true');
-                chatOverlayInput.focus();
-            } else {
-                chatOverlay.classList.remove('open');
-                sessionStorage.setItem('isChatOverlayOpen', 'false');
-            }
-        });
-
-        // --- Add Message to Chat (Overlay Version) - FIXED ---
+        // --- Add Message to Chat (Overlay Version) ---
         function addOverlayMessageToChat(message) {
             const messageBubble = document.createElement('div');
             messageBubble.className = `message-bubble ${message.sender}`;
@@ -670,7 +699,7 @@
 
             chatOverlayMessages.appendChild(messageBubble);
             chatOverlayMessages.appendChild(timestampDiv);
-            
+
             // Auto-scroll to bottom after adding message
             setTimeout(() => {
                 chatOverlayMessages.scrollTop = chatOverlayMessages.scrollHeight;
@@ -760,50 +789,99 @@
         }
 
         // --- Overlay Event Listeners ---
-        sendOverlayMessageBtn.addEventListener('click', sendOverlayMessage);
-        chatOverlayInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendOverlayMessage();
-            }
-        });
+        // Only add listeners if the elements exist (i.e., if role is admin and they are rendered and visible)
+        if (sendOverlayMessageBtn) {
+            sendOverlayMessageBtn.addEventListener('click', sendOverlayMessage);
+        }
+        if (chatOverlayInput) {
+            chatOverlayInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendOverlayMessage();
+                }
+            });
+        }
+        if (chatOverlayToggle) {
+            chatOverlayToggle.addEventListener('click', () => {
+                isChatOpen = !isChatOpen;
+                if (isChatOpen) {
+                    chatOverlay.classList.add('open');
+                    sessionStorage.setItem('isChatOverlayOpen', 'true');
+                    // Only focus if input exists and chat is becoming open
+                    if (chatOverlayInput) {
+                        chatOverlayInput.focus();
+                    }
+                } else {
+                    chatOverlay.classList.remove('open');
+                    sessionStorage.setItem('isChatOverlayOpen', 'false');
+                }
+            });
+        }
 
-        // --- Initialize Chat Overlay on Page Load ---
+        // --- Initialize UI Elements based on Role and Chat State on Page Load ---
         document.addEventListener('DOMContentLoaded', () => {
-            const lastActiveConvId = sessionStorage.getItem('lastActiveConversationId');
-            const wasChatOpen = sessionStorage.getItem('isChatOverlayOpen') === 'true';
+            // Update navigation and admin specific elements visibility
+            updateAuthNav();
 
-            const savedLeft = sessionStorage.getItem('chatOverlayLeft');
-            const savedTop = sessionStorage.getItem('chatOverlayTop');
-            const savedRight = sessionStorage.getItem('chatOverlayRight');
-            const savedBottom = sessionStorage.getItem('chatOverlayBottom');
+            // Only attempt to initialize chat if the user is an admin AND the chatOverlay element is present in the DOM
+            const userRole = localStorage.getItem('role');
+            if (userRole === 'a' && chatOverlay) {
+                const lastActiveConvId = sessionStorage.getItem('lastActiveConversationId');
+                const wasChatOpen = sessionStorage.getItem('isChatOverlayOpen') === 'true';
 
-            if (savedLeft && savedTop) {
-                chatOverlay.style.left = savedLeft;
-                chatOverlay.style.top = savedTop;
-                chatOverlay.style.right = 'auto';
-                chatOverlay.style.bottom = 'auto';
-                chatOverlay.style.transform = 'none';
-            } else if (savedRight && savedBottom) {
-                chatOverlay.style.right = savedRight;
-                chatOverlay.style.bottom = savedBottom;
-                chatOverlay.style.transform = 'none';
-            } else {
-                chatOverlay.style.right = '20px';
-                chatOverlay.style.bottom = '90px';
+                const savedLeft = sessionStorage.getItem('chatOverlayLeft');
+                const savedTop = sessionStorage.getItem('chatOverlayTop');
+                const savedRight = sessionStorage.getItem('chatOverlayRight');
+                const savedBottom = sessionStorage.getItem('chatOverlayBottom');
+
+                // Apply saved position if available, otherwise default to right/bottom
+                if (savedLeft && savedTop) {
+                    chatOverlay.style.left = savedLeft;
+                    chatOverlay.style.top = savedTop;
+                    chatOverlay.style.right = 'auto';
+                    chatOverlay.style.bottom = 'auto';
+                    chatOverlay.style.transform = 'none'; // Clear transform for absolute positioning
+                } else if (savedRight && savedBottom) {
+                    chatOverlay.style.right = savedRight;
+                    chatOverlay.style.bottom = savedBottom;
+                    chatOverlay.style.left = 'auto';
+                    chatOverlay.style.top = 'auto';
+                    chatOverlay.style.transform = 'none'; // Clear transform for right/bottom positioning
+                } else {
+                    // Default position if no saved position (initial position for animation)
+                    chatOverlay.style.right = '20px';
+                    chatOverlay.style.bottom = '90px';
+                    // Re-apply the transform for initial closed state if no saved position,
+                    // to allow the 'open' class transition to work.
+                    chatOverlay.style.transform = 'translateY(100%) scale(0.8)';
+                }
+
+
+                if (lastActiveConvId) {
+                    loadOverlayConversation(parseInt(lastActiveConvId));
+                } else {
+                    chatOverlayMessages.innerHTML = '<p class="placeholder-text">How can I help you today?</p>';
+                }
+
+                if (wasChatOpen) {
+                    isChatOpen = true;
+                    chatOverlay.classList.add('open');
+                    if (chatOverlayInput) {
+                        chatOverlayInput.focus();
+                    }
+                } else {
+                    chatOverlay.classList.remove('open');
+                }
             }
 
-            if (lastActiveConvId) {
-                loadOverlayConversation(parseInt(lastActiveConvId));
-            } else {
-                chatOverlayMessages.innerHTML = '<p class="placeholder-text">How can I help you today?</p>';
-            }
-
-            if (wasChatOpen) {
-                isChatOpen = true;
-                chatOverlay.classList.add('open');
-                chatOverlayInput.focus();
-            } else {
-                chatOverlay.classList.remove('open');
+            // Logout link event listener (added here for better encapsulation)
+            const logoutLinkElement = document.getElementById('logoutLink');
+            if (logoutLinkElement) {
+                logoutLinkElement.addEventListener('click', (event) => {
+                    event.preventDefault(); // Prevent default link behavior
+                    localStorage.clear(); // Clear all localStorage data (name, company_name, role)
+                    sessionStorage.clear(); // Clear chat history from session storage
+                    window.location.href = '/logout'; // Redirect to Flask logout route to clear server session
+                });
             }
         });
     </script>
