@@ -3,115 +3,136 @@
 {% block title %}DevOrks - Job Postings{% endblock %}
 
 {% block head_extra %}
-  <style>
+<style>
     /* Existing CSS styles */
     .job-listing-wrapper {
-      max-width: 900px; /* Wider for job listings */
-      padding: 30px;
-      margin: 40px auto;
-      background-color: var(--surface-color-dark);
-      border-radius: 10px;
-      box-shadow: 0 4px 15px var(--shadow-color-dark);
-      border: 1px solid var(--border-color-dark);
+        max-width: 900px; /* Wider for job listings */
+        padding: 30px;
+        margin: 40px auto;
+        background-color: var(--surface-color-dark);
+        border-radius: 10px;
+        box-shadow: 0 4px 15px var(--shadow-color-dark);
+        border: 1px solid var(--border-color-dark);
     }
+
     .job-listing-wrapper h1 {
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 2.8em;
-      color: var(--accent-color);
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.8em;
+        color: var(--accent-color);
     }
+
     .job-card {
-      background-color: var(--surface-color-dark);
-      border: 1px solid var(--border-color-dark);
-      padding: 20px;
-      margin-bottom: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px var(--shadow-color-dark);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background-color: var(--surface-color-dark);
+        border: 1px solid var(--border-color-dark);
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px var(--shadow-color-dark);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
     .job-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 15px var(--shadow-color-dark);
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px var(--shadow-color-dark);
     }
+
     .job-card h2 {
-      color: var(--accent-color);
-      margin-top: 0;
-      margin-bottom: 15px;
-      font-size: 2em;
+        color: var(--accent-color);
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 2em;
     }
+
     .job-card p {
-      color: var(--text-color-light);
-      margin-bottom: 8px;
+        color: var(--text-color-light);
+        margin-bottom: 8px;
     }
+
     .job-card p strong {
-      color: var(--text-color-light);
+        color: var(--text-color-light);
     }
-    .job-card .description, .job-card .qualifications, .job-card .responsibilities {
-      font-size: 0.95em;
-      color: var(--text-color-faded);
-      line-height: 1.6;
-      margin-top: 15px;
-      margin-bottom: 15px;
-      padding-left: 15px;
-      border-left: 3px solid var(--accent-color);
+
+    .job-card .description,
+    .job-card .qualifications,
+    .job-card .responsibilities {
+        font-size: 0.95em;
+        color: var(--text-color-faded);
+        line-height: 1.6;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        padding-left: 15px;
+        border-left: 3px solid var(--accent-color);
     }
+
     .job-card .job-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
     }
+
     .job-card .job-meta p {
-      background-color: #3a3a3a;
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 0.9em;
-      color: var(--text-color-light);
+        background-color: #3a3a3a;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 0.9em;
+        color: var(--text-color-light);
     }
+
     .job-card .job-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-      justify-content: flex-end; /* Align buttons to the right */
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: flex-end; /* Align buttons to the right */
     }
+
     .job-card .btn {
-      padding: 10px 20px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-      cursor: pointer;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+        cursor: pointer;
     }
+
     .job-card .btn-primary {
-      background-color: var(--button-bg-dark);
-      color: white;
-      border: none;
+        background-color: var(--button-bg-dark);
+        color: white;
+        border: none;
     }
+
     .job-card .btn-primary:hover {
-      background-color: var(--button-hover-dark);
+        background-color: var(--button-hover-dark);
     }
+
     .job-card .btn-secondary {
-      background-color: #6c757d;
-      color: white;
-      border: none;
+        background-color: #6c757d;
+        color: white;
+        border: none;
     }
+
     .job-card .btn-secondary:hover {
-      background-color: #5a6268;
+        background-color: #5a6268;
     }
+
     .job-card .btn-danger {
-      background-color: #dc3545;
-      color: white;
-      border: none;
+        background-color: #dc3545;
+        color: white;
+        border: none;
     }
+
     .job-card .btn-danger:hover {
-      background-color: #c82333;
+        background-color: #c82333;
     }
+
     #noJobsMsg {
-      text-align: center;
-      color: var(--text-color-faded);
-      margin-top: 30px;
-      font-size: 1.2em;
+        text-align: center;
+        color: var(--text-color-faded);
+        margin-top: 30px;
+        font-size: 1.2em;
     }
+
     .loading-message {
         text-align: center;
         color: var(--text-color-faded);
@@ -120,320 +141,365 @@
     }
 
     .filter-bar {
-    display: flex;
-    flex-wrap: wrap; /* Allows items to wrap naturally */
-    gap: 15px 25px; /* Vertical gap, Horizontal gap (more space horizontally) */
-    margin-bottom: 30px;
-    padding: 20px 25px; /* Slightly more horizontal padding */
-    background-color: var(--background-color-dark);
-    border-radius: 10px; /* Slightly more rounded */
-    box-shadow: 0 4px 15px var(--shadow-color-dark); /* More pronounced shadow */
-    align-items: flex-end; /* Aligns items at the bottom */
-    border: 1px solid var(--border-color-dark); /* Add a subtle border */
-  }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    flex: 1; /* Allow groups to grow and shrink */
-    min-width: 160px; /* Ensure inputs don't get too small */
-  }
-
-  .filter-bar label {
-    color: var(--text-color-light);
-    margin-bottom: 7px; /* More space between label and input */
-    font-weight: 500; /* Slightly less bold than 'bold' for softer look */
-    font-size: 0.9em; /* Slightly smaller for precision */
-    text-transform: uppercase; /* Subtle uppercase for distinction */
-    letter-spacing: 0.5px; /* Add slight letter spacing */
-  }
-
-  .filter-bar input[type="text"],
-  .filter-bar select {
-    padding: 10px 14px; /* Slightly more padding for a comfortable feel */
-    border-radius: 6px; /* Slightly more rounded inputs */
-    border: 1px solid var(--border-color-dark);
-    background-color: var(--input-bg-dark);
-    color: var(--text-color-light);
-    font-size: 0.95em; /* Slightly smaller font for compactness */
-    width: 100%; /* Ensure they fill their flex container */
-    box-sizing: border-box;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
-  }
-
-  .filter-bar input[type="text"]::placeholder {
-    color: var(--text-color-faded); /* Make placeholder text lighter */
-    opacity: 0.7; /* Make it a bit more subtle */
-  }
-
-  .filter-bar input[type="text"]:focus,
-  .filter-bar select:focus {
-    border-color: var(--accent-color); /* Highlight border on focus */
-    box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2); /* Subtle glow on focus */
-    outline: none; /* Remove default outline */
-  }
-
-  /* Specific styling for select arrow for a cleaner look */
-  .filter-bar select {
-    -webkit-appearance: none; /* Remove default arrow on WebKit browsers */
-    -moz-appearance: none; /* Remove default arrow on Firefox */
-    appearance: none; /* Remove default arrow */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); /* Custom SVG arrow */
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 14px;
-    padding-right: 30px; /* Make space for the custom arrow */
-  }
-
-  .filter-bar button {
-    padding: 10px 22px; /* Slightly more padding for buttons */
-    border-radius: 6px; /* Match input border-radius */
-    border: none;
-    font-weight: 600; /* Make buttons slightly bolder */
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.1s ease;
-    min-width: 120px; /* Give buttons a consistent minimum width */
-  }
-
-  /* Clear Filters Button */
-  #clearFilters {
-    background-color: var(--button-bg-dark); /* Use your general button background */
-    color: var(--text-color-light); /* Or a lighter grey for the text */
-    border: 1px solid var(--border-color-dark); /* Subtle border for clear button */
-  }
-  #clearFilters:hover {
-    background-color: var(--button-hover-dark);
-    transform: translateY(-1px);
-  }
-
-
-  /* Responsive adjustments for filter bar */
-  @media (max-width: 768px) {
-    .filter-bar {
-      flex-direction: column;
-      align-items: stretch; /* Stretch items to full width */
-      gap: 15px; /* Consistent gap for vertical stacking */
+        display: flex;
+        flex-wrap: wrap; /* Allows items to wrap naturally */
+        gap: 15px 25px; /* Vertical gap, Horizontal gap (more space horizontally) */
+        margin-bottom: 30px;
+        padding: 20px 25px; /* Slightly more horizontal padding */
+        background-color: var(--background-color-dark);
+        border-radius: 10px; /* Slightly more rounded */
+        box-shadow: 0 4px 15px var(--shadow-color-dark); /* More pronounced shadow */
+        align-items: flex-end; /* Aligns items at the bottom */
+        border: 1px solid var(--border-color-dark); /* Add a subtle border */
     }
+
     .filter-group {
-      min-width: unset; /* Remove min-width to allow full stretch */
+        display: flex;
+        flex-direction: column;
+        flex: 1; /* Allow groups to grow and shrink */
+        min-width: 160px; /* Ensure inputs don't get too small */
     }
+
+    .filter-bar label {
+        color: var(--text-color-light);
+        margin-bottom: 7px; /* More space between label and input */
+        font-weight: 500; /* Slightly less bold than 'bold' for softer look */
+        font-size: 0.9em; /* Slightly smaller for precision */
+        text-transform: uppercase; /* Subtle uppercase for distinction */
+        letter-spacing: 0.5px; /* Add slight letter spacing */
+    }
+
     .filter-bar input[type="text"],
-    .filter-bar select,
-    .filter-bar button {
-      width: 100%; /* Make inputs and buttons full width on small screens */
+    .filter-bar select {
+        padding: 10px 14px; /* Slightly more padding for a comfortable feel */
+        border-radius: 6px; /* Slightly more rounded inputs */
+        border: 1px solid var(--border-color-dark);
+        background-color: var(--input-bg-dark);
+        color: var(--text-color-light);
+        font-size: 0.95em; /* Slightly smaller font for compactness */
+        width: 100%; /* Ensure they fill their flex container */
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
     }
-  }
+
+    .filter-bar input[type="text"]::placeholder {
+        color: var(--text-color-faded); /* Make placeholder text lighter */
+        opacity: 0.7; /* Make it a bit more subtle */
+    }
+
+    .filter-bar input[type="text"]:focus,
+    .filter-bar select:focus {
+        border-color: var(--accent-color); /* Highlight border on focus */
+        box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2); /* Subtle glow on focus */
+        outline: none; /* Remove default outline */
+    }
+
+    /* Specific styling for select arrow for a cleaner look */
+    .filter-bar select {
+        -webkit-appearance: none;
+        /* Remove default arrow on WebKit browsers */
+        -moz-appearance: none;
+        /* Remove default arrow on Firefox */
+        appearance: none;
+        /* Remove default arrow */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+        /* Custom SVG arrow */
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 14px;
+        padding-right: 30px; /* Make space for the custom arrow */
+    }
+
+    .filter-bar button {
+        padding: 10px 22px; /* Slightly more padding for buttons */
+        border-radius: 6px; /* Match input border-radius */
+        border: none;
+        font-weight: 600; /* Make buttons slightly bolder */
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+        min-width: 120px; /* Give buttons a consistent minimum width */
+    }
+
+    /* Clear Filters Button */
+    #clearFilters {
+        background-color: var(--button-bg-dark);
+        /* Use your general button background */
+        color: var(--text-color-light);
+        /* Or a lighter grey for the text */
+        border: 1px solid var(--border-color-dark); /* Subtle border for clear button */
+    }
+
+    #clearFilters:hover {
+        background-color: var(--button-hover-dark);
+        transform: translateY(-1px);
+    }
+
+
+    /* Responsive adjustments for filter bar */
+    @media (max-width: 768px) {
+        .filter-bar {
+            flex-direction: column;
+            align-items: stretch; /* Stretch items to full width */
+            gap: 15px; /* Consistent gap for vertical stacking */
+        }
+
+        .filter-group {
+            min-width: unset; /* Remove min-width to allow full stretch */
+        }
+
+        .filter-bar input[type="text"],
+        .filter-bar select,
+        .filter-bar button {
+            width: 100%; /* Make inputs and buttons full width on small screens */
+        }
+    }
+
+    /* CSS to hide admin-only buttons by default */
+    .admin-only-btn {
+        display: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="job-listing-wrapper">
-  <div class="filter-bar">
-    <div class="filter-group">
-      <label for="jobTitleFilter">Job Title</label>
-      <input type="text" id="jobTitleFilter" placeholder="e.g., Software Engineer">
+<div class="job-listing-wrapper">
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="jobTitleFilter">Job Title</label>
+            <input type="text" id="jobTitleFilter" placeholder="e.g., Software Engineer">
+        </div>
+        <div class="filter-group">
+            <label for="jobTypeFilter">Job Type</label>
+            <select id="jobTypeFilter">
+                <option value="">All</option>
+                <option value="Remote">Remote</option>
+                <option value="On-site">On-site</option>
+                <option value="Hybrid">Hybrid</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="locationFilter">Location</label>
+            <input type="text" id="locationFilter" placeholder="e.g., Hyderabad, Mumbai">
+        </div>
+        <div class="filter-group">
+            <label for="experienceFilter">Experience</label>
+            <select id="experienceFilter">
+                <option value="">All</option>
+                <option value="0 Years">Entry Level</option>
+                <option value="1-3 Years">1-3 Years</option>
+                <option value="3-5 Years">3-5 Years</option>
+                <option value="5-7 Years">5-7 Years</option>
+                <option value="7+ Years">7+years</option>
+            </select>
+        </div>
+        <button id="clearFilters">Clear</button>
     </div>
-    <div class="filter-group">
-      <label for="jobTypeFilter">Job Type</label>
-      <select id="jobTypeFilter">
-        <option value="">All</option>
-        <option value="Remote">Remote</option>
-        <option value="On-site">On-site</option>
-        <option value="Hybrid">Hybrid</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="locationFilter">Location</label>
-      <input type="text" id="locationFilter" placeholder="e.g., Hyderabad, Mumbai">
-    </div>
-    <div class="filter-group">
-      <label for="experienceFilter">Experience</label>
-      <select id="experienceFilter">
-        <option value="">All</option>
-        <option value="0 Years">Entry Level</option>
-        <option value="1-3 Years">1-3 Years</option>
-        <option value="3-5 Years">3-5 Years</option>
-        <option value="5-7 Years">5-7 Years</option>
-        <option value="7+ Years">7+years</option>
-      </select>
-    </div>
-    <button id="clearFilters">Clear</button>
-  </div>
 
-  <h1>Available Job Postings</h1>
-  <p id="loadingMessage" class="loading-message">Loading job postings...</p>
-  <div id="jobListings" class="job-listings">
-    <p id="noJobsMsg" style="display: none;">No jobs currently posted.</p>
-  </div>
+    <h1>Available Job Postings</h1>
+    <p id="loadingMessage" class="loading-message">Loading job postings...</p>
+    <div id="jobListings" class="job-listings">
+        <p id="noJobsMsg" style="display: none;">No jobs currently posted.</p>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-  <script>
+<script>
     let allJobs = []; // This will store all jobs fetched from the server
+    const userRole = localStorage.getItem('role'); // Get role once on script load
 
     async function fetchJobs() {
-      const jobListingsDiv = document.getElementById('jobListings');
-      const loadingMsg = document.getElementById('loadingMessage');
-      const noJobsMsg = document.getElementById('noJobsMsg');
+        const jobListingsDiv = document.getElementById('jobListings');
+        const loadingMsg = document.getElementById('loadingMessage');
+        const noJobsMsg = document.getElementById('noJobsMsg');
 
-      if (jobListingsDiv) jobListingsDiv.innerHTML = ''; // Clear existing listings
-      if (loadingMsg) loadingMsg.style.display = 'block'; // Show loading message
-      if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
+        if (jobListingsDiv) jobListingsDiv.innerHTML = ''; // Clear existing listings
+        if (loadingMsg) loadingMsg.style.display = 'block'; // Show loading message
+        if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
 
-      try {
-        const response = await fetch('http://localhost:5000/jobs');
-        const jobs = await response.json();
+        try {
+            const response = await fetch('/jobs');
+            const jobs = await response.json();
 
-        console.log("Fetched jobs:", jobs); // For debugging
-        loadingMsg.style.display = 'none'; // Hide loading message
-        allJobs = jobs; // Store all fetched jobs globally
+            console.log("Fetched jobs:", jobs); // For debugging
+            loadingMsg.style.display = 'none'; // Hide loading message
+            allJobs = jobs; // Store all fetched jobs globally
 
-        displayJobs(allJobs); // Display all jobs initially
+            displayJobs(allJobs); // Display all jobs initially
 
-      } catch (error) {
-        console.error('Error fetching jobs:', error);
-        loadingMsg.style.display = 'none';
-        jobListingsDiv.innerHTML = '<p id="noJobsMsg" class="error-text" style="display: block;">Failed to load jobs. Please try again later.</p>';
-      }
+        } catch (error) {
+            console.error('Error fetching jobs:', error);
+            loadingMsg.style.display = 'none';
+            jobListingsDiv.innerHTML = '<p id="noJobsMsg" class="error-text" style="display: block;">Failed to load jobs. Please try again later.</p>';
+        }
     }
 
     function displayJobs(jobsToDisplay) {
-      const jobListingsDiv = document.getElementById('jobListings');
-      const noJobsMsg = document.getElementById('noJobsMsg');
+        const jobListingsDiv = document.getElementById('jobListings');
+        const noJobsMsg = document.getElementById('noJobsMsg');
 
-      jobListingsDiv.innerHTML = ''; // Clear previous listings
+        jobListingsDiv.innerHTML = ''; // Clear previous listings
 
-      if (jobsToDisplay.length === 0) {
-        if (noJobsMsg) noJobsMsg.style.display = 'block'; // Show no jobs message
-      } else {
-        if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
-        jobsToDisplay.forEach(job => {
-          const jobCard = document.createElement('div');
-          jobCard.className = 'job-card';
-          jobCard.innerHTML = `
-            <h2>${job.title}</h2>
-            <div class="job-meta">
-              <p><strong>Job Type:</strong> ${job.job_type}</p>
-              <p><strong>Location:</strong> ${job.location}</p>
-              <p><strong>Experience:</strong> ${job.required_experience}</p>
-              <p><strong>Assessment Timer:</strong> ${job.assessment_timer} minutes</p>
-              <p><strong>Min. Assessment Score:</strong> ${job.min_assesment_score}</p>
-              <p><strong>Posted On:</strong> ${new Date(job.posted_at).toLocaleDateString()}</p>
-            </div>
-            <h3>Description:</h3>
-            <p class="description">${job.description}</p>
-            <h3>Qualifications:</h3>
-            <p class="qualifications">${job.qualifications}</p>
-            <h3>Responsibilities:</h3>
-            <p class="responsibilities">${job.responsibilities}</p>
-            <div class="job-actions">
-              <button class="btn btn-primary apply-btn" data-job-id="${job.id}" data-job-title="${job.title}">Apply</button>
-              <button class="btn btn-secondary edit-btn" data-job-id="${job.id}">Edit</button>
-              <button class="btn btn-danger delete-btn" data-job-id="${job.id}">Delete</button>
-            </div>
-          `;
-          jobListingsDiv.appendChild(jobCard);
-        });
+        if (jobsToDisplay.length === 0) {
+            if (noJobsMsg) noJobsMsg.style.display = 'block'; // Show no jobs message
+        } else {
+            if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
+            jobsToDisplay.forEach(job => {
+                const jobCard = document.createElement('div');
+                jobCard.className = 'job-card';
+                jobCard.innerHTML = `
+                    <h2>${job.title}</h2>
+                    <div class="job-meta">
+                        <p><strong>Job Type:</strong> ${job.job_type}</p>
+                        <p><strong>Location:</strong> ${job.location}</p>
+                        <p><strong>Experience:</strong> ${job.required_experience}</p>
+                        <p><strong>Assessment Timer:</strong> ${job.assessment_timer} minutes</p>
+                        <p><strong>Min. Assessment Score:</strong> ${job.min_assesment_score}</p>
+                        <p><strong>Posted On:</strong> ${new Date(job.posted_at).toLocaleDateString()}</p>
+                    </div>
+                    <h3>Description:</h3>
+                    <p class="description">${job.description}</p>
+                    <h3>Qualifications:</h3>
+                    <p class="qualifications">${job.qualifications}</p>
+                    <h3>Responsibilities:</h3>
+                    <p class="responsibilities">${job.responsibilities}</p>
+                    <div class="job-actions">
+                        <button class="btn btn-primary apply-btn" data-job-id="${job.id}" data-job-title="${job.title}">Apply</button>
+                        <button class="btn btn-secondary edit-btn admin-only-btn" data-job-id="${job.id}">Edit</button>
+                        <button class="btn btn-danger delete-btn admin-only-btn" data-job-id="${job.id}">Delete</button>
+                    </div>
+                `;
+                jobListingsDiv.appendChild(jobCard);
+            });
 
-        // Add event listeners for edit and delete buttons
-        document.querySelectorAll('.delete-btn').forEach(button => {
-          button.addEventListener('click', function() {
-            const jobId = this.dataset.jobId;
-            if (confirm('Are you sure you want to delete this job posting?')) {
-              deleteJob(jobId);
-            }
-          });
-        });
+            // Get the role from localStorage. This line is intentionally placed here
+            // to ensure it's checked after job cards are created for current rendering.
+            // Note: `userRole` constant declared globally might also be used.
+            const role = localStorage.getItem('role');
 
-        document.querySelectorAll('.edit-btn').forEach(button => {
-          button.addEventListener('click', function() {
-            const jobId = this.dataset.jobId;
-            window.location.href = `/jobs/edit_job.html?job_id=${jobId}`;
-          });
-        });
+            // Show/hide edit and delete buttons based on role
+            document.querySelectorAll('.edit-btn, .delete-btn').forEach(button => {
+                if (role === 'a') { // 'a' signifies admin role
+                    button.style.display = 'inline-block'; // Show the button
+                } else {
+                    button.style.display = 'none'; // Hide the button for non-admins
+                }
 
-        // Add event listener for apply buttons
-        document.querySelectorAll('.apply-btn').forEach(button => {
-          button.addEventListener('click', function() {
-            const jobId = this.dataset.jobId;
-            window.location.href = `/apply.html?job_id=${jobId}`;
-          });
-        });
-      }
+                if (button.classList.contains('delete-btn')) {
+                    button.addEventListener('click', function() {
+                        const jobId = this.dataset.jobId;
+                        if (confirm('Are you sure you want to delete this job posting?')) {
+                            deleteJob(jobId);
+                        }
+                    });
+                } else if (button.classList.contains('edit-btn')) {
+                    button.addEventListener('click', function() {
+                        const jobId = this.dataset.jobId;
+                        window.location.href = `/jobs/edit_job.html?job_id=${jobId}`;
+                    });
+                }
+            });
+
+
+            // Add event listener for apply buttons
+            document.querySelectorAll('.apply-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const jobId = this.dataset.jobId;
+                    window.location.href = `/apply.html?job_id=${jobId}`;
+                });
+            });
+        }
     }
-    
+
     // Helper function to parse experience strings into min/max numerical values
     function parseExperienceToRange(expStr) {
-        if (!expStr) return { min: 0, max: Infinity }; // No experience given, assumes universal range
+        if (!expStr) return {
+            min: 0,
+            max: Infinity
+        }; // No experience given, assumes universal range
 
         expStr = expStr.toLowerCase();
 
         if (expStr === '0 years' || expStr === 'entry level') {
-            return { min: 0, max: 0.99 }; // Use <1 to differentiate from 1-3
+            return {
+                min: 0,
+                max: 0.99
+            }; // Use <1 to differentiate from 1-3
         }
-        
+
         // Handles ranges like "1-3 years", "3-5 years"
         const rangeMatch = expStr.match(/^(\d+)-(\d+)\s*years?$/);
         if (rangeMatch) {
-            return { min: parseInt(rangeMatch[1]), max: parseInt(rangeMatch[2]) };
+            return {
+                min: parseInt(rangeMatch[1]),
+                max: parseInt(rangeMatch[2])
+            };
         }
 
         // Handles "X+ Years" from job data or filter
         const plusMatch = expStr.match(/^(\d+)\+\s*years?$/);
         if (plusMatch) {
-            return { min: parseInt(plusMatch[1]), max: Infinity };
+            return {
+                min: parseInt(plusMatch[1]),
+                max: Infinity
+            };
         }
 
         // Handles single number "X Years" (if that's a possibility in your job data)
         const singleYearMatch = expStr.match(/^(\d+)\s*years?$/);
         if (singleYearMatch) {
             const val = parseInt(singleYearMatch[1]);
-            return { min: val, max: val }; // A specific year
+            return {
+                min: val,
+                max: val
+            }; // A specific year
         }
-        
-        return { min: 0, max: Infinity }; // Default if parsing fails or "All" is selected
+
+        return {
+            min: 0,
+            max: Infinity
+        }; // Default if parsing fails or "All" is selected
     }
 
     function applyFilters() {
-      const jobTitle = document.getElementById('jobTitleFilter').value.toLowerCase();
-      const jobType = document.getElementById('jobTypeFilter').value.toLowerCase();
-      const location = document.getElementById('locationFilter').value.toLowerCase();
-      const experienceFilterValue = document.getElementById('experienceFilter').value.toLowerCase(); // Renamed to avoid conflict
+        const jobTitle = document.getElementById('jobTitleFilter').value.toLowerCase();
+        const jobType = document.getElementById('jobTypeFilter').value.toLowerCase();
+        const location = document.getElementById('locationFilter').value.toLowerCase();
+        const experienceFilterValue = document.getElementById('experienceFilter').value.toLowerCase(); // Renamed to avoid conflict
 
-      // Parse the selected filter's experience into a min/max range
-      const filterExperienceRange = parseExperienceToRange(experienceFilterValue);
+        // Parse the selected filter's experience into a min/max range
+        const filterExperienceRange = parseExperienceToRange(experienceFilterValue);
 
-      const filteredJobs = allJobs.filter(job => {
-        const matchesTitle = job.title.toLowerCase().includes(jobTitle);
-        const matchesType = jobType === '' || job.job_type.toLowerCase() === jobType;
-        const matchesLocation = job.location.toLowerCase().includes(location);
-        
-        // --- NEW EXPERIENCE FILTER LOGIC ---
-        // Parse the job's required experience into a min/max range
-        const jobExperienceRange = parseExperienceToRange(job.required_experience);
+        const filteredJobs = allJobs.filter(job => {
+            const matchesTitle = job.title.toLowerCase().includes(jobTitle);
+            const matchesType = jobType === '' || job.job_type.toLowerCase() === jobType;
+            const matchesLocation = job.location.toLowerCase().includes(location);
 
-        // If 'All' is selected for experience, or the filter/job experience can't be parsed, it matches
-        const matchesExperience = experienceFilterValue === '' || (
-            jobExperienceRange.min <= filterExperienceRange.max && // Job's min is within or below filter's max
-            jobExperienceRange.max >= filterExperienceRange.min    // Job's max is within or above filter's min
-        );
-        // --- END NEW EXPERIENCE FILTER LOGIC ---
+            // --- NEW EXPERIENCE FILTER LOGIC ---
+            // Parse the job's required experience into a min/max range
+            const jobExperienceRange = parseExperienceToRange(job.required_experience);
 
-        return matchesTitle && matchesType && matchesLocation && matchesExperience;
-      });
+            // If 'All' is selected for experience, or the filter/job experience can't be parsed, it matches
+            const matchesExperience = experienceFilterValue === '' || (
+                jobExperienceRange.min <= filterExperienceRange.max && // Job's min is within or below filter's max
+                jobExperienceRange.max >= filterExperienceRange.min // Job's max is within or above filter's min
+            );
+            // --- END NEW EXPERIENCE FILTER LOGIC ---
 
-      displayJobs(filteredJobs);
+            return matchesTitle && matchesType && matchesLocation && matchesExperience;
+        });
+
+        displayJobs(filteredJobs);
     }
 
     function clearFilters() {
-      document.getElementById('jobTitleFilter').value = '';
-      document.getElementById('jobTypeFilter').value = '';
-      document.getElementById('locationFilter').value = '';
-      document.getElementById('experienceFilter').value = '';
-      
-      // Re-apply filters after clearing to ensure the UI updates correctly
-      applyFilters(); // This will now display all jobs because all filter values are empty
+        document.getElementById('jobTitleFilter').value = '';
+        document.getElementById('jobTypeFilter').value = '';
+        document.getElementById('locationFilter').value = '';
+        document.getElementById('experienceFilter').value = '';
+
+        // Re-apply filters after clearing to ensure the UI updates correctly
+        applyFilters(); // This will now display all jobs because all filter values are empty
     }
 
     async function deleteJob(jobId) {
@@ -443,28 +509,29 @@
             });
             const result = await response.json();
             if (response.ok) {
-                showGlobalMessage(result.message, 'success');
+                // Assuming showGlobalMessage is defined elsewhere for notifications
+                // showGlobalMessage(result.message, 'success');
+                alert(result.message); // Simple alert for demonstration
                 fetchJobs(); // Re-fetch and display jobs after deletion
             } else {
-                showGlobalMessage(result.message, 'error');
+                // showGlobalMessage(result.message, 'error');
+                alert(result.message); // Simple alert for demonstration
             }
         } catch (error) {
             console.error('Error deleting job:', error);
-            showGlobalMessage('Failed to delete job. Please try again.', 'error');
+            // showGlobalMessage('Failed to delete job. Please try again.', 'error');
+            alert('Failed to delete job. Please try again.'); // Simple alert for demonstration
         }
     }
 
     // Fetch jobs when the page loads
     window.addEventListener('load', fetchJobs);
 
-    // ONLY KEEP THE CLEAR BUTTON LISTENER
+    // Filter event listeners
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
-
-    // THESE LINES WILL NOW CAUSE INSTANT FILTERING
     document.getElementById('jobTitleFilter').addEventListener('input', applyFilters);
     document.getElementById('jobTypeFilter').addEventListener('change', applyFilters);
     document.getElementById('locationFilter').addEventListener('input', applyFilters);
     document.getElementById('experienceFilter').addEventListener('change', applyFilters);
-
-  </script>
+</script>
 {% endblock %}
