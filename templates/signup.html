@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}DevOrks - Sign Up{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 40px;
+        background-color: var(--surface-color-dark);
+        border-radius: 12px;
+        box-shadow: 0 8px 25px var(--shadow-color-dark);
+        border: 1px solid var(--border-color-dark);
+        color: var(--text-color-light);
+    }
+
+    .form-container h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        color: var(--accent-color);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-color-light);
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="password"],
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color-dark);
+        border-radius: 8px;
+        background-color: var(--input-bg-dark);
+        color: var(--text-color-light);
+        font-size: 1em;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group input[type="password"]:focus,
+    .form-group select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+        outline: none;
+    }
+
+    .form-container button[type="submit"] {
+        width: 100%;
+        padding: 15px;
+        background-color: var(--button-bg-dark);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .form-container button[type="submit"]:hover {
+        background-color: var(--button-hover-dark);
+    }
+
+    .form-link {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .form-link a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .form-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Sign Up</h2>
+    <form id="signupForm">
+        <div class="form-group">
+            <label for="name">Username:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="companyName">Company Name (Optional):</label>
+            <input type="text" id="companyName" name="companyName">
+        </div>
+        <div class="form-group">
+            <label for="role">Role:</label>
+             <input type="text" id="role" name="userRole">
+        </div>
+        <button type="submit">Register</button>
+    </form>
+    <div class="form-link">
+        Already have an account? <a href="/login">Login here</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('signupForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('name').value;
+        const password = document.getElementById('password').value;
+        const companyName = document.getElementById('companyName').value;
+        const role = document.getElementById('role').value;
+
+        try {
+            const response = await fetch('/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, password, company_name: companyName, role })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showGlobalMessage(result.message, 'success', '/login'); // Redirect to login page
+            } else {
+                showGlobalMessage(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error during signup:', error);
+            showGlobalMessage('Network error. Please try again.', 'error');
+        }
+    });
+</script>
+{% endblock %}
