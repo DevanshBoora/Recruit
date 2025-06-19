@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash,url_for
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
 import os
 import json
 from sqlalchemy.exc import IntegrityError
@@ -17,7 +18,7 @@ import signal
 import atexit
 from datetime import datetime
 from routes import register_blueprints
-from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate,User
 import logging
 from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
@@ -33,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 app = Flask(__name__)
 CORS(app)
 register_blueprints(app)
-
+bcrypt = Bcrypt(app)
 # Global variables for Streamlit process management
 streamlit_process = None
 streamlit_port = 8501
@@ -179,6 +180,86 @@ def email_dashboard_status():
         "url": f"http://localhost:{streamlit_port}" if is_running else None
     })
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        data = request.get_json()
+        name = data.get('name')
+        password = data.get('password')
+        company_name = data.get('company_name')
+        # Role is now hardcoded to 'u' (applicant) for regular signup
+        role = data.get('role') 
+
+        if not name or not password:
+            return jsonify({"message": "Name and password are required"}), 400
+
+        existing_user = User.query.filter_by(name=name).first()
+        if existing_user:
+            return jsonify({"message": "Username already exists"}), 409
+
+        # Instantiate User without passing bcrypt_instance explicitly
+        # User model's __init__ will import and use the global `bcrypt`
+        new_user = User(name=name, password=password, company_name=company_name, role=role)
+        db.session.add(new_user)
+        try:
+            db.session.commit()
+            return jsonify({"message": "User registered successfully!", "user": new_user.to_dict()}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"message": f"Error registering user: {str(e)}"}), 500
+    return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json()
+        name = data.get('name')
+        password = data.get('password')
+
+        if not name or not password:
+            return jsonify({"message": "Name and password are required"}), 400
+
+        user = User.query.filter_by(name=name).first()
+        # Check password without passing bcrypt_instance explicitly
+        if not user or not user.check_password(password):
+            return jsonify({"message": "Invalid username or password"}), 401
+
+        # Successful login: Store user info in Flask session
+        session['user_id'] = user.id
+        session['username'] = user.name
+        session['role'] = user.role # Store role in session
+
+        # Return user data for client-side localStorage storage
+        return jsonify({
+            "message": "Login successful!",
+            "name": user.name,
+            "company_name": user.company_name,
+            "role": user.role
+        }), 200
+    return render_template('login.html')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear() # Clear Flask session
+    return redirect(url_for('index')) # Redirect to home page
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ==================== EXISTING ROUTES (KEEP ALL YOUR ORIGINAL ROUTES) ====================
 
 @app.route('/assessment/<int:job_id>/<int:application_id>', methods=['GET'])
@@ -189,28 +270,75 @@ def assessment_page_route(job_id, application_id):
         return render_template('main_page.html', message="Assessment Error."), 400
     return render_template('assessment_page.html')
 
-@app.route('/applications', methods=['GET'])
-def get_applications():
-    applications = Application.query.all()
-    result = []
-    for a in applications:
-        job = db.session.get(Job, a.job_id)
-        result.append({
-            'id': a.id,
-            'job_id': a.job_id,
-            'job_title': job.title if job else "N/A",
-            'applicant_name': a.applicant_name,
-            'applicant_email': a.applicant_email,
-            'applicant_age': a.applicant_age,
-            'applicant_experience': a.applicant_experience,
-            'education': a.education,
-            'applied_at': a.applied_at.isoformat(),
-            'resume_path': a.resume_path,
-            'eligibility_score': a.eligibility_score,
-            'assessment_score': a.assessment_score,
-            'status': a.status
+@app.route('/applications', methods=['POST'])
+def get_filtered_applications():
+    """
+    Retrieves job applications filtered by job title (name) and job responsibilities (role).
+    Expects a POST request with JSON body containing 'name' and 'role'.
+    """
+    # Basic server-side authentication check
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized access. Please log in."}), 403
+
+    data = request.get_json()
+    name_filter = data.get('name')
+    role_filter = data.get('role')
+    print(f"Filtering by Name: {name_filter}, Role: {role_filter}")
+
+    if not name_filter and not role_filter:
+        return jsonify({"error": "Missing 'name' or 'role' in request body."}), 400
+
+    # Start with a base query on Application
+    applications_query = Application.query
+
+    # Conditionally join Job table only once if either filter is present
+    # and then apply the filters
+    if name_filter or role_filter:
+        applications_query = applications_query.join(Job)
+
+    # Apply title filter if provided
+    if name_filter:
+        applications_query = applications_query.filter(Job.title.ilike(f'%{name_filter}%'))
+
+    # Apply responsibilities filter if provided
+    if role_filter:
+        applications_query = applications_query.filter(Job.responsibilities.ilike(f'%{role_filter}%'))
+
+    applications = applications_query.all()
+
+    filtered_applications_list = []
+    for app_obj in applications:
+        job = db.session.get(Job, app_obj.job_id) # Re-fetch job if not eagerly loaded or for consistency
+        if not job:
+            continue
+
+        job_title = job.title if job else ""
+        job_responsibilities = job.responsibilities if job else ""
+
+        # The filtering is now entirely handled by the SQL query,
+        # these Python-side checks are no longer necessary for correctness,
+        # but don't hurt if you want to keep them for debugging or extra validation.
+        # However, they might be slightly misleading now that the DB does the heavy lifting.
+        # For clarity, you could remove them.
+
+        filtered_applications_list.append({
+            'id': app_obj.id,
+            'job_id': app_obj.job_id,
+            'job_title': job_title,
+            'applicant_name': app_obj.applicant_name,
+            'applicant_email': app_obj.applicant_email,
+            'applicant_age': app_obj.applicant_age,
+            'applicant_experience': app_obj.applicant_experience,
+            'education': app_obj.education,
+            'applied_at': app_obj.applied_at.isoformat(),
+            'resume_path': app_obj.resume_path,
+            'eligibility_score': app_obj.eligibility_score,
+            'assessment_score': app_obj.assessment_score,
+            'status': app_obj.status
         })
-    return jsonify(result), 200
+
+    return jsonify(filtered_applications_list), 200
+
 
 @app.route('/applications/<int:app_id>/status', methods=['PUT'])
 def update_application_status(app_id):
