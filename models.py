@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
+import bcrypt
 
 class Job(db.Model):
     __tablename__ = 'job'
@@ -114,3 +115,72 @@ class AcceptedCandidate(db.Model):
     candidate = db.relationship('Application', backref=db.backref('accepted_entry', lazy=True))
 
 
+class Conversation(db.Model):
+    __tablename__ = 'conversations'
+    id = db.Column(db.Integer, primary_key=True)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Renamed 'metadata' to 'conversation_info' to avoid conflict
+    conversation_info = db.Column(db.Text, nullable=True) # Storing JSON string
+
+    messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Conversation {self.id} started at {self.started_at}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'started_at': self.started_at.isoformat(),
+            'conversation_info': json.loads(self.conversation_info) if self.conversation_info else None, # Use new name here
+            'messages': [msg.to_dict() for msg in self.messages]
+        }
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
+    sender = db.Column(db.String(50), nullable=False) # 'user' or 'bot'
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Message {self.id} from {self.sender} in convo {self.conversation_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'conversation_id': self.conversation_id,
+            'sender': self.sender,
+            'content': self.content,
+            'timestamp': self.timestamp.isoformat()
+        }
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False) # Changed to 'name'
+    password_hash = db.Column(db.String(128), nullable=False)
+    company_name = db.Column(db.String(255), nullable=True) # Can be null for applicants
+    role = db.Column(db.String(50), nullable=False, default='u') # 'a' for admin, 'u' for regular user/applicant
+
+    def __init__(self, name, password, company_name=None, role='u'):
+        self.name = name
+        self.password_hash =bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.company_name = company_name
+        self.role = role
+
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'company_name': self.company_name,
+            'role': self.role
+        }
+
+    def __repr__(self):
+        return f'<User {self.name} ({self.role})>'
