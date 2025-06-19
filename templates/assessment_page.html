@@ -353,6 +353,7 @@
             e.preventDefault();
             
             // Validate all required fields before submission
+            console.log("submitting assessment")
             const requiredFields = document.querySelectorAll('#assessmentForm [required]');
             let allValid = true;
             
@@ -440,7 +441,7 @@
                     showGlobalMessage(
                         result.message || 'Assessment submitted successfully!', 
                         'success', 
-                        '/view_applications'
+                        '/view_applications.html'
                     );
                     
                     // Clear localStorage after successful submission

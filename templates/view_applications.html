@@ -347,7 +347,8 @@
                     <td>${application.assessment_score.toFixed(2)}</td>
                     <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
                     <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
-                    <td class="actions-cell"></td>
+                    <td class="actions-cell">
+                        </td>
                 `;
 
                 // Initial button setup - ensure these are added to the dynamically created row
@@ -386,10 +387,17 @@
 
             const result = await response.json();
             console.log("Update status response:", result);
+            if( newStatus === 'Accepted') {
+                        console.log("Accepted");
+                        
+                        // Optionally, you can redirect or perform other actions on success
+                        // window.location.href = '/applications'; // Redirect to applications page
+            }
 
             if (response.ok) {
                 if (typeof showGlobalMessage === 'function') {
                     showGlobalMessage(result.message, 'success');
+                    
                 } else {
                     alert(result.message); // Simple alert for demonstration
                 }
@@ -425,7 +433,7 @@
             actionsCell.innerHTML = '';
 
             // Only add buttons if the current user is an admin ('a') AND the status is 'Pending'
-            const currentUserRole = localStorage.getItem('response'); // Get the user's role again (using 'response' key)
+            const currentUserRole = localStorage.getItem('role'); // Get the user's role again (using 'response' key)
             if (currentUserRole === 'a' && newStatus === 'Pending') {
                 const acceptBtn = document.createElement('button');
                 acceptBtn.textContent = 'Accept';

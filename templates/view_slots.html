@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Available Interview Slots - DevOrks{% endblock %}
+
+{% block head_extra %}
+<style>
+    .slots-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+    .slots-container h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: var(--accent-color);
+        font-size: 2.8rem;
+    }
+    .add-slot-link {
+        display: block;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .slot-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+    }
+    .slot-card {
+        background-color: var(--card-bg-light);
+        border: 1px solid var(--border-color-dark);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 10px var(--shadow-color-dark);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .slot-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0, 188, 212, 0.2);
+    }
+    .slot-card h3 {
+        color: var(--text-color-light);
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 1.5em;
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 10px;
+    }
+    .slot-card p {
+        margin: 8px 0;
+        color: var(--text-color-faded);
+        font-size: 0.95em;
+    }
+    .slot-card strong {
+        color: var(--text-color-light);
+    }
+    .slot-card .status {
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 5px;
+        display: inline-block;
+        margin-top: 10px;
+    }
+    .slot-card .status.booked {
+        background-color: var(--error-color-bg); /* Use a defined error color for booked */
+        color: var(--error-color);
+    }
+    .slot-card .status.available {
+        background-color: var(--success-color-bg); /* Use a defined success color for available */
+        color: var(--success-color);
+    }
+    .delete-slot-btn {
+        background-color: var(--error-color);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 15px;
+        align-self: flex-end; /* Pushes button to the bottom right */
+        transition: background-color 0.3s ease;
+    }
+    .delete-slot-btn:hover {
+        background-color: var(--error-color-dark);
+    }
+    .no-slots-message {
+        text-align: center;
+        color: var(--text-color-faded);
+        font-size: 1.2em;
+        padding: 50px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slots-container">
+    <h2>Available Interview Slots</h2>
+
+    <div class="add-slot-link">
+        <a href="http://127.0.0.1:5000/add_slots" class="btn btn-primary">Add New Slot</a>
+    </div>
+
+    {% if slots %}
+    <div class="slot-list">
+        {% for slot in slots %}
+        <div class="slot-card">
+            <h3>{{ slot.role }} ({{ slot.company_name }})</h3>
+            <p><strong>Time:</strong> {{ slot.interview_time.strftime('%Y-%m-%d %H:%M %Z') }}</p>
+            <p><strong>Mode:</strong> {{ slot.mode.capitalize() }}</p>
+            {% if slot.mode == 'online' %}
+                <p><strong>Link:</strong> <a href="{{ slot.meeting_link }}" target="_blank">{{ slot.meeting_link }}</a></p>
+            {% elif slot.mode == 'offline' %}
+                <p><strong>Address:</strong> {{ slot.address }}</p>
+            {% endif %}
+            <p><strong>Interviewer:</strong> {{ slot.interviewer_name }} ({{ slot.interviewer_email }})</p>
+            <p><span class="status {% if slot.is_booked %}booked{% else %}available{% endif %}">
+                {% if slot.is_booked %}Booked{% else %}Available{% endif %}
+            </span></p>
+            {% if not slot.is_booked %}
+                <button class="delete-slot-btn" data-slot-id="{{ slot.id }}">Delete Slot</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-slots-message">No available interview slots at the moment. Please add some.</p>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.delete-slot-btn');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', async function() {
+                const slotId = this.dataset.slotId;
+                if (confirm('Are you sure you want to delete this slot? This cannot be undone.')) {
+                    try {
+                        const response = await fetch(`/slots/${slotId}/delete`, {
+                            method: 'POST', // Or 'DELETE' if you configure Flask for DELETE
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showGlobalMessage(result.message, 'success');
+                            // Remove the slot card from the DOM
+                            this.closest('.slot-card').remove();
+                            // Check if any slots remain and show no-slots message if not
+                            if (document.querySelectorAll('.slot-card').length === 0) {
+                                document.querySelector('.slots-container').insertAdjacentHTML('beforeend', '<p class="no-slots-message">No available interview slots at the moment. Please add some.</p>');
+                            }
+                        } else {
+                            showGlobalMessage(result.message || 'Error deleting slot', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting slot:', error);
+                        showGlobalMessage('Failed to delete slot. Please try again.', 'error');
+                    }
+                }
+            });
+        });
+
+        // Global message display function (copy from your existing base.html or a common JS file)
+        function showGlobalMessage(message, type) {
+            // Implement your actual message display logic here (e.g., a toast, a div at the top)
+            // For now, using a simple alert
+            alert(`${type.toUpperCase()}: ${message}`);
+            // You might also want to clear query params if using them for messages
+            const url = new URL(window.location);
+            url.searchParams.delete('message');
+            url.searchParams.delete('type');
+            window.history.replaceState({}, document.title, url.toString());
+        }
+    });
+</script>
+{% endblock %}

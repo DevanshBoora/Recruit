@@ -108,6 +108,8 @@ def submit_assessment(job_id, application_id):
     data = request.get_json()
     user_answers = data.get('answers', [])
 
+    print("submitted assesment")
+
     job_description = job.description
     job_qualifications = job.qualifications
     job_responsibilities = job.responsibilities
@@ -135,7 +137,7 @@ def submit_assessment(job_id, application_id):
         - skills, qualifications, achievements, certifications, projects, location, experience, resume_quality
 
         Also evaluate assessment answers (provided below) on a 0–100 scale.
-
+        If the name in resume and applicant_name do not match , return score 0.
         Format:
         {{
           "gemini_score": 85.5,

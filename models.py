@@ -57,7 +57,7 @@ class Application(db.Model):
     status = db.Column(db.String(50), default="Pending")
     rejection_email_sent = db.Column(db.Boolean, default=False)
 
-    job = db.relationship('Job', backref=db.backref('applications', lazy=True))
+    job = db.relationship('Job', backref=db.backref('application', lazy=True))
 
     def to_dict(self):
         return {
@@ -192,3 +192,42 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.name} ({self.role})>'
+
+# models.py (continued)
+
+class Slot(db.Model):
+    __tablename__ = 'slots'
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(255), nullable=False) # This refers to the Job role/title
+    interview_time = db.Column(db.DateTime, nullable=False)
+    interviewer_name = db.Column(db.String(255), nullable=False)
+    interviewer_email = db.Column(db.String(255), nullable=False)
+    mode = db.Column(db.String(50), nullable=False) # 'online' or 'offline'
+    meeting_link = db.Column(db.String(1000), nullable=True) # For online
+    address = db.Column(db.String(1000), nullable=True) # For offline
+    is_booked = db.Column(db.Boolean, default=False)
+    booked_by_application_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=True, unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship to Application (optional, but good for direct lookup)
+    booked_application = db.relationship('Application', backref=db.backref('booked_slot', uselist=False))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'company_name': self.company_name,
+            'role': self.role,
+            'interview_time': self.interview_time.isoformat(),
+            'interviewer_name': self.interviewer_name,
+            'interviewer_email': self.interviewer_email,
+            'mode': self.mode,
+            'meeting_link': self.meeting_link,
+            'address': self.address,
+            'is_booked': self.is_booked,
+            'booked_by_application_id': self.booked_by_application_id,
+            'created_at': self.created_at.isoformat()
+        }
+
+    def __repr__(self):
+        return f'<Slot {self.id} for {self.role} at {self.interview_time}>'

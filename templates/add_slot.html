@@ -1,227 +1,169 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Interview Slot</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        input[type="datetime-local"], select, input[type="url"], textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        select {
-            cursor: pointer;
-        }
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        .conditional-field {
-            display: none;
-            margin-top: 10px;
-        }
-        .conditional-field.show {
-            display: block;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .slots-list {
-            margin-top: 40px;
-        }
-        .slot-item {
-            background-color: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #007bff;
-        }
-        .slot-booked {
-            border-left-color: #dc3545;
-            background-color: #f8d7da;
-        }
-        .slot-available {
-            border-left-color: #28a745;
-            background-color: #d4edda;
-        }
-        .alert {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .nav-links {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .nav-links a {
-            color: #0551a3;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="nav-links">
-            <a href="/interviewer/dashboard">Dashboard</a> |
-            <a href="/logout_interviewer">Logout</a>
-        </div>
+{% extends "base.html" %}
 
-        <h1>Add Interview Slot</h1>
+{% block title %}Add New Interview Slot - DevOrks{% endblock %}
 
-        <!-- Show success/error messages -->
-        {% if request.args.get('message') %}
-            <div class="alert {{ 'alert-success' if request.args.get('type') == 'success' else 'alert-error' }}">
-                {{ request.args.get('message') }}
-            </div>
-        {% endif %}
+{% block head_extra %}
+<style>
+    /* Re-use or adapt styles from your schedule_interview.html for form-card, form-section, form-row, form-group, etc. */
+    .slot-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .form-card h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5rem;
+        color: var(--accent-color);
+    }
+    /* Add specific styles for the slot form if needed */
+</style>
+{% endblock %}
 
-        <form method="POST">
-            <div class="form-group">
-                <label for="slot_datetime">Date and Time:</label>
-                <input type="datetime-local" id="slot_datetime" name="slot_datetime" required>
+{% block content %}
+<div class="slot-form-container">
+    <div class="form-card">
+        <h2>Add New Interview Slot</h2>
+        <form id="addSlotForm" method="POST" action="/slots/add">
+            <div class="form-section">
+                <h3>Slot Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="company_name">Company Name <span class="required">*</span></label>
+                        <input type="text" id="company_name" name="company_name" required value="{{ session.get('company_name', '') }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Job Role / Title <span class="required">*</span></label>
+                        <input type="text" id="role" name="role" placeholder="e.g., Software Engineer" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="interview_time">Interview Date & Time <span class="required">*</span></label>
+                        <input type="datetime-local" id="interview_time" name="interview_time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mode">Interview Mode <span class="required">*</span></label>
+                        <select id="mode" name="mode" required>
+                            <option value="">-- Select Mode --</option>
+                            <option value="online">Online</option>
+                            <option value="offline">In-Person</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="mode">Interview Mode:</label>
-                <select id="mode" name="mode" required onchange="toggleFields()">
-                    <option value="">Select Mode</option>
-                    <option value="Online">Online</option>
-                    <option value="Offline">Offline</option>
-                </select>
+            <div class="form-section">
+                <h3>Interviewer Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="interviewer_name">Interviewer Name <span class="required">*</span></label>
+                        <input type="text" id="interviewer_name" name="interviewer_name" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="interviewer_email">Interviewer Email <span class="required">*</span></label>
+                        <input type="email" id="interviewer_email" name="interviewer_email" placeholder="email@company.com" required>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group conditional-field" id="meeting_link_field">
-                <label for="meeting_link">Meeting Link:</label>
-                <input type="url" id="meeting_link" name="meeting_link" placeholder="https://zoom.us/j/123456789 or https://meet.google.com/abc-defg-hij">
+            <div class="form-section">
+                <h3>Location Details</h3>
+                <div id="onlineSection" class="mode-dependent">
+                    <div class="form-group">
+                        <label for="meeting_link">Meeting Link</label>
+                        <input type="url" id="meeting_link" name="meeting_link" placeholder="https://zoom.us/j/meeting-id">
+                    </div>
+                </div>
+                <div id="offlineSection" class="mode-dependent">
+                    <div class="form-group">
+                        <label for="address">Interview Address</label>
+                        <textarea id="address" name="address" rows="3" placeholder="Full interview address"></textarea>
+                    </div>
+                </div>
             </div>
-
-            <div class="form-group conditional-field" id="address_field">
-                <label for="address">Address:</label>
-                <textarea id="address" name="address" placeholder="Enter the physical address for the interview"></textarea>
-            </div>
-
-            <button type="submit">Add Slot</button>
+            
+            <button type="submit" class="submit-button">Add Slot</button>
         </form>
-
-        {% if slots %}
-        <div class="slots-list">
-            <h2>Your Interview Slots</h2>
-            {% for slot in slots %}
-            <div class="slot-item {{ 'slot-booked' if slot.is_booked else 'slot-available' }}">
-                <strong>{{ slot.slot_datetime.strftime('%Y-%m-%d %H:%M') }}</strong> - 
-                <span>{{ slot.mode }}</span>
-                {% if slot.is_booked %}
-                    <span style="color: #dc3545; font-weight: bold;">(Booked)</span>
-                {% else %}
-                    <span style="color: #28a745; font-weight: bold;">(Available)</span>
-                {% endif %}
-                
-                {% if slot.mode == 'Online' and slot.meeting_link %}
-                    <br><small>Meeting Link: {{ slot.meeting_link }}</small>
-                {% endif %}
-                
-                {% if slot.mode == 'Offline' and slot.address %}
-                    <br><small>Address: {{ slot.address }}</small>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
     </div>
+</div>
 
-    <script>
-        function toggleFields() {
-            const mode = document.getElementById('mode').value;
-            const meetingLinkField = document.getElementById('meeting_link_field');
-            const addressField = document.getElementById('address_field');
-            const meetingLinkInput = document.getElementById('meeting_link');
-            const addressInput = document.getElementById('address');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modeSelect = document.getElementById('mode');
+        const onlineSection = document.getElementById('onlineSection');
+        const offlineSection = document.getElementById('offlineSection');
+        const meetingLinkInput = document.getElementById('meeting_link');
+        const addressInput = document.getElementById('address');
+        const interviewTimeInput = document.getElementById('interview_time');
 
-            // Hide both fields first
-            meetingLinkField.classList.remove('show');
-            addressField.classList.remove('show');
+        // Set minimum date for datetime-local to now
+        const now = new Date();
+        // Format to YYYY-MM-DDTHH:MM for datetime-local input
+        const nowIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+        interviewTimeInput.setAttribute('min', nowIso);
+
+
+        modeSelect.addEventListener('change', function() {
+            const selectedMode = this.value;
             
-            // Remove required attribute from both
-            meetingLinkInput.required = false;
-            addressInput.required = false;
+            onlineSection.classList.remove('show');
+            offlineSection.classList.remove('show');
+            
+            // Clear required attributes and values
+            meetingLinkInput.removeAttribute('required');
+            addressInput.removeAttribute('required');
+            meetingLinkInput.value = '';
+            addressInput.value = '';
 
-            if (mode === 'Online') {
-                meetingLinkField.classList.add('show');
-                meetingLinkInput.required = true;
-            } else if (mode === 'Offline') {
-                addressField.classList.add('show');
-                addressInput.required = true;
+            // Hide physically
+            onlineSection.style.display = 'none';
+            offlineSection.style.display = 'none';
+
+            if (selectedMode === 'online') {
+                onlineSection.style.display = 'block';
+                setTimeout(() => onlineSection.classList.add('show'), 10);
+                meetingLinkInput.setAttribute('required', 'required');
+            } else if (selectedMode === 'offline') {
+                offlineSection.style.display = 'block';
+                setTimeout(() => offlineSection.classList.add('show'), 10);
+                addressInput.setAttribute('required', 'required');
             }
-        }
-
-        // Set minimum date to current date and time
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            
-            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-            document.getElementById('slot_datetime').min = minDateTime;
         });
-    </script>
-</body>
-</html>
+
+        // Trigger change on load if a default value is set (e.g., from an edit operation)
+        modeSelect.dispatchEvent(new Event('change'));
+
+        // Handle form submission with fetch API for messages
+        document.getElementById('addSlotForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/slots/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showGlobalMessage(result.message, 'success', '/slots'); // Redirect to view slots
+                    this.reset(); // Clear form
+                    modeSelect.dispatchEvent(new Event('change')); // Reset mode display
+                } else {
+                    showGlobalMessage(result.message || 'Error adding slot', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding slot:', error);
+                showGlobalMessage('Failed to add slot. Please try again.', 'error');
+            }
+        });
+    });
+</script>
+{% endblock %}

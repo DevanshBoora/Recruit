@@ -28,7 +28,7 @@ from email.mime.text import MIMEText
 import mysql.connector
 from mysql.connector import Error
 from routes import register_blueprints
-from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot
 import logging
 from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
@@ -347,6 +347,185 @@ def offers_dashboard():
     }
     
     return render_template('offers_dashboard.html', stats=stats)
+# ==================== Adding the slots ====================
+@app.route('/slots/add', methods=['GET', 'POST'])
+def add_slots():
+    # Only allow certain roles (e.g., admin, HR) to add slots
+    # if session.get('user_role') not in ['admin', 'hr']:
+    #     flash('You do not have permission to add slots.', 'error')
+    #     return redirect(url_for('dashboard')) # Or appropriate page
+
+    if request.method == 'POST':
+        company_name = request.form.get('company_name')
+        role = request.form.get('role')
+        interview_time_str = request.form.get('interview_time')
+        interviewer_name = request.form.get('interviewer_name')
+        interviewer_email = request.form.get('interviewer_email')
+        mode = request.form.get('mode')
+        meeting_link = request.form.get('meeting_link')
+        address = request.form.get('address')
+
+        if not all([company_name, role, interview_time_str, interviewer_name, interviewer_email, mode]):
+            return jsonify({"message": "Missing required fields"}), 400
+
+        try:
+            # Parse datetime string from HTML form (example: 2025-06-19T14:30)
+            interview_time = datetime.fromisoformat(interview_time_str)
+        except ValueError:
+            return jsonify({"message": "Invalid date/time format"}), 400
+
+        # Basic validation for mode-specific fields
+        if mode == 'online' and not meeting_link:
+            return jsonify({"message": "Meeting link is required for online interviews"}), 400
+        if mode == 'offline' and not address:
+            return jsonify({"message": "Address is required for in-person interviews"}), 400
+        
+        # Ensure meeting_link/address is None if not applicable, for cleaner data
+        if mode != 'online': meeting_link = None
+        if mode != 'offline': address = None
+
+        new_slot = Slot(
+            company_name=company_name,
+            role=role,
+            interview_time=interview_time,
+            interviewer_name=interviewer_name,
+            interviewer_email=interviewer_email,
+            mode=mode,
+            meeting_link=meeting_link,
+            address=address,
+            is_booked=False # Initially not booked
+        )
+        db.session.add(new_slot)
+        db.session.commit()
+        return jsonify({"message": "Slot added successfully", "slot_id": new_slot.id}), 201
+    
+    # GET request for adding slots
+    return render_template('add_slot.html') # You'll create this HTML template
+
+
+# --- New Route to View Available Slots ---
+@app.route('/slots', methods=['GET'])
+def view_slots():
+    # Fetch all unbooked slots or filter by company/role if needed
+    # You might want to filter by user's company if 'company_name' in Slot matches User's company
+    current_user_id = session.get('user_id')
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    slots_query = Slot.query.filter_by(is_booked=False).order_by(Slot.interview_time)
+
+    # Filter slots based on the logged-in user's company (if they have one)
+    if user.company_name:
+        slots_query = slots_query.filter_by(company_name=user.company_name)
+
+    available_slots = slots_query.all()
+    
+    # You might want to filter by job title/role as well if the user has a specific job they are hiring for
+    # Example: If `user` has an associated job they are managing. This would depend on your user-job relationship.
+    
+    return render_template('view_slots.html', slots=available_slots) # Create this HTML template
+
+
+# @app.route('/applications/<int:application_id>/accept', methods=['POST'])
+
+# def accept_application_and_assign_slot(application_id):
+#     application = Application.query.get(application_id)
+#     if not application:
+#         return jsonify({"message": "Application not found"}), 404
+
+   
+#     if application.status != "Pending":
+#         return jsonify({"message": "Application already processed."}), 400
+
+    
+#     job = Job.query.get(application.job_id)
+#     if not job:
+#         return jsonify({"message": "Associated job not found."}), 404
+
+
+#     current_user_id = session.get('user_id')
+#     acting_user = User.query.get(current_user_id)
+#     if not acting_user or not acting_user.company_name:
+#         return jsonify({"message": "User's company information is missing for slot allocation."}), 400
+
+   
+#     available_slot = Slot.query.filter(
+#         Slot.company_name == acting_user.company_name, # Filter by company accepting the application
+#         Slot.role == job.title, # Match the job title/role
+#         Slot.is_booked == False,
+#         Slot.interview_time > datetime.utcnow() # Only future slots
+#     ).order_by(Slot.interview_time.asc()).first() # Get the earliest available slot
+
+#     if not available_slot:
+#         # No slot available, maybe prompt for manual scheduling or offer to create one
+#         return jsonify({"message": "No available interview slots found for this role and company. Please add new slots."}), 404
+
+#     # Book the slot
+#     available_slot.is_booked = True
+#     available_slot.booked_by_application_id = application.id
+
+#     # Update application status
+#     application.status = "Interview Scheduled"
+
+#     try:
+#         db.session.commit()
+
+#         # Send emails to candidate and interviewer
+#         candidate_email_sent = send_interview_schedule_email(
+#             candidate_email=application.applicant_email,
+#             candidate_name=application.applicant_name,
+#             job_title=job.title,
+#             interview_slot=available_slot
+#         )
+#         interviewer_email_sent = send_interviewer_email(
+#             interviewer_email=available_slot.interviewer_email,
+#             interviewer_name=available_slot.interviewer_name,
+#             candidate_name=application.applicant_name,
+#             job_title=job.title,
+#             interview_slot=available_slot
+#         )
+
+#         message = "Application accepted and interview scheduled."
+#         if not candidate_email_sent:
+#             message += " (Failed to send email to candidate)."
+#         if not interviewer_email_sent:
+#             message += " (Failed to send email to interviewer)."
+
+#         # Optionally, delete the old InterviewSchedule entry if it exists for this application
+#         # interview_schedule_entry = InterviewSchedule.query.filter_by(candidate_id=application.id).first()
+#         # if interview_schedule_entry:
+#         #     db.session.delete(interview_schedule_entry)
+#         #     db.session.commit() # Commit again after deleting
+
+#         return jsonify({"message": message, "slot_id": available_slot.id}), 200
+
+#     except Exception as e:
+#         db.session.rollback() # Rollback in case of error
+#         print(f"Error booking slot or sending email: {e}")
+#         return jsonify({"message": f"Failed to book slot or send emails. Error: {str(e)}"}), 500
+
+# --- You might also want a route to delete a slot if it's no longer needed ---
+@app.route('/slots/<int:slot_id>/delete', methods=['POST']) # Or DELETE method
+def delete_slot(slot_id):
+    slot = Slot.query.get(slot_id)
+    if not slot:
+        return jsonify({"message": "Slot not found"}), 404
+    
+    # Add authorization check here: Only owner company/admin can delete
+    current_user_id = session.get('user_id')
+    user = User.query.get(current_user_id)
+    if not user or (user.company_name and user.company_name != slot.company_name) and user.role != 'admin':
+        return jsonify({"message": "Unauthorized to delete this slot"}), 403
+
+    if slot.is_booked:
+        return jsonify({"message": "Cannot delete a booked slot. Unbook it first if necessary."}), 400
+
+    db.session.delete(slot)
+    db.session.commit()
+    return jsonify({"message": "Slot deleted successfully"}), 200
+
 
 # ==================== EXISTING ROUTES (PRESERVED) ====================
 
@@ -605,7 +784,6 @@ def get_filtered_applications():
     data = request.get_json()
     name_filter = data.get('name')
     role_filter = data.get('role')
-    
     print(name_filter)
     print(role_filter)
     
@@ -626,6 +804,7 @@ def get_filtered_applications():
     applications = applications_query.all()
 
     filtered_applications_list = []
+    
     for app_obj in applications:
         job = db.session.get(Job, app_obj.job_id)
         if not job:
@@ -646,6 +825,8 @@ def get_filtered_applications():
             'assessment_score': app_obj.assessment_score,
             'status': app_obj.status
         })
+
+    print(filtered_applications_list)
 
     return jsonify(filtered_applications_list), 200
 
