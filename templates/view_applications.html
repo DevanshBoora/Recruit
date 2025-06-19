@@ -275,15 +275,13 @@
         <iframe id="pdfViewer" class="pdf-viewer"></iframe>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', fetchApplications);
 
     const applicationsTableBody = document.querySelector('#applicationsTable tbody');
     const noApplicationsMessage = document.getElementById('noApplicationsMessage');
-
+  
     async function fetchApplications() {
         const userName = localStorage.getItem('name');
         const userRole = localStorage.getItem('response'); // Assuming 'role' is stored as 'response' in local storage
@@ -430,6 +428,9 @@
         resumeModal.style.display = 'block'; // Show the modal
     }
 
+
+
+
     // Modal close logic
     const resumeModal = document.getElementById('resumeModal');
     const closeModalButton = document.querySelector('#resumeModal .close-button');
@@ -448,6 +449,7 @@
     });
 
     // Fetch applications when the page loads
-    window.addEventListener('load', fetchApplications);
+    // window.addEventListener('load', fetchApplications);
+    
 </script>
 {% endblock %}
