@@ -140,6 +140,17 @@
         font-size: 1.2em;
     }
 
+    .error-message {
+        text-align: center;
+        color: #dc3545;
+        margin-top: 30px;
+        font-size: 1.2em;
+        padding: 20px;
+        background-color: rgba(220, 53, 69, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
     .filter-bar {
         display: flex;
         flex-wrap: wrap; /* Allows items to wrap naturally */
@@ -301,14 +312,17 @@
         <p id="noJobsMsg" style="display: none;">No jobs currently posted.</p>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing job listings page');
+    
     let allJobs = []; // This will store all jobs fetched from the server
     const userRole = localStorage.getItem('role'); // Get role once on script load
+    console.log('User role:', userRole);
 
     async function fetchJobs() {
+        console.log('Starting to fetch jobs...');
         const jobListingsDiv = document.getElementById('jobListings');
         const loadingMsg = document.getElementById('loadingMessage');
         const noJobsMsg = document.getElementById('noJobsMsg');
@@ -317,24 +331,39 @@
         if (loadingMsg) loadingMsg.style.display = 'block'; // Show loading message
         if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
 
-        try {
-            const response = await fetch('/jobs');
-            const jobs = await response.json();
-
-            console.log("Fetched jobs:", jobs); // For debugging
-            loadingMsg.style.display = 'none'; // Hide loading message
-            allJobs = jobs; // Store all fetched jobs globally
-
-            displayJobs(allJobs); // Display all jobs initially
-
-        } catch (error) {
-            console.error('Error fetching jobs:', error);
-            loadingMsg.style.display = 'none';
-            jobListingsDiv.innerHTML = '<p id="noJobsMsg" class="error-text" style="display: block;">Failed to load jobs. Please try again later.</p>';
+        // Try multiple possible endpoints
+        const possibleEndpoints = ['/jobs', '/jobs/', '/api/jobs'];
+        
+        for (let endpoint of possibleEndpoints) {
+            try {
+                console.log(`Trying to fetch from: ${endpoint}`);
+                const response = await fetch(endpoint);
+                console.log(`Response status for ${endpoint}:`, response.status);
+                
+                if (response.ok) {
+                    const jobs = await response.json();
+                    console.log("Successfully fetched jobs from", endpoint, ":", jobs);
+                    
+                    loadingMsg.style.display = 'none';
+                    allJobs = jobs;
+                    displayJobs(allJobs);
+                    return; // Success, exit the function
+                } else {
+                    console.log(`Failed to fetch from ${endpoint}, status:`, response.status);
+                }
+            } catch (error) {
+                console.error(`Error fetching from ${endpoint}:`, error);
+            }
         }
+
+        // If we get here, all endpoints failed
+        console.error('All endpoints failed');
+        loadingMsg.style.display = 'none';
+        jobListingsDiv.innerHTML = '<div class="error-message">Failed to load jobs. Please check the console for details and ensure the server is running.</div>';
     }
 
     function displayJobs(jobsToDisplay) {
+        console.log('Displaying jobs:', jobsToDisplay);
         const jobListingsDiv = document.getElementById('jobListings');
         const noJobsMsg = document.getElementById('noJobsMsg');
 
@@ -342,9 +371,11 @@
 
         if (jobsToDisplay.length === 0) {
             if (noJobsMsg) noJobsMsg.style.display = 'block'; // Show no jobs message
+            console.log('No jobs to display');
         } else {
             if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
             jobsToDisplay.forEach(job => {
+                console.log('Creating job card for:', job.title);
                 const jobCard = document.createElement('div');
                 jobCard.className = 'job-card';
                 jobCard.innerHTML = `
@@ -372,14 +403,9 @@
                 jobListingsDiv.appendChild(jobCard);
             });
 
-            // Get the role from localStorage. This line is intentionally placed here
-            // to ensure it's checked after job cards are created for current rendering.
-            // Note: `userRole` constant declared globally might also be used.
-            const role = localStorage.getItem('role');
-
             // Show/hide edit and delete buttons based on role
             document.querySelectorAll('.edit-btn, .delete-btn').forEach(button => {
-                if (role === 'a') { // 'a' signifies admin role
+                if (userRole === 'a') { // 'a' signifies admin role
                     button.style.display = 'inline-block'; // Show the button
                 } else {
                     button.style.display = 'none'; // Hide the button for non-admins
@@ -400,7 +426,6 @@
                 }
             });
 
-
             // Add event listener for apply buttons
             document.querySelectorAll('.apply-btn').forEach(button => {
                 button.addEventListener('click', function() {
@@ -413,21 +438,14 @@
 
     // Helper function to parse experience strings into min/max numerical values
     function parseExperienceToRange(expStr) {
-        if (!expStr) return {
-            min: 0,
-            max: Infinity
-        }; // No experience given, assumes universal range
+        if (!expStr) return { min: 0, max: Infinity };
 
         expStr = expStr.toLowerCase();
 
         if (expStr === '0 years' || expStr === 'entry level') {
-            return {
-                min: 0,
-                max: 0.99
-            }; // Use <1 to differentiate from 1-3
+            return { min: 0, max: 0.99 };
         }
 
-        // Handles ranges like "1-3 years", "3-5 years"
         const rangeMatch = expStr.match(/^(\d+)-(\d+)\s*years?$/);
         if (rangeMatch) {
             return {
@@ -436,7 +454,6 @@
             };
         }
 
-        // Handles "X+ Years" from job data or filter
         const plusMatch = expStr.match(/^(\d+)\+\s*years?$/);
         if (plusMatch) {
             return {
@@ -445,29 +462,21 @@
             };
         }
 
-        // Handles single number "X Years" (if that's a possibility in your job data)
         const singleYearMatch = expStr.match(/^(\d+)\s*years?$/);
         if (singleYearMatch) {
             const val = parseInt(singleYearMatch[1]);
-            return {
-                min: val,
-                max: val
-            }; // A specific year
+            return { min: val, max: val };
         }
 
-        return {
-            min: 0,
-            max: Infinity
-        }; // Default if parsing fails or "All" is selected
+        return { min: 0, max: Infinity };
     }
 
     function applyFilters() {
         const jobTitle = document.getElementById('jobTitleFilter').value.toLowerCase();
         const jobType = document.getElementById('jobTypeFilter').value.toLowerCase();
         const location = document.getElementById('locationFilter').value.toLowerCase();
-        const experienceFilterValue = document.getElementById('experienceFilter').value.toLowerCase(); // Renamed to avoid conflict
+        const experienceFilterValue = document.getElementById('experienceFilter').value.toLowerCase();
 
-        // Parse the selected filter's experience into a min/max range
         const filterExperienceRange = parseExperienceToRange(experienceFilterValue);
 
         const filteredJobs = allJobs.filter(job => {
@@ -475,16 +484,12 @@
             const matchesType = jobType === '' || job.job_type.toLowerCase() === jobType;
             const matchesLocation = job.location.toLowerCase().includes(location);
 
-            // --- NEW EXPERIENCE FILTER LOGIC ---
-            // Parse the job's required experience into a min/max range
             const jobExperienceRange = parseExperienceToRange(job.required_experience);
 
-            // If 'All' is selected for experience, or the filter/job experience can't be parsed, it matches
             const matchesExperience = experienceFilterValue === '' || (
-                jobExperienceRange.min <= filterExperienceRange.max && // Job's min is within or below filter's max
-                jobExperienceRange.max >= filterExperienceRange.min // Job's max is within or above filter's min
+                jobExperienceRange.min <= filterExperienceRange.max &&
+                jobExperienceRange.max >= filterExperienceRange.min
             );
-            // --- END NEW EXPERIENCE FILTER LOGIC ---
 
             return matchesTitle && matchesType && matchesLocation && matchesExperience;
         });
@@ -497,9 +502,7 @@
         document.getElementById('jobTypeFilter').value = '';
         document.getElementById('locationFilter').value = '';
         document.getElementById('experienceFilter').value = '';
-
-        // Re-apply filters after clearing to ensure the UI updates correctly
-        applyFilters(); // This will now display all jobs because all filter values are empty
+        applyFilters();
     }
 
     async function deleteJob(jobId) {
@@ -509,23 +512,19 @@
             });
             const result = await response.json();
             if (response.ok) {
-                // Assuming showGlobalMessage is defined elsewhere for notifications
-                // showGlobalMessage(result.message, 'success');
-                alert(result.message); // Simple alert for demonstration
-                fetchJobs(); // Re-fetch and display jobs after deletion
+                alert(result.message);
+                fetchJobs();
             } else {
-                // showGlobalMessage(result.message, 'error');
-                alert(result.message); // Simple alert for demonstration
+                alert(result.message);
             }
         } catch (error) {
             console.error('Error deleting job:', error);
-            // showGlobalMessage('Failed to delete job. Please try again.', 'error');
-            alert('Failed to delete job. Please try again.'); // Simple alert for demonstration
+            alert('Failed to delete job. Please try again.');
         }
     }
 
     // Fetch jobs when the page loads
-    window.addEventListener('load', fetchJobs);
+    fetchJobs();
 
     // Filter event listeners
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
@@ -533,5 +532,6 @@
     document.getElementById('jobTypeFilter').addEventListener('change', applyFilters);
     document.getElementById('locationFilter').addEventListener('input', applyFilters);
     document.getElementById('experienceFilter').addEventListener('change', applyFilters);
+});
 </script>
 {% endblock %}
