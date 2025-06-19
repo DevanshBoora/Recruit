@@ -504,9 +504,11 @@
         }
 
         /* Class to hide elements that should only be visible for 'admin' roles */
+        /*
         .admin-only {
-            display: none !important; /* Forces hiding unless explicitly overridden by JS */
+            display: none !important;
         }
+        */ /* REMOVED: JavaScript will handle display for these directly */
 
         /* Class to hide general elements when they should not be visible */
         .hidden-chat-element {
@@ -514,12 +516,14 @@
         }
 
         /* Class to hide login/signup for logged-in users, and show logout */
+        /*
         .logged-in-only {
             display: none;
         }
         .logged-out-only {
             display: none;
         }
+        */ /* REMOVED: JavaScript will handle display for these directly */
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -531,12 +535,12 @@
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/jobs/job_post.html">Job Postings</a></li>
-                <li class="admin-only" id="postJobLink"><a href="/jobs/post_job.html">Post a Job</a></li>
-                <li class="admin-only" id="viewApplicationsLink"><a href="/view_applications.html">View Applications</a></li>
+                <li id="postJobLink" style="display: none;"><a href="/jobs/post_job.html">Post a Job</a></li>
+                <li id="viewApplicationsLink" style="display: none;"><a href="/view_applications.html">View Applications</a></li>
 
-                <li id="loginLink" class="logged-out-only"><a href="/login">Login</a></li>
-                <li id="signupLink" class="logged-out-only"><a href="/signup">Sign Up</a></li>
-                <li id="logoutLink" class="logged-in-only"><a href="/logout">Logout</a></li>
+                <li id="loginLink" style="display: none;"><a href="/login">Login</a></li>
+                <li id="signupLink" style="display: none;"><a href="/signup">Sign Up</a></li>
+                <li id="logoutLink" style="display: none;"><a href="/logout">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -558,6 +562,171 @@
     </div>
 
     <script>
+
+        // Add this to your base.html or main JavaScript file
+
+// Function to handle logout
+async function handleLogout(event) {
+    if (event) {
+        event.preventDefault();
+    }
+    
+    try {
+        // Show loading state
+        const logoutLink = document.getElementById('logoutLink');
+        if (logoutLink) {
+            const originalText = logoutLink.querySelector('a').textContent;
+            logoutLink.querySelector('a').textContent = 'Logging out...';
+            logoutLink.style.pointerEvents = 'none';
+        }
+
+        // Make AJAX request to logout endpoint
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Clear localStorage data
+            localStorage.removeItem('name');
+            localStorage.removeItem('role');
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('company_name');
+            
+            // Clear sessionStorage data
+            sessionStorage.removeItem('lastActiveConversationId');
+            sessionStorage.removeItem('isChatOverlayOpen');
+            sessionStorage.removeItem('chatOverlayLeft');
+            sessionStorage.removeItem('chatOverlayTop');
+            sessionStorage.removeItem('chatOverlayRight');
+            sessionStorage.removeItem('chatOverlayBottom');
+            
+            // Show success message
+            showGlobalMessage(result.message || 'Logged out successfully', 'success');
+            
+            // Update navigation UI immediately
+            updateAuthNav();
+            
+            // Redirect to home page after a short delay
+            setTimeout(() => {
+                window.location.href = result.redirect_url || '/';
+            }, 1500);
+            
+        } else {
+            throw new Error(result.message || 'Logout failed');
+        }
+        
+    } catch (error) {
+        console.error('Logout error:', error);
+        
+        // Still clear local storage even if server request fails
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        showGlobalMessage('Logout completed. Redirecting...', 'warning');
+        
+        // Fallback: redirect anyway
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+        
+    } finally {
+        // Restore logout link if still on page
+        const logoutLink = document.getElementById('logoutLink');
+        if (logoutLink) {
+            logoutLink.querySelector('a').textContent = 'Logout';
+            logoutLink.style.pointerEvents = 'auto';
+        }
+    }
+}
+
+// Function to update authentication navigation (enhanced version)
+function updateAuthNav() {
+    const userName = localStorage.getItem('name');
+    const userRole = localStorage.getItem('role');
+
+    // Get references to navigation elements
+    const loginLink = document.getElementById('loginLink');
+    const signupLink = document.getElementById('signupLink');
+    const logoutLink = document.getElementById('logoutLink');
+    const postJobLink = document.getElementById('postJobLink');
+    const viewApplicationsLink = document.getElementById('viewApplicationsLink');
+    
+    // Get references to chat elements
+    const chatToggle = document.getElementById('chatOverlayToggle');
+    const chatBox = document.getElementById('chatOverlay');
+
+    // First, hide all navigation elements to reset state
+    [loginLink, signupLink, logoutLink, postJobLink, viewApplicationsLink].forEach(element => {
+        if (element) element.style.display = 'none';
+    });
+
+    // Hide chat elements by default
+    if (chatToggle) chatToggle.style.display = 'none';
+    if (chatBox) {
+        chatBox.style.display = 'none';
+        chatBox.classList.remove('open');
+    }
+
+    if (userName) { 
+        // User is logged in
+        if (logoutLink) {
+            logoutLink.style.display = 'list-item';
+            // Ensure logout link has the event listener
+            const logoutLinkElement = logoutLink.querySelector('a');
+            if (logoutLinkElement) {
+                logoutLinkElement.removeEventListener('click', handleLogout);
+                logoutLinkElement.addEventListener('click', handleLogout);
+            }
+        }
+        
+        // Show admin-specific elements if user is admin
+        if (userRole === 'a') {
+            if (postJobLink) postJobLink.style.display = 'list-item';
+            if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item';
+            
+            // Show chat overlay for admin users
+            if (chatToggle) chatToggle.style.display = 'flex';
+            if (chatBox) chatBox.style.display = 'flex';
+        }
+    } else { 
+        // User is logged out
+        if (loginLink) loginLink.style.display = 'list-item';
+        if (signupLink) signupLink.style.display = 'list-item';
+    }
+
+    console.log('Auth nav updated - User:', userName, 'Role:', userRole);
+}
+
+// Initialize logout functionality when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Update navigation on page load
+    updateAuthNav();
+    
+    // Add logout event listener if logout link exists
+    const logoutLink = document.getElementById('logoutLink');
+    if (logoutLink) {
+        const logoutLinkElement = logoutLink.querySelector('a');
+        if (logoutLinkElement) {
+            logoutLinkElement.addEventListener('click', handleLogout);
+        }
+    }
+});
+
+// Alternative: Handle logout via direct navigation (fallback)
+// This handles cases where JavaScript is disabled or fails
+window.addEventListener('beforeunload', function() {
+    // Only clear if we're navigating to logout
+    if (window.location.pathname === '/logout') {
+        localStorage.clear();
+        sessionStorage.clear();
+    }
+});
         // Global function for messages
         function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
             const msgContainer = document.getElementById('globalMessageContainer');
@@ -592,52 +761,38 @@
             const loginLink = document.getElementById('loginLink');
             const signupLink = document.getElementById('signupLink');
             const logoutLink = document.getElementById('logoutLink');
-
-            // Hide all by default for safety or manage visibility based on state
-            if (loginLink) loginLink.style.display = 'none';
-            if (signupLink) signupLink.style.display = 'none';
-            if (logoutLink) logoutLink.style.display = 'none';
-
-            if (userName) { // User is logged in
-                if (logoutLink) logoutLink.style.display = 'list-item'; // Show logout
-            } else { // User is logged out
-                if (loginLink) loginLink.style.display = 'list-item'; // Show login
-                if (signupLink) signupLink.style.display = 'list-item'; // Show signup
-            }
-
-            // Also manage admin-only links and chat overlay based on role
             const postJobLink = document.getElementById('postJobLink');
             const viewApplicationsLink = document.getElementById('viewApplicationsLink');
-            
-            // Get references to chat elements
+
             const chatToggle = document.getElementById('chatOverlayToggle');
             const chatBox = document.getElementById('chatOverlay');
 
-            // Admin-specific nav links
-            if (postJobLink) {
-                if (userRole === 'a') {
-                    postJobLink.style.display = 'list-item';
-                } else {
-                    postJobLink.style.display = 'none';
-                }
-            }
-            if (viewApplicationsLink) {
-                if (userRole === 'a') {
-                    viewApplicationsLink.style.display = 'list-item';
-                } else {
-                    viewApplicationsLink.style.display = 'none';
-                }
-            }
+            // Set initial display to none for all controlled elements
+            if (loginLink) loginLink.style.display = 'none';
+            if (signupLink) signupLink.style.display = 'none';
+            if (logoutLink) logoutLink.style.display = 'none';
+            if (postJobLink) postJobLink.style.display = 'none';
+            if (viewApplicationsLink) viewApplicationsLink.style.display = 'none';
 
-            // Chat overlay visibility based on role
-            if (chatToggle && chatBox) {
-                if (userRole === 'a') {
-                    chatToggle.classList.remove('hidden-chat-element');
-                    chatBox.classList.remove('hidden-chat-element');
-                } else {
-                    chatToggle.classList.add('hidden-chat-element');
-                    chatBox.classList.add('hidden-chat-element');
+            // Always hide chat elements by default, then show if admin
+            if (chatToggle) chatToggle.classList.add('hidden-chat-element');
+            if (chatBox) chatBox.classList.add('hidden-chat-element');
+
+
+            if (userName) { // User is logged in
+                if (logoutLink) logoutLink.style.display = 'list-item'; // Show logout
+
+                if (userRole === 'a') { // Admin specific links
+                    if (postJobLink) postJobLink.style.display = 'list-item';
+                    if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item'; // This is the fix!
+
+                    // Show chat overlay elements for admin
+                    if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
+                    if (chatBox) chatBox.classList.remove('hidden-chat-element');
                 }
+            } else { // User is logged out
+                if (loginLink) loginLink.style.display = 'list-item'; // Show login
+                if (signupLink) signupLink.style.display = 'list-item'; // Show signup
             }
         }
 
@@ -851,32 +1006,27 @@
                     chatOverlay.style.left = savedLeft;
                     chatOverlay.style.top = savedTop;
                     chatOverlay.style.right = 'auto';
-                    chatOverlay.style.bottom = 'auto';
+                    chatOverlay.style.bottom = 'auto'; // Corrected typo here
                     chatOverlay.style.transform = 'none'; // Ensure no conflicting transforms
                 } else if (savedRight && savedBottom) {
                     chatOverlay.style.right = savedRight;
                     chatOverlay.style.bottom = savedBottom;
                     chatOverlay.style.left = 'auto';
                     chatOverlay.style.top = 'auto';
-                    chatOverlay.style.transform = 'none'; // Ensure no conflicting transforms
                 }
 
-                // If chat was open in the previous session, apply the 'open' class directly
-                if (wasChatOpen) {
-                    chatOverlay.classList.add('open');
-                    isChatOpen = true; // Sync JS variable state
-                    // Load conversation history immediately if it was open
-                    if (lastActiveConvId) {
-                        loadOverlayConversation(lastActiveConvId);
-                    } else {
-                        chatOverlayMessages.innerHTML = '<p class="placeholder-text">Say hello to start the conversation!</p>';
-                    }
+                if (lastActiveConvId) {
+                    loadOverlayConversation(lastActiveConvId);
                 } else {
-                    // Ensure it's in its initial hidden state if not meant to be open
-                    chatOverlay.classList.remove('open');
-                    isChatOpen = false;
-                    // If chat is not open initially, display placeholder without loading history
-                    chatOverlayMessages.innerHTML = '<p class="placeholder-text">Loading chat history...</p>';
+                    chatOverlayMessages.innerHTML = '<p class="placeholder-text">Say hello to start the conversation!</p>';
+                }
+
+                if (wasChatOpen) {
+                    isChatOpen = true; // Set the JS flag
+                    chatOverlay.classList.add('open'); // Add the class for visibility
+                    if (chatOverlayInput) {
+                        chatOverlayInput.focus();
+                    }
                 }
             }
         });
