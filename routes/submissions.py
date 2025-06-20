@@ -132,24 +132,29 @@ def submit_assessment(job_id, application_id):
         You are an advanced AI expert in resume screening and candidate-job matching.
 
         You will receive a job description and a resume. Analyze the resume in detail against the job description and provide a comprehensive evaluation.
-
+        if the name in the resume and the name in the applicant_name do not match, return a score of 0.
         Score the resume out of 100 based on:
         - skills, qualifications, achievements, certifications, projects, location, experience, resume_quality
 
+         if the name in the resume and the name in the applicant_name do not match, return a score of 0.
         Also evaluate assessment answers (provided below) on a 0–100 scale.
-        If the name in resume and applicant_name do not match , return score 0.
+
+        also extrct the good summary of the resume in Resume Summary field
+        If the name in the resume and the name in the applicant_anme do not match, return a score of 0.
+
         Format:
         {{
           "gemini_score": 85.5,
           "assessment_score": 86.7,
-          "reasoning": "Strong alignment with qualifications and good answers."
+          "reasoning": "Strong alignment with qualifications and good answers.",
+          "Resume Summary": "The candidate has relevant experience and skills.",
         }}
 
         Job Title: {job.title}
         Description: {job_description}
         Qualifications: {job_qualifications}
         Responsibilities: {job_responsibilities}
-
+        if the name in the resume and the name in the applicant_name do not match, return a score of 0.
         Applicant:
         - Name: {application.applicant_name}
         - Email: {application.applicant_email}
@@ -157,9 +162,11 @@ def submit_assessment(job_id, application_id):
         - Experience: {application.applicant_experience}
         - Education: {application.education}
         - Resume: {resume_text[:3000]}
-
+        if the name in the resume and the name in the applicant_name do not match, return a score of 0.
+        Name in the Resume should matcht the applicant_name other wise return 0 score
         Assessment Answers:
         {user_answers_str}
+        if the name in the resume and the name in the applicant_name do not match, return a score of 0.
         """
     ]
 

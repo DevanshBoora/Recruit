@@ -137,10 +137,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('response', result.role);
                 if(result.position == "interviewer") {
                     localStorage.setItem('interviewer', 'true');
+                    localStorage.setItem('role','i');
                 } else {
                     localStorage.setItem('interviewer', 'false');
+                    localStorage.setItem('role','a');
                 }
-                localStorage.setItem('role','a');
+                
                 localStorage.setItem('email',result.email || '');
                 if(result.position == "interviewer") {
                     showGlobalMessage(result.message, 'success', '/dashboard');

@@ -779,18 +779,19 @@ window.addEventListener('beforeunload', function() {
             if (chatBox) chatBox.classList.add('hidden-chat-element');
 
 
-            if (userName) { // User is logged in
-                if (logoutLink) logoutLink.style.display = 'list-item'; // Show logout
+ // User is logged in
+                 // Show logout
 
                 if (userRole === 'a') { // Admin specific links
                     if (postJobLink) postJobLink.style.display = 'list-item';
-                    if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item'; // This is the fix!
+                    if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item'; 
+                    if (logoutLink) logoutLink.style.display = 'list-item';// This is the fix!
 
                     // Show chat overlay elements for admin
                     if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
                     if (chatBox) chatBox.classList.remove('hidden-chat-element');
                 }
-            } else { // User is logged out
+             else { // User is logged out
                 if (loginLink) loginLink.style.display = 'list-item'; // Show login
                 if (signupLink) signupLink.style.display = 'list-item'; // Show signup
             }

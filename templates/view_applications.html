@@ -491,7 +491,7 @@
             actionsCell.innerHTML = '';
 
             // Only add buttons if the current user is an admin ('a') AND the status is 'Pending'
-            const currentUserRole = localStorage.getItem('response'); // Corrected to use 'response' key
+            const currentUserRole = localStorage.getItem('role'); // Corrected to use 'response' key
             if (currentUserRole === 'a' && newStatus === 'Pending') {
                 const acceptBtn = document.createElement('button');
                 acceptBtn.textContent = 'Accept';

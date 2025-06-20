@@ -421,7 +421,7 @@ def view_slots():
 
     # Filter slots based on the logged-in user's company (if they have one)
     if user.company_name:
-        slots_query = slots_query.filter_by(company_name=user.company_name)
+        slots_query = slots_query.filter_by(interviewer_name=user.name)
 
     available_slots = slots_query.all()
     
@@ -501,10 +501,10 @@ def accept_application_and_assign_slot(application_id):
        
 
         # Optionally, delete the old InterviewSchedule entry if it exists for this application
-        interview_schedule_entry = InterviewSchedule.query.filter_by(candidate_id=application.id).first()
-        if interview_schedule_entry:
-            db.session.delete(interview_schedule_entry)
-            db.session.commit() # Commit again after deleting
+        # interview_schedule_entry = InterviewSchedule.query.filter_by(candidate_id=application.id).first()
+        # if interview_schedule_entry:
+        #     db.session.delete(interview_schedule_entry)
+        #     db.session.commit() # Commit again after deleting
 
         return jsonify({"message": message, "slot_id": available_slot.id}), 200
 

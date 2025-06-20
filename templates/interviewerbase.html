@@ -537,6 +537,7 @@
                 <li><a href="/slots">View Slots</a></li>
                 <li id="postJobLink" style="display: none;"><a href="/slots/add">Add Slots</a></li>
                 <li id="viewApplicationsLink" style="display: none;"><a href="/feedback">Feedback Form</a></li>
+                 <li id="logoutlink" ><a href="/logout">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -566,7 +567,7 @@ async function handleLogout(event) {
     if (event) {
         event.preventDefault();
     }
-    
+    console.log("hello i am called")
     try {
         // Show loading state
         const logoutLink = document.getElementById('logoutLink');
@@ -577,7 +578,7 @@ async function handleLogout(event) {
         }
 
         // Make AJAX request to logout endpoint
-        const response = await fetch('/api/logout', {
+        const response = await fetch('/logout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -682,7 +683,7 @@ function updateAuthNav() {
         }
         
         // Show admin-specific elements if user is admin
-        if (userRole === 'a') {
+        if (userRole === 'i') {
             if (postJobLink) postJobLink.style.display = 'list-item';
             if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item';
             
@@ -778,7 +779,7 @@ window.addEventListener('beforeunload', function() {
             if (userName) { // User is logged in
                 if (logoutLink) logoutLink.style.display = 'list-item'; // Show logout
 
-                if (userRole === 'a') { // Admin specific links
+                if (userRole === 'i') { // Admin specific links
                     if (postJobLink) postJobLink.style.display = 'list-item';
                     if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item'; // This is the fix!
 
