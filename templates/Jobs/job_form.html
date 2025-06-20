@@ -403,7 +403,7 @@
           if (response.ok) {
             // Check if showGlobalMessage function exists
             if (typeof showGlobalMessage === 'function') {
-              showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
+              showGlobalMessage(result.message, 'success', '/admin/job');
             } else {
               alert('Job posted successfully!');
               window.location.href = '/jobs/job_post.html';
