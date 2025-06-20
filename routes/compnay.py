@@ -58,6 +58,7 @@ def company_login():
         session['company_id'] = company.id
         session['company_name'] = company.company_name
         session['company_logged_in'] = True
+        session['role'] = 'c'
         
         return jsonify({"message": "Logged in successfully!", "redirect_url": 'http://127.0.0.1:5000/admin/applications'}) # Redirect to view slots or company dashboard
 

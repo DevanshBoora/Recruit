@@ -589,6 +589,10 @@ def login():
         session['name'] = user.company_name
         session['response'] = user.role
         session['email'] = user.email
+        if ( user.role == "interviewer"):
+            session['role'] ='i'
+        else : 
+            session['role'] ='a'
 
         return jsonify({
             "message": "Login successful!",
