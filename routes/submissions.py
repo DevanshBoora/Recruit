@@ -181,13 +181,14 @@ def submit_assessment(job_id, application_id):
 
         gemini_score = float(gemini_output.get('gemini_score', 0.0))
         assessment_score = float(gemini_output.get('assessment_score', 0.0))
-
+        print("assesmnet score :", assessment_score)
         if assessment_score < min_assessment_score:
             db.session.delete(application)
             db.session.commit()
             return jsonify({
                 "message": "Application rejected. Assessment score below minimum threshold.",
-                "assessment_score": assessment_score
+                "assessment_score": assessment_score,
+                "min_assessment_score":min_assessment_score
             }), 200
 
         application.eligibility_score = gemini_score
