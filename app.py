@@ -550,9 +550,9 @@ def signup():
         if not name or not password:
             return jsonify({"message": "Name and password are required"}), 400
         
-        if not company or company.check_password(company_password):
+        if not company or not company.check_password(company_password):
             print(company)
-            return jsonify({"message": "company password"}), 401
+            return jsonify({"message": "company password error or company "}), 401
         
 
         existing_user = User.query.filter_by(name=name).first()
