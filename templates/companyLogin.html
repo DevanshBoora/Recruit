@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 
-{% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/register_company.css') }}">
-{% endblock %}
 
-{% block title %}Register Your Company - DevOrks{% endblock %}
+{% block title %}Company Login - DevOrks{% endblock %}
 
 {% block head_extra %}
 <style>
+    /* Re-using most of the styles from register_company.html */
     .form-container {
         max-width: 500px;
         margin: 50px auto;
@@ -97,19 +95,19 @@
         color: var(--error-color);
     }
 
-    .login-link {
+    .register-link { /* Changed from login-link to register-link */
         text-align: center;
         margin-top: 20px;
         color: var(--text-color-faded);
     }
 
-    .login-link a {
+    .register-link a {
         color: var(--accent-color);
         text-decoration: none;
         font-weight: bold;
     }
 
-    .login-link a:hover {
+    .register-link a:hover {
         text-decoration: underline;
     }
 
@@ -123,8 +121,10 @@
 
 {% block content %}
 <div class="form-container">
-    <h2>Register Your Company</h2>
-    <form id="registerCompanyForm" method="POST" action="http://127.0.0.1:5000/auth/register_company">
+    <h2>Company Login</h2>
+    <form id="companyLoginForm" method="POST" action="http://127.0.0.1:5000/auth/company_login">
+        <div id="loginMessage" class="message" style="display: none;"></div>
+
         <div class="form-group">
             <label for="company_name">Company Name <span class="required">*</span></label>
             <input type="text" id="company_name" name="company_name" required>
@@ -133,53 +133,34 @@
             <label for="password">Password <span class="required">*</span></label>
             <input type="password" id="password" name="password" required>
         </div>
-        <div class="form-group">
-            <label for="confirm_password">Confirm Password <span class="required">*</span></label>
-            <input type="password" id="confirm_password" name="confirm_password" required>
-        </div>
-        <button type="submit" class="submit-button">Register Company</button>
+        <button type="submit" class="submit-button">Login</button>
     </form>
-    <div class="login-link">
-        Already have an account? <a href="http://127.0.0.1:5000/auth/company_login">Login here</a>
+    <div class="register-link">
+        Don't have an account? <a href="http://127.0.0.1:5000/auth/register_company">Register here</a>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // You'll need a global showGlobalMessage function if you want consistent messages
-        // Or integrate the message display directly into this script.
-        // For example:
-        function showFormMessage(message, type) {
-            const form = document.getElementById('registerCompanyForm');
-            let messageDiv = document.querySelector('.form-message');
-            if (!messageDiv) {
-                messageDiv = document.createElement('div');
-                messageDiv.classList.add('message');
-                messageDiv.classList.add('form-message'); // Add a specific class
-                form.prepend(messageDiv);
-            }
-            messageDiv.textContent = message;
-            messageDiv.className = `message form-message ${type}`; // Reset classes
-            messageDiv.style.display = 'block'; // Ensure it's visible
+        const loginForm = document.getElementById('companyLoginForm');
+        const loginMessageDiv = document.getElementById('loginMessage');
+
+        function showLoginMessage(message, type) {
+            loginMessageDiv.textContent = message;
+            loginMessageDiv.className = `message ${type}`; // Reset classes and add type
+            loginMessageDiv.style.display = 'block'; // Make it visible
 
             // Optional: Hide after some time
             setTimeout(() => {
-                messageDiv.style.display = 'none';
+                loginMessageDiv.style.display = 'none';
             }, 5000);
         }
 
-        const registerForm = document.getElementById('registerCompanyForm');
-        registerForm.addEventListener('submit', async function(event) {
+        loginForm.addEventListener('submit', async function(event) {
             event.preventDefault(); // Prevent default form submission
 
             const companyName = document.getElementById('company_name').value;
             const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-
-            if (password !== confirmPassword) {
-                showFormMessage('Passwords do not match.', 'error');
-                return;
-            }
 
             try {
                 const response = await fetch(this.action, {
@@ -195,19 +176,20 @@
 
                 const result = await response.json(); // Assuming your Flask route returns JSON
 
-                if (response.ok) { // Check if the response status is 2xx
-                    showFormMessage(result.message, 'success');
-                    // Optionally redirect after a short delay
+                if (response.ok) { // Check if the response status is 2xx (e.g., 200 OK)
+                    showLoginMessage(result.message, 'success');
+                    localStorage.setItem('company_name', companyName); // Store company name in local storage
+                    // Redirect to a company dashboard or home page after successful login
                     setTimeout(() => {
-                        window.location.href = "http://127.0.0.1:5000/auth/company_login"; // Redirect to company login
-                    }, 2000);
+                        window.location.href = result.redirect_url || "/company/dashboard"; // Adjust the default redirect path
+                    }, 1500); // Short delay before redirect
                 } else {
-                    // Handle server-side errors (e.g., company name already exists)
-                    showFormMessage(result.message || 'An unexpected error occurred.', 'error');
+                    // Handle server-side errors (e.g., invalid credentials)
+                    showLoginMessage(result.message || 'An unexpected error occurred during login.', 'error');
                 }
             } catch (error) {
-                console.error('Error during company registration:', error);
-                showFormMessage('Failed to connect to the server. Please try again.', 'error');
+                console.error('Error during company login:', error);
+                showLoginMessage('Failed to connect to the server. Please try again.', 'error');
             }
         });
     });

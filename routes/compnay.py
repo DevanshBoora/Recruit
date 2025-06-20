@@ -59,6 +59,6 @@ def company_login():
         session['company_name'] = company.company_name
         session['company_logged_in'] = True
         
-        return jsonify({"message": "Logged in successfully!", "redirect_url": url_for('view_slots')}) # Redirect to view slots or company dashboard
+        return jsonify({"message": "Logged in successfully!", "redirect_url": 'http://127.0.0.1:5000/admin/applications'}) # Redirect to view slots or company dashboard
 
-    return render_template('company_login.html') # You'll need to create this HTML too
+    return render_template('companyLogin.html') # You'll need to create this HTML too

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "interviewerbase.html" %}
 
 {% block title %}Add New Interview Slot - DevOrks{% endblock %}
 
@@ -169,7 +169,7 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showGlobalMessage(result.message, 'success', '/slots'); // Redirect to view slots
+                    showGlobalMessage(result.message, 'success', '/slots/add'); // Redirect to view slots
                     this.reset(); // Clear form
                     modeSelect.dispatchEvent(new Event('change')); // Reset mode display
                 } else {

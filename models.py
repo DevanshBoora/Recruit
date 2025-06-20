@@ -173,13 +173,15 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     company_name = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(50), nullable=False, default='u')
+    position = db.Column(db.String(100), nullable=True)  # Optional field for user's position
 
-    def __init__(self, name, email,password, company_name=None, role='u'):
+    def __init__(self, name, email,password, company_name=None, role='u',position=None):
         self.name = name
         self.email = email.lower()
         self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         self.company_name = company_name
         self.role = role
+        self.position = position
 
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))

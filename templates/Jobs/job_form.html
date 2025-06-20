@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admins/adminbase.html' %}
 
 {% block title %}DevOrks - Job Form{% endblock %}
 
@@ -6,13 +6,111 @@
   <style>
     .form-card {
       max-width: 800px;
-      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px;
+      background: var(--card-bg, #fff);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     .form-card h2 {
       text-align: center;
       margin-bottom: 30px;
       font-size: 2.5rem;
       color: var(--accent-color);
+    }
+    .form-card label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: var(--text-color, #333);
+    }
+    .form-card input,
+    .form-card textarea,
+    .form-card select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color, #ddd);
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .form-card textarea {
+      resize: vertical;
+    }
+    .btn {
+      background-color: var(--primary-color, #007bff);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .btn:hover {
+      background-color: var(--primary-color-hover, #0056b3);
+    }
+    .btn-primary {
+      background-color: var(--accent-color, #28a745);
+      width: 100%;
+      margin-top: 20px;
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-color-hover, #218838);
+    }
+    .assessment-builder-fieldset {
+      border: 2px solid var(--border-color, #ddd);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .assessment-builder-fieldset legend {
+      font-weight: bold;
+      color: var(--accent-color, #333);
+      padding: 0 10px;
+    }
+    .assessment-question-actions {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .questions-builder-container {
+      min-height: 50px;
+    }
+    .question-card {
+      border: 1px solid var(--border-color, #ddd);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: var(--card-bg-secondary, #f8f9fa);
+      position: relative;
+    }
+    .question-card h3 {
+      margin-top: 0;
+      color: var(--accent-color, #333);
+    }
+    .delete-question-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .delete-question-btn:hover {
+      background: #c82333;
+    }
+    .mcq-options-container {
+      margin: 15px 0;
+    }
+    .mcq-options-container input {
+      margin-bottom: 10px;
     }
   </style>
 {% endblock %}
@@ -24,19 +122,16 @@
       <label for="jobTitle">Job Title:</label>
       <input type="text" id="jobTitle" required />
 
-
       <label for="jobDescription">Job Description:</label>
       <textarea id="jobDescription" rows="6" required></textarea>
-
 
       <label for="qualifications">Qualifications:</label>
       <textarea id="qualifications" rows="4" required></textarea>
 
-
       <label for="responsibilities">Responsibilities:</label>
       <textarea id="responsibilities" rows="4" required></textarea>
 
-      <label for="jobType">JobType:</label>
+      <label for="jobType">Job Type:</label>
       <select id="jobType" required>
         <option value="">Select Job Type...</option>
         <option value="On-site">On-site</option>
@@ -60,20 +155,6 @@
         <option value="Dubai">Dubai</option>
         <option value="Sao Paulo">Sao Paulo</option>
         <option value="Hyderabad">Hyderabad</option>
-        <option value="">Select a City...</option>
-        <option value="New York">New York</option>
-        <option value="San Francisco">San Francisco</option>
-        <option value="London">London</option>
-        <option value="Berlin">Berlin</option>
-        <option value="Paris">Paris</option>
-        <option value="Tokyo">Tokyo</option>
-        <option value="Sydney">Sydney</option>
-        <option value="Singapore">Singapore</option>
-        <option value="Bengaluru">Bengaluru</option>
-        <option value="Toronto">Toronto</option>
-        <option value="Dubai">Dubai</option>
-        <option value="Sao Paulo">Sao Paulo</option>
-        <option value="Hyderabad">Hyderabad</option>
       </select>
 
       <label for="requiredExperience">Required Experience:</label>
@@ -82,21 +163,18 @@
       <label for="assessmentTimer">Assessment Timer (minutes):</label>
       <input type="number" id="assessmentTimer" name="assessmentTimer" min="0" value="0" />
 
-      <label for="minAssessmentScore">Min Assessment Score (number in percentage):</label>
-      <label for="minAssessmentScore">Min Assessment Score (number in percentage):</label>
+      <label for="minAssessmentScore">Min Assessment Score (percentage):</label>
       <input type="number" id="minAssessmentScore" name="minAssessmentScore" min="0" max="100" value="0" required />
 
       <fieldset class="assessment-builder-fieldset">
         <legend>Assessment Questions (MANDATORY)</legend>
-        <legend>Assessment Questions (MANDATORY)</legend>
         <div class="assessment-question-actions">
-          <button type="button" class="btn" onclick="add('mcu')">Add MCQ</button>
-          <button type="button" class="btn" onclick="add('mcu')">Add MCQ</button>
+          <button type="button" class="btn" onclick="addQuestion('mcq')">Add MCQ</button>
           <button type="button" class="btn" onclick="addQuestion('text')">Add Text Question</button>
           <button type="button" class="btn" onclick="addQuestion('coding')">Add Coding Question</button>
         </div>
         <div id="questionsBuilderContainer" class="questions-builder-container">
-          <p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded);">No questions added yet. Use the buttons above to add questions.</p>
+          <p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded, #666);">No questions added yet. Use the buttons above to add questions.</p>
         </div>
         <input type="hidden" id="assessmentQuestions" name="assessmentQuestions" value="[]" />
       </fieldset>
@@ -109,48 +187,26 @@
     document.addEventListener('DOMContentLoaded', function () {
       let questionCounter = 0;
       let questionsData = [];
-    document.addEventListener('DOMContentLoaded', function () {
-      let questionCounter = 0;
-      let questionsData = [];
 
-      function updateNoQuestionsMessage() {
       function updateNoQuestionsMessage() {
         const message = document.getElementById('noQuestionsMessage');
-        message.style.display = questionsData.length === 0 ? 'block' : 'none';
-      }
-
-      window.add = function (type) {
-        if (type === 'mcu') {
-          addQuestion('mcq');
-        message.style.display = questionsData.length === 0 ? 'block' : 'none';
-      }
-
-      window.add = function (type) {
-        if (type === 'mcu') {
-          addQuestion('mcq');
-        } else {
-          addQuestion(type);
-          addQuestion(type);
+        if (message) {
+          message.style.display = questionsData.length === 0 ? 'block' : 'none';
         }
-      };
-      };
+      }
 
-      window.addQuestion = function (type) {
       window.addQuestion = function (type) {
         const container = document.getElementById('questionsBuilderContainer');
-        const questionId = question-${questionCounter};
+        if (!container) return;
+        
+        const questionId = `question-${questionCounter}`;
 
         let questionHtml = `
           <div class="question-card" id="${questionId}" data-question-type="${type}">
-            <button type="button" class="delete-question-btn" onclick="deleteQuestion('${questionId}')">X</button>
+            <button type="button" class="delete-question-btn" onclick="deleteQuestion('${questionId}')" title="Delete Question">×</button>
             <h3>Question ${questionCounter + 1} (${type.toUpperCase()})</h3>
             <label for="q-${questionCounter}-text">Question Text:</label>
-            <textarea id="q-${questionCounter}-text" rows="2" required onchange="updateQuestionData()"></textarea>
-          <div class="question-card" id="${questionId}" data-question-type="${type}">
-            <button type="button" class="delete-question-btn" onclick="deleteQuestion('${questionId}')">X</button>
-            <h3>Question ${questionCounter + 1} (${type.toUpperCase()})</h3>
-            <label for="q-${questionCounter}-text">Question Text:</label>
-            <textarea id="q-${questionCounter}-text" rows="2" required onchange="updateQuestionData()"></textarea>
+            <textarea id="q-${questionCounter}-text" rows="2" required onchange="updateQuestionData()" placeholder="Enter your question here..."></textarea>
         `;
 
         if (type === 'mcq') {
@@ -162,120 +218,167 @@
               <input type="text" id="q-${questionCounter}-option-c" placeholder="Option C" required onchange="updateQuestionData()" />
               <input type="text" id="q-${questionCounter}-option-d" placeholder="Option D" required onchange="updateQuestionData()" />
             </div>
-            <label for="q-${questionCounter}-correct">Correct Option (A, B, C, D):</label>
-            <input type="text" id="q-${questionCounter}-correct" maxlength="1" pattern="[A-Da-d]" required onchange="updateQuestionData()" />
-          `;
-          questionHtml += `
-            <div class="mcq-options-container">
-              <label>Options:</label>
-              <input type="text" id="q-${questionCounter}-option-a" placeholder="Option A" required onchange="updateQuestionData()" />
-              <input type="text" id="q-${questionCounter}-option-b" placeholder="Option B" required onchange="updateQuestionData()" />
-              <input type="text" id="q-${questionCounter}-option-c" placeholder="Option C" required onchange="updateQuestionData()" />
-              <input type="text" id="q-${questionCounter}-option-d" placeholder="Option D" required onchange="updateQuestionData()" />
-            </div>
-            <label for="q-${questionCounter}-correct">Correct Option (A, B, C, D):</label>
-            <input type="text" id="q-${questionCounter}-correct" maxlength="1" pattern="[A-Da-d]" required onchange="updateQuestionData()" />
+            <label for="q-${questionCounter}-correct">Correct Option (A, B, C, or D):</label>
+            <input type="text" id="q-${questionCounter}-correct" maxlength="1" pattern="[A-Da-d]" required onchange="updateQuestionData()" placeholder="A" style="text-transform: uppercase;" />
           `;
         } else if (type === 'text') {
           questionHtml += `
             <label for="q-${questionCounter}-expected">Expected Keywords (comma-separated):</label>
-            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
-          `;
-          questionHtml += `
-            <label for="q-${questionCounter}-expected">Expected Keywords (comma-separated):</label>
-            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
+            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" placeholder="keyword1, keyword2, keyword3" />
           `;
         } else if (type === 'coding') {
           questionHtml += `
             <label for="q-${questionCounter}-expected">Expected Keywords in Solution (comma-separated):</label>
-            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
-            <label for="q-${questionCounter}-starter">Starter Code:</label>
-            <textarea id="q-${questionCounter}-starter" rows="4" onchange="updateQuestionData()"></textarea>
-          `;
-          questionHtml += `
-            <label for="q-${questionCounter}-expected">Expected Keywords in Solution (comma-separated):</label>
-            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" />
-            <label for="q-${questionCounter}-starter">Starter Code:</label>
-            <textarea id="q-${questionCounter}-starter" rows="4" onchange="updateQuestionData()"></textarea>
+            <input type="text" id="q-${questionCounter}-expected" onchange="updateQuestionData()" placeholder="function, loop, array" />
+            <label for="q-${questionCounter}-starter">Starter Code (optional):</label>
+            <textarea id="q-${questionCounter}-starter" rows="4" onchange="updateQuestionData()" placeholder="// Write your starter code here..."></textarea>
           `;
         }
 
-        questionHtml += </div>;
+        questionHtml += `</div>`;
         container.insertAdjacentHTML('beforeend', questionHtml);
 
-
-        questionsData.push({
+        // Initialize question data
+        const newQuestion = {
           id: questionId,
           type: type,
           text: '',
-          options: {},
-          correct_option: '',
-          expected_keywords: [],
-          starter_code: ''
-          id: questionId,
-          type: type,
-          text: '',
-          options: {},
-          correct_option: '',
-          expected_keywords: [],
-          starter_code: ''
-        });
+          expected_keywords: []
+        };
 
+        if (type === 'mcq') {
+          newQuestion.options = { a: '', b: '', c: '', d: '' };
+          newQuestion.correct_option = '';
+        }
 
+        if (type === 'coding') {
+          newQuestion.starter_code = '';
+        }
+
+        questionsData.push(newQuestion);
         questionCounter++;
         updateNoQuestionsMessage();
         updateQuestionData();
       };
-        updateQuestionData();
-      };
 
       window.deleteQuestion = function (questionId) {
-      window.deleteQuestion = function (questionId) {
-        document.getElementById(questionId).remove();
+        const questionElement = document.getElementById(questionId);
+        if (questionElement) {
+          questionElement.remove();
+        }
         questionsData = questionsData.filter(q => q.id !== questionId);
         updateNoQuestionsMessage();
         updateQuestionData();
-      };
-        updateQuestionData();
+        
+        // Re-number the remaining questions
+        renumberQuestions();
       };
 
-      window.updateQuestionData = function () {
+      function renumberQuestions() {
+        const questionCards = document.querySelectorAll('.question-card');
+        questionCards.forEach((card, index) => {
+          const h3 = card.querySelector('h3');
+          if (h3) {
+            const type = card.getAttribute('data-question-type').toUpperCase();
+            h3.textContent = `Question ${index + 1} (${type})`;
+          }
+        });
+      }
+
       window.updateQuestionData = function () {
         questionsData.forEach(q => {
           const index = parseInt(q.id.split('-')[1]);
-          q.text = document.getElementById(`q-${index}-text`)?.value.trim() || '';
+          const textElement = document.getElementById(`q-${index}-text`);
+          
+          if (textElement) {
+            q.text = textElement.value.trim();
+          }
 
           if (q.type === 'mcq') {
-            q.options = {
-              a: document.getElementById(`q-${index}-option-a`)?.value.trim() || '',
-              b: document.getElementById(`q-${index}-option-b`)?.value.trim() || '',
-              c: document.getElementById(`q-${index}-option-c`)?.value.trim() || '',
-              d: document.getElementById(`q-${index}-option-d`)?.value.trim() || '',
-            };
-            q.correct_option = document.getElementById(`q-${index}-correct`)?.value.trim().toLowerCase() || '';
+            const optionA = document.getElementById(`q-${index}-option-a`);
+            const optionB = document.getElementById(`q-${index}-option-b`);
+            const optionC = document.getElementById(`q-${index}-option-c`);
+            const optionD = document.getElementById(`q-${index}-option-d`);
+            const correctOption = document.getElementById(`q-${index}-correct`);
+
+            if (optionA && optionB && optionC && optionD) {
+              q.options = {
+                a: optionA.value.trim(),
+                b: optionB.value.trim(),
+                c: optionC.value.trim(),
+                d: optionD.value.trim()
+              };
+            }
+
+            if (correctOption) {
+              q.correct_option = correctOption.value.trim().toLowerCase();
+            }
           } else if (q.type === 'text' || q.type === 'coding') {
             const keywordsInput = document.getElementById(`q-${index}-expected`);
             if (keywordsInput) {
-              q.expected_keywords = keywordsInput.value.split(',').map(k => k.trim()).filter(k => k);
+              q.expected_keywords = keywordsInput.value
+                .split(',')
+                .map(k => k.trim())
+                .filter(k => k.length > 0);
             }
+            
             if (q.type === 'coding') {
               const starterCodeInput = document.getElementById(`q-${index}-starter`);
-              q.starter_code = starterCodeInput?.value.trim() || '';
+              if (starterCodeInput) {
+                q.starter_code = starterCodeInput.value.trim();
+              }
             }
           }
         });
-        document.getElementById('assessmentQuestions').value = JSON.stringify(questionsData);
+        
+        const hiddenInput = document.getElementById('assessmentQuestions');
+        if (hiddenInput) {
+          hiddenInput.value = JSON.stringify(questionsData);
+        }
       };
+
+      // Form validation
+      function validateForm() {
+        // Check if at least one question is added
+        if (questionsData.length === 0) {
+          alert('Please add at least one assessment question.');
+          return false;
+        }
+
+        // Validate each question
+        for (let i = 0; i < questionsData.length; i++) {
+          const question = questionsData[i];
+          
+          if (!question.text.trim()) {
+            alert(`Please enter text for Question ${i + 1}.`);
+            return false;
+          }
+
+          if (question.type === 'mcq') {
+            const options = question.options;
+            if (!options.a || !options.b || !options.c || !options.d) {
+              alert(`Please fill all options for Question ${i + 1}.`);
+              return false;
+            }
+            
+            if (!question.correct_option || !['a', 'b', 'c', 'd'].includes(question.correct_option)) {
+              alert(`Please select a valid correct option (A, B, C, or D) for Question ${i + 1}.`);
+              return false;
+            }
+          }
+        }
+
+        return true;
+      }
 
       document.getElementById('jobForm').addEventListener('submit', async function (event) {
         event.preventDefault();
-      };
 
-      document.getElementById('jobForm').addEventListener('submit', async function (event) {
-        event.preventDefault();
+        updateQuestionData(); // Ensure the latest data is captured
 
-        updateQuestionData(); // Ensure the latest data
-        updateQuestionData(); // Ensure the latest data
+        if (!validateForm()) {
+          return;
+        }
 
         const formData = new FormData();
         formData.append('jobTitle', document.getElementById('jobTitle').value.trim());
@@ -288,56 +391,54 @@
         formData.append('assessmentTimer', document.getElementById('assessmentTimer').value);
         formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
         formData.append('assessmentQuestions', document.getElementById('assessmentQuestions').value);
-        formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
-        formData.append('assessmentQuestions', document.getElementById('assessmentQuestions').value);
 
         try {
           const response = await fetch('/jobs', {
             method: 'POST',
             body: formData
           });
-          const response = await fetch('/jobs', {
-            method: 'POST',
-            body: formData
-          });
 
-          const result = await response.json();
           const result = await response.json();
 
           if (response.ok) {
-            showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
+            // Check if showGlobalMessage function exists
+            if (typeof showGlobalMessage === 'function') {
+              showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
+            } else {
+              alert('Job posted successfully!');
+              window.location.href = '/jobs/job_post.html';
+            }
+            
+            // Reset form
             document.getElementById('jobForm').reset();
-
-            localStorage.clear();
-
-            document.getElementById('questionsBuilderContainer').innerHTML = '<p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded);">No questions added yet. Use the buttons above to add questions.</p>';
+            
+            // Clear questions
+            const container = document.getElementById('questionsBuilderContainer');
+            if (container) {
+              container.innerHTML = '<p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded, #666);">No questions added yet. Use the buttons above to add questions.</p>';
+            }
             questionsData = [];
             questionCounter = 0;
             updateNoQuestionsMessage();
           } else {
-            showGlobalMessage(result.message, 'error');
-          }
-          if (response.ok) {
-            showGlobalMessage(result.message, 'success', '/jobs/job_post.html');
-            document.getElementById('jobForm').reset();
-
-            localStorage.clear();
-
-            document.getElementById('questionsBuilderContainer').innerHTML = '<p id="noQuestionsMessage" style="text-align: center; color: var(--text-color-faded);">No questions added yet. Use the buttons above to add questions.</p>';
-            questionsData = [];
-            questionCounter = 0;
-            updateNoQuestionsMessage();
-          } else {
-            showGlobalMessage(result.message, 'error');
+            if (typeof showGlobalMessage === 'function') {
+              showGlobalMessage(result.message || 'Failed to post job', 'error');
+            } else {
+              alert(result.message || 'Failed to post job. Please try again.');
+            }
           }
         } catch (error) {
           console.error('Error submitting job form:', error);
-          showGlobalMessage('Failed to submit job. Please try again.', 'error');
-          console.error('Error submitting job form:', error);
-          showGlobalMessage('Failed to submit job. Please try again.', 'error');
+          if (typeof showGlobalMessage === 'function') {
+            showGlobalMessage('Failed to submit job. Please try again.', 'error');
+          } else {
+            alert('Failed to submit job. Please try again.');
+          }
         }
       });
-      });
+
+      // Initialize
+      updateNoQuestionsMessage();
     });
   </script>
 {% endblock %}

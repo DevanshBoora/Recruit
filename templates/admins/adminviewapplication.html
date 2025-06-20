@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admins/adminbase.html' %}
 
 {% block title %}DevOrks - View Applications{% endblock %}
 
@@ -314,15 +314,10 @@
     const noApplicationsMessage = document.getElementById('noApplicationsMessage');
  
     async function fetchApplications() {
-        const userName = localStorage.getItem('name');
-        const userRole = localStorage.getItem('response'); // Assuming 'role' is stored as 'response' in local storage
+        const companyName = localStorage.getItem('company_name') // Assuming 'role' is stored as 'response' in local storage
 
-        console.log("Attempting to fetch applications...");
-        console.log("User Name from localStorage:", userName);
-        console.log("User Role from localStorage (response):", userRole);
-
-        if (!userName || !userRole) {
-            console.warn("Name or Role not found in localStorage. Cannot filter applications.");
+        if (!companyName) {
+            console.warn("authorization error");
             noApplicationsMessage.textContent = 'User data (Name/Role) not found. Please login or ensure data is available.';
             noApplicationsMessage.style.display = 'block';
             return;
@@ -332,15 +327,11 @@
             // It seems your backend is expecting a POST request for fetching,
             // which is unconventional but we'll stick to it if that's the setup.
             // Ensure your Flask route for /applications expects POST and processes JSON body.
-            const response = await fetch('/applications', {
+            const response = await fetch('/admin/applications', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    name: userName, // Sending 'name' as job title filter
-                    role: userRole // Sending 'role' as job responsibility filter
-                })
             });
 
             console.log("Fetch response received:", response);

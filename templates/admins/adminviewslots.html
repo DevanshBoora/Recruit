@@ -1,4 +1,4 @@
-{% extends "interviewerbase.html" %}
+{% extends "admins/adminbase.html" %}
 
 {% block title %}Available Interview Slots - DevOrks{% endblock %}
 
@@ -97,11 +97,6 @@
 {% block content %}
 <div class="slots-container">
     <h2>Available Interview Slots</h2>
-
-    <div class="add-slot-link">
-        <a href="http://127.0.0.1:5000/add_slots" class="btn btn-primary">Add New Slot</a>
-    </div>
-
     {% if slots %}
     <div class="slot-list">
         {% for slot in slots %}
@@ -118,9 +113,6 @@
             <p><span class="status {% if slot.is_booked %}booked{% else %}available{% endif %}">
                 {% if slot.is_booked %}Booked{% else %}Available{% endif %}
             </span></p>
-            {% if not slot.is_booked %}
-                <button class="delete-slot-btn" data-slot-id="{{ slot.id }}">Delete Slot</button>
-            {% endif %}
         </div>
         {% endfor %}
     </div>

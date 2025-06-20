@@ -234,7 +234,7 @@
                 console.error('Fetch error:', err);
             }
         } else {
-            showGlobalMessage('No job ID provided for editing.', 'error', '/jobs/job_post.html');
+            showGlobalMessage('No job ID provided for editing.', 'error', '/admin/job');
         }
     });
 
@@ -266,7 +266,7 @@
             const result = await response.json();
 
             if (response.ok) {
-                showGlobalMessage(result.message, 'success', 'Jobs/job_post.html');
+                showGlobalMessage(result.message, 'success', '/admin/job');
                 // No form reset needed for edit
             } else {
                 showGlobalMessage(result.message, 'error');

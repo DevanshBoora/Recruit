@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "interviewerbase.html" %}
 
 {% block title %}Feedback Form - DevOrks{% endblock %}
 
@@ -414,9 +414,7 @@
         </form>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
     function updateScoreIndicator(field, value) {
         const fill = document.getElementById(field + '-fill');

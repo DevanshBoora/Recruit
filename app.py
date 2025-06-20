@@ -546,6 +546,7 @@ def signup():
         company_name = data.get('company_name')
         role = data.get('role') 
         company_password = data.get('company_password')
+        position = data.get('position')
         company =  Company.query.filter_by(company_name=company_name).first()
         if not name or not password:
             return jsonify({"message": "Name and password are required"}), 400
@@ -559,7 +560,7 @@ def signup():
         if existing_user:
             return jsonify({"message": "Username already exists"}), 409
 
-        new_user = User(name=name, email=email ,password=password, company_name=company_name, role=role)
+        new_user = User(name=name, email=email ,password=password, company_name=company_name, role=role,position=position)
         db.session.add(new_user)
         try:
             db.session.commit()
@@ -584,6 +585,7 @@ def login():
             return jsonify({"message": "Invalid username or password"}), 401
 
         session['user_id'] = user.id
+        session['user_name'] = user.name
         session['name'] = user.company_name
         session['response'] = user.role
         session['email'] = user.email
@@ -593,14 +595,15 @@ def login():
             "name": user.name,
             "company_name": user.company_name,
             "email": user.email,
-            "role": user.role
+            "role": user.role,
+            "position":user.position
         }), 200
     return render_template('login.html')
 
 @app.route('/logout', methods=['GET'])
 def logout():
     session.clear()
-    return redirect(url_for('index'))
+    return render_template('main_page.html')
 
 
 
@@ -748,21 +751,43 @@ def feedback():
             return f"Error: {e}", 500
 
     try:
-        # GET request – only show candidates with interviews and no feedback
+        # Get the current interviewer's name from the session
+        current_interviewer_name = session.get('user_name')
+
+        if not current_interviewer_name:
+            # Handle case where interviewer name is not in session (e.g., not logged in)
+            # You might redirect to login or show an error
+            return render_template("error.html", message="Interviewer not identified. Please log in.")
+
+        # GET request – show candidates whose interviews were scheduled by the current interviewer
+        # and who do not yet have feedback.
         candidates = db.session.query(Application.id, Application.applicant_name).filter(
+            # Candidate application status is 'Accepted' (from your original logic)
             Application.status == 'Accepted',
+
+            # Filter by applications linked to interview schedules booked by the current interviewer
             Application.id.in_(
-                db.session.query(InterviewSchedule.candidate_id).filter(InterviewSchedule.candidate_id.isnot(None))
+                db.session.query(Slot.booked_by_application_id).filter(
+                    and_(
+                        Slot.booked_by_application_id.isnot(None),
+                        Slot.interviewer_name == current_interviewer_name # Filter by interviewer's name
+                    )
+                ).distinct() # Use distinct to avoid duplicate application IDs if one candidate has multiple interviews
             ),
+
+            # Filter out candidates who already have feedback
             ~Application.id.in_(
-                db.session.query(Feedback.candidate_id).filter(Feedback.candidate_id.isnot(None))
+                db.session.query(Feedback.candidate_id).filter(Feedback.candidate_id.isnot(None)).distinct()
             )
         ).order_by(Application.applied_at.desc()).all()
 
         return render_template("feedback.html", candidates=candidates)
 
     except Exception as e:
-        return f"Error loading feedback page: {e}", 500
+            # Handle exceptions appropriately, e.g., log the error and return an error page
+        print(f"Error fetching candidates: {e}")
+            # Consider showing a more user-friendly message or logging full traceback
+        return render_template("error.html", message=f"An error occurred while fetching candidates: {e}")
 
 @app.route("/dashboard")
 def dashboard():

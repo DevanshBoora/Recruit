@@ -145,18 +145,8 @@
 
         .form-group input[type="text"],
         .form-group input[type="password"],
-        .form-group input[type="email"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color-dark);
-            border-radius: 8px;
-            background-color: var(--input-bg-dark);
-            color: var(--text-color-light);
-            font-size: 1em;
-            box-sizing: border-box;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .form-group select {
+        .form-group input[type="email"],
+        .form-group select { /* Added select to this rule */
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border-color-dark);
@@ -170,6 +160,7 @@
 
         .form-group input[type="text"]:focus,
         .form-group input[type="password"]:focus,
+        .form-group input[type="email"]:focus, /* Added email to focus rule */
         .form-group select:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
@@ -249,7 +240,7 @@
                 <input type="text" id="name" name="name" required minlength="3" maxlength="50">
                 <div class="error-message" id="nameError"></div>
             </div>
-             <div class="form-group">
+            <div class="form-group">
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" required minlength="3" maxlength="50">
                 <div class="error-message" id="emailError"></div>
@@ -259,7 +250,7 @@
                 <input type="password" id="password" name="password" required minlength="6">
                 <div class="error-message" id="passwordError"></div>
             </div>
-             <div class="form-group">
+            <div class="form-group">
                 <label for="Cpassword">Company Password:</label>
                 <input type="password" id="Cpassword" name="Cpassword" required minlength="6">
                 <div class="error-message" id="CpasswordError"></div>
@@ -272,7 +263,17 @@
             <div class="form-group">
                 <label for="role">Role:</label>
                 <input type="text" id="role" name="role" maxlength="100">
-                <div class="error-message" id="roleError"></div> </div>
+                <div class="error-message" id="roleError"></div>
+            </div>
+            <div class="form-group">
+                <label for="position">Position:</label>
+                <select id="position" name="position" required>
+                    <option value="">Select Position</option>
+                    <option value="manager">Manager</option>
+                    <option value="interviewer">Interviewer</option>
+                </select>
+                <div class="error-message" id="positionError"></div>
+            </div>
             <button type="submit" id="submitBtn">Register</button>
         </form>
         <div class="form-link">
@@ -321,9 +322,7 @@
             }
             if (!errorDiv) {
                 console.error(`Validation Error: Error div with ID '${errorId}' not found for field '${fieldId}'.`);
-                // If the error div is missing, we can't display the error, but we can still return validation result.
-                // For robustness, you might choose to throw an error or handle this more gracefully.
-                return validator(field.value); // Just return the validation result without displaying error
+                return validator(field.value); 
             }
 
             if (!validator(field.value)) {
@@ -343,26 +342,29 @@
                 (value) => value.length >= 3 && value.length <= 50, 
                 'Username must be between 3 and 50 characters');
             const emailValid = validateField('email', 'emailError', 
-                (value) => value.length >= 3 && value.length <= 50, 
-                'Username must be between 3 and 50 characters');
+                (value) => value.length >= 3 && value.length <= 50 && value.includes('@'), // Added basic email format check
+                'Please enter a valid email address');
             
             const passwordValid = validateField('password', 'passwordError', 
                 (value) => value.length >= 6, 
                 'Password must be at least 6 characters');
-             const CpasswordValid = validateField('Cpassword', 'CpasswordError', 
+            const CpasswordValid = validateField('Cpassword', 'CpasswordError', 
                 (value) => value.length >= 6, 
-                'Password must be at least 6 characters');
+                'Company Password must be at least 6 characters');
             
-            // For the role input, it's just a text input, so an empty string check is appropriate
             const roleValid = validateField('role', 'roleError', 
-                (value) => value.trim() !== '', // Use trim() to handle spaces
-                'Role cannot be empty'); // Changed message to reflect input text
+                (value) => value.trim() !== '', 
+                'Role cannot be empty');
             
             const companyNameValid = validateField('companyName', 'companyNameError', 
                 (value) => value.length <= 100, 
                 'Company name must be less than 100 characters');
 
-            return nameValid && passwordValid && roleValid && companyNameValid && emailValid && CpasswordValid; 
+            const positionValid = validateField('position', 'positionError',
+                (value) => value !== '',
+                'Please select a position');
+
+            return nameValid && emailValid && passwordValid && CpasswordValid && roleValid && companyNameValid && positionValid; 
         }
 
         // Real-time validation
@@ -374,8 +376,8 @@
 
         document.getElementById('email').addEventListener('blur', () => {
             validateField('email', 'emailError', 
-                (value) => value.length >= 3 && value.length <= 50, 
-                'Username must be between 3 and 50 characters');
+                (value) => value.length >= 3 && value.length <= 50 && value.includes('@'), 
+                'Please enter a valid email address');
         });
 
         document.getElementById('password').addEventListener('blur', () => {
@@ -386,10 +388,9 @@
         document.getElementById('Cpassword').addEventListener('blur', () => {
             validateField('Cpassword', 'CpasswordError', 
                 (value) => value.length >= 6, 
-                'Password must be at least 6 characters');
+                'Company Password must be at least 6 characters');
         });
 
-        // Changed 'change' event to 'blur' for text input
         document.getElementById('role').addEventListener('blur', () => {
             validateField('role', 'roleError', 
                 (value) => value.trim() !== '', 
@@ -400,6 +401,12 @@
             validateField('companyName', 'companyNameError', 
                 (value) => value.length <= 100, 
                 'Company name must be less than 100 characters');
+        });
+
+        document.getElementById('position').addEventListener('change', () => {
+            validateField('position', 'positionError',
+                (value) => value !== '',
+                'Please select a position');
         });
 
         // Form submission
@@ -426,6 +433,7 @@
             const companyName = document.getElementById('companyName').value.trim();
             const role = document.getElementById('role').value.trim();
             const email = document.getElementById('email').value.trim();
+            const position = document.getElementById('position').value; // Get the value from the new dropdown
 
             try {
                 const response = await fetch('/signup', {
@@ -438,8 +446,9 @@
                         email,
                         password, 
                         company_name: companyName, 
-                        role ,
-                        company_password:Cpassword
+                        role,
+                        company_password:Cpassword,
+                        position // Include the new 'position' field in the request body
                     })
                 });
 
@@ -464,16 +473,14 @@
         // Clear errors when user starts typing
         document.querySelectorAll('input, select').forEach(field => {
             field.addEventListener('input', () => {
-                // Check if the field itself is causing a border color change, not just an associated error div
                 if (field.style.borderColor === 'var(--error-color)') {
                     field.style.borderColor = 'var(--border-color-dark)';
                 }
-                // Also, hide the associated error message div if it exists and is visible
                 const errorDivId = field.id + 'Error';
                 const errorDiv = document.getElementById(errorDivId);
                 if (errorDiv && errorDiv.style.display === 'block') {
                     errorDiv.style.display = 'none';
-                    errorDiv.textContent = ''; // Clear text as well
+                    errorDiv.textContent = ''; 
                 }
             });
         });
