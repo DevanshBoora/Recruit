@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('name', result.company_name || '');
                 localStorage.setItem('response', result.role);
                 localStorage.setItem('role','a');
+                localStorage.setItem('email',result.email || '');
 
                 showGlobalMessage(result.message, 'success', '/');
             } else {

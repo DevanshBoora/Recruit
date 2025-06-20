@@ -28,7 +28,7 @@ from email.mime.text import MIMEText
 import mysql.connector
 from mysql.connector import Error
 from routes import register_blueprints
-from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot,Company
 import logging
 from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
@@ -354,18 +354,21 @@ def add_slots():
     # if session.get('user_role') not in ['admin', 'hr']:
     #     flash('You do not have permission to add slots.', 'error')
     #     return redirect(url_for('dashboard')) # Or appropriate page
-
+   
     if request.method == 'POST':
-        company_name = request.form.get('company_name')
-        role = request.form.get('role')
-        interview_time_str = request.form.get('interview_time')
-        interviewer_name = request.form.get('interviewer_name')
-        interviewer_email = request.form.get('interviewer_email')
-        mode = request.form.get('mode')
-        meeting_link = request.form.get('meeting_link')
-        address = request.form.get('address')
+        data = request.get_json() 
+        company_name = data.get('company_name')
+        role = data.get('role')
+        interview_time_str = data.get('interview_time')
+        interviewer_name = data.get('interviewer_name')
+        interviewer_email = data.get('interviewer_email')
+        mode = data.get('mode')
+        meeting_link = data.get('meeting_link')
+        address = data.get('address')
+        
 
         if not all([company_name, role, interview_time_str, interviewer_name, interviewer_email, mode]):
+            print(company_name)
             return jsonify({"message": "Missing required fields"}), 400
 
         try:
@@ -428,83 +431,87 @@ def view_slots():
     return render_template('view_slots.html', slots=available_slots) # Create this HTML template
 
 
-# @app.route('/applications/<int:application_id>/accept', methods=['POST'])
+@app.route('/applications/<int:application_id>/accept', methods=['POST'])
 
-# def accept_application_and_assign_slot(application_id):
-#     application = Application.query.get(application_id)
-#     if not application:
-#         return jsonify({"message": "Application not found"}), 404
+def accept_application_and_assign_slot(application_id):
+    application = db.session.get(Application, application_id)
+    if not application:
+        return jsonify({"message": "Application not found"}), 404
 
    
-#     if application.status != "Pending":
-#         return jsonify({"message": "Application already processed."}), 400
+    # if application.status != "Pending":
+    #     return jsonify({"message": "Application already processed."}), 400
 
     
-#     job = Job.query.get(application.job_id)
-#     if not job:
-#         return jsonify({"message": "Associated job not found."}), 404
+    job = Job.query.get(application.job_id)
+    if not job:
+        return jsonify({"message": "Associated job not found."}), 404
 
 
-#     current_user_id = session.get('user_id')
-#     acting_user = User.query.get(current_user_id)
-#     if not acting_user or not acting_user.company_name:
-#         return jsonify({"message": "User's company information is missing for slot allocation."}), 400
+    current_user_id = session.get('user_id')
+    acting_user = db.session.get(User, current_user_id)
+    print(current_user_id)
+    if not acting_user or not acting_user.company_name:
+        return jsonify({"message": "User's company information is missing for slot allocation."}), 400
 
    
-#     available_slot = Slot.query.filter(
-#         Slot.company_name == acting_user.company_name, # Filter by company accepting the application
-#         Slot.role == job.title, # Match the job title/role
-#         Slot.is_booked == False,
-#         Slot.interview_time > datetime.utcnow() # Only future slots
-#     ).order_by(Slot.interview_time.asc()).first() # Get the earliest available slot
+    available_slot = Slot.query.filter(
+        Slot.company_name == acting_user.company_name, # Filter by company accepting the application
+        Slot.role == job.responsibilities, # Match the job title/role
+        Slot.is_booked == False,
+        Slot.interview_time > datetime.utcnow() # Only future slots
+    ).order_by(Slot.interview_time.asc()).first() # Get the earliest available slot
 
-#     if not available_slot:
-#         # No slot available, maybe prompt for manual scheduling or offer to create one
-#         return jsonify({"message": "No available interview slots found for this role and company. Please add new slots."}), 404
+    if not available_slot:
+        # No slot available, maybe prompt for manual scheduling or offer to create one
+        return jsonify({"message": "No available interview slots found for this role and company. Please add new slots."}), 404
 
-#     # Book the slot
-#     available_slot.is_booked = True
-#     available_slot.booked_by_application_id = application.id
+    # Book the slot
+    available_slot.is_booked = True
+    available_slot.booked_by_application_id = application.id
 
-#     # Update application status
-#     application.status = "Interview Scheduled"
+    # Update application status
+    application.status = "Interview Scheduled"
 
-#     try:
-#         db.session.commit()
+    try:
+        db.session.commit()
 
-#         # Send emails to candidate and interviewer
-#         candidate_email_sent = send_interview_schedule_email(
-#             candidate_email=application.applicant_email,
-#             candidate_name=application.applicant_name,
-#             job_title=job.title,
-#             interview_slot=available_slot
-#         )
-#         interviewer_email_sent = send_interviewer_email(
-#             interviewer_email=available_slot.interviewer_email,
-#             interviewer_name=available_slot.interviewer_name,
-#             candidate_name=application.applicant_name,
-#             job_title=job.title,
-#             interview_slot=available_slot
-#         )
+        # Send emails to candidate and interviewer
+        print("correct till here")
+        send_schedule_email(
+            application.applicant_email,
+            available_slot.interview_time,
+            available_slot.mode,
+            available_slot.interviewer_name,
+            available_slot.meeting_link,
+            available_slot.address
+            
+        )
+        send_schedule_email(
+            available_slot.interviewer_email,
+            available_slot.interview_time,
+            available_slot.mode,
+            available_slot.interviewer_name,
+            available_slot.meeting_link,
+            available_slot.address,
+            is_interviewer=True
+        )
 
-#         message = "Application accepted and interview scheduled."
-#         if not candidate_email_sent:
-#             message += " (Failed to send email to candidate)."
-#         if not interviewer_email_sent:
-#             message += " (Failed to send email to interviewer)."
+        message = "Application accepted and interview scheduled."
+       
 
-#         # Optionally, delete the old InterviewSchedule entry if it exists for this application
-#         # interview_schedule_entry = InterviewSchedule.query.filter_by(candidate_id=application.id).first()
-#         # if interview_schedule_entry:
-#         #     db.session.delete(interview_schedule_entry)
-#         #     db.session.commit() # Commit again after deleting
+        # Optionally, delete the old InterviewSchedule entry if it exists for this application
+        interview_schedule_entry = InterviewSchedule.query.filter_by(candidate_id=application.id).first()
+        if interview_schedule_entry:
+            db.session.delete(interview_schedule_entry)
+            db.session.commit() # Commit again after deleting
 
-#         return jsonify({"message": message, "slot_id": available_slot.id}), 200
+        return jsonify({"message": message, "slot_id": available_slot.id}), 200
 
-#     except Exception as e:
-#         db.session.rollback() # Rollback in case of error
-#         print(f"Error booking slot or sending email: {e}")
-#         return jsonify({"message": f"Failed to book slot or send emails. Error: {str(e)}"}), 500
+    except Exception as e:
+        db.session.rollback() # Rollback in case of error
+        print(f"Error booking slot or sending email: {e}")
+        return jsonify({"message": f"Failed to book slot or send emails. Error: {str(e)}"}), 500
 
 # --- You might also want a route to delete a slot if it's no longer needed ---
 @app.route('/slots/<int:slot_id>/delete', methods=['POST']) # Or DELETE method
@@ -534,18 +541,25 @@ def signup():
     if request.method == 'POST':
         data = request.get_json()
         name = data.get('name')
+        email = data.get('email')
         password = data.get('password')
         company_name = data.get('company_name')
         role = data.get('role') 
-
+        company_password = data.get('company_password')
+        company =  Company.query.filter_by(company_name=company_name).first()
         if not name or not password:
             return jsonify({"message": "Name and password are required"}), 400
+        
+        if not company or company.check_password(company_password):
+            print(company)
+            return jsonify({"message": "company password"}), 401
+        
 
         existing_user = User.query.filter_by(name=name).first()
         if existing_user:
             return jsonify({"message": "Username already exists"}), 409
 
-        new_user = User(name=name, password=password, company_name=company_name, role=role)
+        new_user = User(name=name, email=email ,password=password, company_name=company_name, role=role)
         db.session.add(new_user)
         try:
             db.session.commit()
@@ -570,13 +584,15 @@ def login():
             return jsonify({"message": "Invalid username or password"}), 401
 
         session['user_id'] = user.id
-        session['username'] = user.name
-        session['role'] = user.role
+        session['name'] = user.company_name
+        session['response'] = user.role
+        session['email'] = user.email
 
         return jsonify({
             "message": "Login successful!",
             "name": user.name,
             "company_name": user.company_name,
+            "email": user.email,
             "role": user.role
         }), 200
     return render_template('login.html')

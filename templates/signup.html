@@ -145,6 +145,17 @@
 
         .form-group input[type="text"],
         .form-group input[type="password"],
+        .form-group input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color-dark);
+            border-radius: 8px;
+            background-color: var(--input-bg-dark);
+            color: var(--text-color-light);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
         .form-group select {
             width: 100%;
             padding: 12px;
@@ -238,10 +249,20 @@
                 <input type="text" id="name" name="name" required minlength="3" maxlength="50">
                 <div class="error-message" id="nameError"></div>
             </div>
+             <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required minlength="3" maxlength="50">
+                <div class="error-message" id="emailError"></div>
+            </div>
             <div class="form-group">
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required minlength="6">
                 <div class="error-message" id="passwordError"></div>
+            </div>
+             <div class="form-group">
+                <label for="Cpassword">Company Password:</label>
+                <input type="password" id="Cpassword" name="Cpassword" required minlength="6">
+                <div class="error-message" id="CpasswordError"></div>
             </div>
             <div class="form-group">
                 <label for="companyName">Company Name (Optional):</label>
@@ -321,8 +342,14 @@
             const nameValid = validateField('name', 'nameError', 
                 (value) => value.length >= 3 && value.length <= 50, 
                 'Username must be between 3 and 50 characters');
+            const emailValid = validateField('email', 'emailError', 
+                (value) => value.length >= 3 && value.length <= 50, 
+                'Username must be between 3 and 50 characters');
             
             const passwordValid = validateField('password', 'passwordError', 
+                (value) => value.length >= 6, 
+                'Password must be at least 6 characters');
+             const CpasswordValid = validateField('Cpassword', 'CpasswordError', 
                 (value) => value.length >= 6, 
                 'Password must be at least 6 characters');
             
@@ -335,7 +362,7 @@
                 (value) => value.length <= 100, 
                 'Company name must be less than 100 characters');
 
-            return nameValid && passwordValid && roleValid && companyNameValid;
+            return nameValid && passwordValid && roleValid && companyNameValid && emailValid && CpasswordValid; 
         }
 
         // Real-time validation
@@ -345,8 +372,19 @@
                 'Username must be between 3 and 50 characters');
         });
 
+        document.getElementById('email').addEventListener('blur', () => {
+            validateField('email', 'emailError', 
+                (value) => value.length >= 3 && value.length <= 50, 
+                'Username must be between 3 and 50 characters');
+        });
+
         document.getElementById('password').addEventListener('blur', () => {
             validateField('password', 'passwordError', 
+                (value) => value.length >= 6, 
+                'Password must be at least 6 characters');
+        });
+        document.getElementById('Cpassword').addEventListener('blur', () => {
+            validateField('Cpassword', 'CpasswordError', 
                 (value) => value.length >= 6, 
                 'Password must be at least 6 characters');
         });
@@ -384,8 +422,10 @@
 
             const name = document.getElementById('name').value.trim();
             const password = document.getElementById('password').value;
+            const Cpassword = document.getElementById('Cpassword').value;
             const companyName = document.getElementById('companyName').value.trim();
             const role = document.getElementById('role').value.trim();
+            const email = document.getElementById('email').value.trim();
 
             try {
                 const response = await fetch('/signup', {
@@ -395,9 +435,11 @@
                     },
                     body: JSON.stringify({ 
                         name, 
+                        email,
                         password, 
                         company_name: companyName, 
-                        role 
+                        role ,
+                        company_password:Cpassword
                     })
                 });
 

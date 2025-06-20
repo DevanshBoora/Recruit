@@ -389,6 +389,27 @@
             console.log("Update status response:", result);
             if( newStatus === 'Accepted') {
                         console.log("Accepted");
+                        try {
+                        const response = await fetch(`/applications/${appId}/accept`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            // No body needed for this simple action
+                        });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showGlobalMessage(result.message, 'success');
+                            // Update the status on the UI without page reload
+                            document.getElementById(`status-${applicationId}`).textContent = 'Interview Scheduled';
+                            this.remove(); // Remove the button after successful acceptance
+                        } else {
+                            showGlobalMessage(result.message || 'Error accepting application', 'error');
+                        }
+                        } catch (error) {
+                            console.error('Error accepting application:', error);
+                            showGlobalMessage('Failed to accept application. Please try again.', 'error');
+                        }
                         
                         // Optionally, you can redirect or perform other actions on success
                         // window.location.href = '/applications'; // Redirect to applications page

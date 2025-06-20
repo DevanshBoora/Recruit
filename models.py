@@ -169,12 +169,14 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     company_name = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(50), nullable=False, default='u')
 
-    def __init__(self, name, password, company_name=None, role='u'):
+    def __init__(self, name, email,password, company_name=None, role='u'):
         self.name = name
+        self.email = email.lower()
         self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         self.company_name = company_name
         self.role = role
@@ -186,12 +188,13 @@ class User(db.Model):
         return {
             'id': self.id,
             'name': self.name,
+            'email':self.email,
             'company_name': self.company_name,
             'role': self.role
         }
 
     def __repr__(self):
-        return f'<User {self.name} ({self.role})>'
+        return f'<User {self.name} ({self.role}) at {self.company_name}>'
 
 # models.py (continued)
 
@@ -231,3 +234,34 @@ class Slot(db.Model):
 
     def __repr__(self):
         return f'<Slot {self.id} for {self.role} at {self.interview_time}>'
+
+
+
+class Company(db.Model):
+    __tablename__ = 'companies' # It's good practice to pluralize table names
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(255), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False) # Store hashed password
+
+    # Optional: Add other company-specific fields if needed later, e.g.,
+    # website = db.Column(db.String(255))
+    # contact_email = db.Column(db.String(255))
+
+    def __init__(self, company_name, password):
+        self.company_name = company_name
+        # Hash the password using bcrypt for security
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    def check_password(self, password):
+        """Checks the provided password against the stored hash."""
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'company_name': self.company_name
+        }
+
+    def __repr__(self):
+        return f'<Company {self.company_name}>'

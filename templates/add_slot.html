@@ -30,11 +30,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="company_name">Company Name <span class="required">*</span></label>
-                        <input type="text" id="company_name" name="company_name" required value="{{ session.get('company_name', '') }}">
+                        <input type="text" id="company_name" name="company_name" required >
                     </div>
                     <div class="form-group">
                         <label for="role">Job Role / Title <span class="required">*</span></label>
-                        <input type="text" id="role" name="role" placeholder="e.g., Software Engineer" required>
+                        <input type="text" id="role" name="role"  placeholder="e.g., Software Engineer" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -98,6 +98,20 @@
         const interviewTimeInput = document.getElementById('interview_time');
 
         // Set minimum date for datetime-local to now
+
+        const companyNameInput = document.getElementById('company_name');
+        const roleInput = document.getElementById('role');
+        const interviewerEmail = document.getElementById('interviewer_email');
+
+        if (localStorage.getItem('name')) {
+            companyNameInput.value = localStorage.getItem('name');
+        }
+        if (localStorage.getItem('response')) {
+            roleInput.value = localStorage.getItem('response');
+        }
+        if ( localStorage.getItem('email')) {
+            interviewerEmail.value = localStorage.getItem('email');
+        }
         const now = new Date();
         // Format to YYYY-MM-DDTHH:MM for datetime-local input
         const nowIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
@@ -139,7 +153,9 @@
             event.preventDefault();
 
             const formData = new FormData(this);
+            console.log("hello")
             const data = Object.fromEntries(formData.entries());
+            console.log(data)
 
             try {
                 const response = await fetch('/slots/add', {
