@@ -64,14 +64,14 @@
         margin-top: 10px;
     }
     .slot-card .status.booked {
-        background-color: var(--error-color-bg); /* Use a defined error color for booked */
+        background-color: yellow; /* Use a defined error color for booked */
         color: var(--error-color);
     }
     .slot-card .status.available {
         background-color: var(--success-color-bg); /* Use a defined success color for available */
         color: var(--success-color);
     }
-    .delete-slot-btn {
+    .delete-slot-btn ,.feedback-btn {
         background-color: var(--error-color);
         color: white;
         border: none;
@@ -82,7 +82,10 @@
         align-self: flex-end; /* Pushes button to the bottom right */
         transition: background-color 0.3s ease;
     }
-    .delete-slot-btn:hover {
+    .feedback-btn{
+        background-color: green;
+    }
+    .delete-slot-btn:hover ,.feedback-btn:hover {
         background-color: var(--error-color-dark);
     }
     .no-slots-message {
@@ -99,7 +102,7 @@
     <h2>Available Interview Slots</h2>
 
     <div class="add-slot-link">
-        <a href="http://127.0.0.1:5000/add_slots" class="btn btn-primary">Add New Slot</a>
+        <a href="http://127.0.0.1:5000/slots/add" class="btn btn-primary">Add New Slot</a>
     </div>
 
     {% if slots %}
@@ -114,13 +117,27 @@
             {% elif slot.mode == 'offline' %}
                 <p><strong>Address:</strong> {{ slot.address }}</p>
             {% endif %}
-            <p><strong>Interviewer:</strong> {{ slot.interviewer_name }} ({{ slot.interviewer_email }})</p>
+            {% if slot.is_booked and slot.booked_application %}
+            <p><strong>Candidate Name :</strong> {{ slot.booked_application.applicant_name }}</p>
+            <p>({{ slot.booked_application.applicant_email }})</p>
+
+            {% endif %}
+
             <p><span class="status {% if slot.is_booked %}booked{% else %}available{% endif %}">
                 {% if slot.is_booked %}Booked{% else %}Available{% endif %}
             </span></p>
+            <p>
             {% if not slot.is_booked %}
                 <button class="delete-slot-btn" data-slot-id="{{ slot.id }}">Delete Slot</button>
+            {% else %}
+                {% set current_timestamp = now().timestamp() %}
+                {% if slot.is_booked and slot.interview_time.timestamp() < current_timestamp %}
+                    <button class="feedback-btn" 
+                onclick="handleClick('{{ slot.booked_by_application_id }}')" 
+                data-slot-id="{{ slot.id }}">Give Feedback</button>
+                {% endif %}
             {% endif %}
+</p>
         </div>
         {% endfor %}
     </div>
@@ -130,6 +147,43 @@
 </div>
 
 <script>
+    function handleClick(id) {
+            const url = 'http://localhost:5000/fetch/feedback';
+
+            const data = {
+                app_id: id 
+            };
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' 
+                
+                },
+                body: JSON.stringify(data) 
+            })
+            .then(response => {
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(responseData => {
+                console.log('Success:', responseData);
+                localStorage.setItem("candName",responseData.candidate_name)
+                localStorage.setItem("candId",responseData.candidate_id)
+                console.log("setting lcoalstorage :")
+                setTimeout(()=>{
+                    window.location.href ="http://127.0.0.1:5000/fetch/feedback"
+                },3000)
+                
+            })
+            .catch(error => {
+                console.error('Error sending POST request:', error);
+                alert('Failed to send feedback request. See console for details.'); 
+            });
+    }
     document.addEventListener('DOMContentLoaded', function() {
         const deleteButtons = document.querySelectorAll('.delete-slot-btn');
 
@@ -164,12 +218,9 @@
             });
         });
 
-        // Global message display function (copy from your existing base.html or a common JS file)
+        
         function showGlobalMessage(message, type) {
-            // Implement your actual message display logic here (e.g., a toast, a div at the top)
-            // For now, using a simple alert
             alert(`${type.toUpperCase()}: ${message}`);
-            // You might also want to clear query params if using them for messages
             const url = new URL(window.location);
             url.searchParams.delete('message');
             url.searchParams.delete('type');

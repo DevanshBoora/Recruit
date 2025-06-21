@@ -243,8 +243,10 @@
     .top-buttons-container {
         display: flex;
         justify-content: center;
-        gap: 20px; /* Space between buttons */
-        margin-bottom: 30px; /* Space below buttons */
+        gap: 20px;
+        /* Space between buttons */
+        margin-bottom: 30px;
+        /* Space below buttons */
     }
 
     .top-buttons-container .action-btn {
@@ -257,14 +259,16 @@
         font-size: 1.1em;
         font-weight: 600;
         transition: background-color 0.3s ease, transform 0.2s ease;
-        text-decoration: none; /* For anchor tags */
+        text-decoration: none;
+        /* For anchor tags */
         display: inline-flex;
         align-items: center;
         justify-content: center;
     }
 
     .top-buttons-container .action-btn:hover {
-        background-color: #008c9e; /* Slightly darker accent on hover */
+        background-color: #008c9e;
+        /* Slightly darker accent on hover */
         transform: translateY(-2px);
     }
 </style>
@@ -273,7 +277,7 @@
 {% block content %}
 <div class="applications-wrapper">
     <h1>All Job Applications</h1>
-    
+
     <div id="applicationsListings">
         <table id="applicationsTable" class="applications-table">
             <thead>
@@ -312,7 +316,7 @@
 
     const applicationsTableBody = document.querySelector('#applicationsTable tbody');
     const noApplicationsMessage = document.getElementById('noApplicationsMessage');
- 
+
     async function fetchApplications() {
         const userName = localStorage.getItem('name');
         const userRole = localStorage.getItem('response'); // Assuming 'role' is stored as 'response' in local storage
@@ -389,7 +393,7 @@
             // Add event listener for view resume buttons
             // This needs to be done *after* the rows are added to the DOM
             document.querySelectorAll('.view-resume-btn').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     const resumePath = this.dataset.resumePath;
                     openResumeModal(resumePath);
                 });
@@ -405,44 +409,58 @@
     async function updateApplicationStatus(appId, newStatus) {
         console.log(`Attempting to update application ${appId} status to ${newStatus}`);
         try {
-            const response = await fetch(`/applications/${appId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: newStatus
-                })
-            });
 
-            const result = await response.json();
-            console.log("Update status response:", result);
-            
-            if( newStatus === 'Accepted') {
+            if (newStatus === 'Accepted') {
                 console.log("Accepted");
                 try {
-                const acceptResponse = await fetch(`/applications/${appId}/accept`, { // Changed variable name to avoid conflict
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    // No body needed for this simple action
-                });
-                const acceptResult = await acceptResponse.json(); // Changed variable name to avoid conflict
-                if (acceptResponse.ok) {
-                    if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
-                        showGlobalMessage(acceptResult.message, 'success');
+                    const acceptResponse = await fetch(`/applications/${appId}/accept`, { // Changed variable name to avoid conflict
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        // No body needed for this simple action
+                    });
+                    const acceptResult = await acceptResponse.json(); // Changed variable name to avoid conflict
+                    if (acceptResponse.ok) {
+                        if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
+                            showGlobalMessage(acceptResult.message, 'success');
+                            const response = await fetch(`/applications/${appId}/status`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    status: newStatus
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (response.ok) {
+                                if (typeof showGlobalMessage === 'function') {
+                                    showGlobalMessage(result.message, 'success');
+                                } else {
+                                    alert(result.message); // Simple alert for demonstration
+                                }
+                                updateApplicationRowInTable(appId, newStatus); // Update the specific row
+                            } else {
+                                if (typeof showGlobalMessage === 'function') {
+                                    showGlobalMessage(result.message, 'error');
+                                } else {
+                                    alert(result.message); // Simple alert for demonstration
+                                }
+                            }
+                        } else {
+                            alert(acceptResult.message);
+                        }
+                        // The status will be updated by updateApplicationRowInTable already
                     } else {
-                        alert(acceptResult.message);
+                        if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
+                            showGlobalMessage(acceptResult.message || 'Error accepting application', 'error');
+                        } else {
+                            alert(acceptResult.message || 'Error accepting application');
+                        }
                     }
-                    // The status will be updated by updateApplicationRowInTable already
-                } else {
-                    if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
-                        showGlobalMessage(acceptResult.message || 'Error accepting application', 'error');
-                    } else {
-                        alert(acceptResult.message || 'Error accepting application');
-                    }
-                }
                 } catch (error) {
                     console.error('Error accepting application:', error);
                     if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
@@ -450,21 +468,6 @@
                     } else {
                         alert('Failed to accept application. Please try again.');
                     }
-                }
-            }
-
-            if (response.ok) {
-                if (typeof showGlobalMessage === 'function') {
-                    showGlobalMessage(result.message, 'success');
-                } else {
-                    alert(result.message); // Simple alert for demonstration
-                }
-                updateApplicationRowInTable(appId, newStatus); // Update the specific row
-            } else {
-                if (typeof showGlobalMessage === 'function') {
-                    showGlobalMessage(result.message, 'error');
-                } else {
-                    alert(result.message); // Simple alert for demonstration
                 }
             }
         } catch (error) {
@@ -525,12 +528,12 @@
     const closeModalButton = document.querySelector('#resumeModal .close-button');
     const pdfViewer = document.getElementById('pdfViewer'); // Get the iframe
 
-    closeModalButton.addEventListener('click', function() {
+    closeModalButton.addEventListener('click', function () {
         resumeModal.style.display = 'none';
         pdfViewer.src = ''; // Clear iframe source to stop loading
     });
 
-    window.addEventListener('click', function(event) {
+    window.addEventListener('click', function (event) {
         if (event.target == resumeModal) {
             resumeModal.style.display = 'none';
             pdfViewer.src = ''; // Clear iframe source
@@ -540,6 +543,6 @@
     // Note: The previous window.addEventListener('load', fetchApplications); is commented out,
     // but document.addEventListener('DOMContentLoaded', fetchApplications); is active,
     // which is generally preferred for fetching data after the DOM is fully loaded.
-    
+
 </script>
 {% endblock %}

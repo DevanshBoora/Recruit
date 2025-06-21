@@ -73,6 +73,8 @@ class Application(db.Model):
             'eligibility_score': self.eligibility_score,
             'assessment_score': self.assessment_score,
             'status': self.status,
+            'rejection_email_sent': self.rejection_email_sent,
+            'applied_at': self.applied_at.isoformat() if self.applied_at else None
         }
 
     def __repr__(self):
@@ -93,6 +95,18 @@ class InterviewSchedule(db.Model):
 
     candidate = db.relationship('Application', backref=db.backref('interview_schedule', lazy=True))
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'candidate_id': self.candidate_id,
+            'mode': self.mode,
+            'interview_date': self.interview_date.isoformat() if self.interview_date else None,
+            'interviewer_name': self.interviewer_name,
+            'interviewer_email': self.interviewer_email,
+            'meeting_link': self.meeting_link,
+            'address': self.address
+        }
+
 class Feedback(db.Model):
     __tablename__ = 'feedback'
     feedback_id = db.Column(db.Integer, primary_key=True)
@@ -105,6 +119,17 @@ class Feedback(db.Model):
     rejection_email_sent = db.Column(db.Boolean, default=False)
 
     candidate = db.relationship('Application', backref=db.backref('feedback', lazy=True))
+
+    def to_dict(self):
+        return {
+            'feedback_id': self.feedback_id,
+            'candidate_id': self.candidate_id,
+            'comments': self.comments,
+            'decision': self.decision,
+            'communication_score': self.communication_score,
+            'technical_score': self.technical_score,
+            'problem_solving_score': self.problem_solving_score
+        }
 
 class AcceptedCandidate(db.Model):
     __tablename__ = 'accepted_candidates'
@@ -125,6 +150,15 @@ class JobOffer(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     application = db.relationship('Application', backref=db.backref('job_offer', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'application_id': self.application_id,
+            'status': self.status,
+            'offer_sent': self.offer_sent,
+            'offer_sent_time': self.offer_sent_time.isoformat() if self.offer_sent_time else None
+        }
 
 class Conversation(db.Model):
     __tablename__ = 'conversations'
@@ -169,7 +203,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=False, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     company_name = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(50), nullable=False, default='u')

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash, url_for
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, flash, url_for,g
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
@@ -408,6 +408,13 @@ def add_slots():
 
 
 # --- New Route to View Available Slots ---
+
+@app.before_request
+def inject_now():
+    """Injects the current datetime into the Flask global context for Jinja2."""
+    g.now = datetime.now # This is correct for setting g.now
+
+
 @app.route('/slots', methods=['GET'])
 def view_slots():
     # Fetch all unbooked slots or filter by company/role if needed
@@ -417,31 +424,29 @@ def view_slots():
     
     if not user:
         return jsonify({"message": "User not found"}), 404
+    print(user.name)
+    slots_query = Slot.query.options(db.joinedload(Slot.booked_application))\
+                               .filter_by(interviewer_name=user.name)\
+                               .order_by(Slot.interview_time)\
+                               .all()
 
-    slots_query = Slot.query.filter_by(is_booked=False).order_by(Slot.interview_time)
-
-    # Filter slots based on the logged-in user's company (if they have one)
-    if user.company_name:
-        slots_query = slots_query.filter_by(interviewer_name=user.name)
-
-    available_slots = slots_query.all()
+    available_slots = slots_query
     
     # You might want to filter by job title/role as well if the user has a specific job they are hiring for
     # Example: If `user` has an associated job they are managing. This would depend on your user-job relationship.
     
-    return render_template('view_slots.html', slots=available_slots) # Create this HTML template
+    return render_template('view_slots.html', slots=available_slots, now=g.now  ) # Create this HTML template
 
 
 @app.route('/applications/<int:application_id>/accept', methods=['POST'])
-
 def accept_application_and_assign_slot(application_id):
     application = db.session.get(Application, application_id)
     if not application:
         return jsonify({"message": "Application not found"}), 404
 
    
-    # if application.status != "Pending":
-    #     return jsonify({"message": "Application already processed."}), 400
+    if application.status != "Pending":
+        return jsonify({"message": "Application already processed."}), 400
 
     
     job = Job.query.get(application.job_id)
@@ -473,6 +478,20 @@ def accept_application_and_assign_slot(application_id):
 
     # Update application status
     application.status = "Interview Scheduled"
+
+    db.session.execute(text("""
+                INSERT INTO interview_schedule 
+                (candidate_id, mode, interview_date, interviewer_name, interviewer_email, meeting_link, address)
+                VALUES (:candidate_id, :mode, :interview_date, :interviewer_name, :interviewer_email, :meeting_link, :address)
+            """), {
+                "candidate_id": application.id,
+                "mode": available_slot.mode,
+                "interview_date": available_slot.interview_time,
+                "interviewer_name": available_slot.interviewer_name,
+                "interviewer_email":  available_slot.interviewer_email,
+                "meeting_link": available_slot.meeting_link,
+                "address":available_slot.address
+    })
 
     try:
         db.session.commit()
@@ -637,16 +656,42 @@ def login():
         if not user or not user.check_password(password):
             return jsonify({"message": "Invalid username or password"}), 401
 
-        session['user_id'] = user.id
-        session['user_name'] = user.name
-        session['name'] = user.company_name
-        session['response'] = user.role
-        session['email'] = user.email
-        if ( user.role == "interviewer"):
+        
+        if ( user.position == "interviewer"):
             session['role'] ='i'
-        else : 
+            session['user_id'] = user.id
+            session['user_name'] = user.name
+            session['name'] = user.company_name
+            session['response'] = user.role
+            session['email'] = user.email
+            return jsonify({
+            "message": "Login successful!",
+            "name": user.name,
+            "company_name": user.company_name,
+            "email": user.email,
+            "role": user.role,
+            "position":user.position
+        }), 200
+        elif user.position == "manager": 
             session['role'] ='a'
+            session['user_id'] = user.id
+            session['user_name'] = user.name
+            session['name'] = user.company_name
+            session['response'] = user.role
+            session['email'] = user.email
+            return jsonify({
+            "message": "Login successful!",
+            "name": user.name,
+            "company_name": user.company_name,
+            "email": user.email,
+            "role": user.role,
+            "position":user.position
+        }), 200
 
+
+        session['candidate_name'] = user.name
+        session['candidate_email'] = user.email
+        session['who'] ='user'
         return jsonify({
             "message": "Login successful!",
             "name": user.name,
@@ -801,50 +846,26 @@ def feedback():
 
             db.session.commit()
             flash("Feedback submitted successfully.", "success")
-            return redirect("/view_applications.html")
+            return redirect("/dashboard")
 
         except Exception as e:
             db.session.rollback()
             return f"Error: {e}", 500
+@app.route('/fetch/feedback' ,methods=['POST','GET'])
+def fetch():
+    if request.method == "POST":
+        try:
+            data = request.get_json()
+            id = data.get('app_id')
+            if not id:
+                return jsonify({'status':'Error','message':'Id is missign in the post request'}) ,500
+            candidates = Application.query.get(id)
+            return jsonify({'candidate_name':candidates.applicant_name, 'candidate_id':id}) ,200
 
-    try:
-        # Get the current interviewer's name from the session
-        current_interviewer_name = session.get('user_name')
-
-        if not current_interviewer_name:
-            # Handle case where interviewer name is not in session (e.g., not logged in)
-            # You might redirect to login or show an error
-            return render_template("error.html", message="Interviewer not identified. Please log in.")
-
-        # GET request – show candidates whose interviews were scheduled by the current interviewer
-        # and who do not yet have feedback.
-        candidates = db.session.query(Application.id, Application.applicant_name).filter(
-            # Candidate application status is 'Accepted' (from your original logic)
-            Application.status == 'Accepted',
-
-            # Filter by applications linked to interview schedules booked by the current interviewer
-            Application.id.in_(
-                db.session.query(Slot.booked_by_application_id).filter(
-                    and_(
-                        Slot.booked_by_application_id.isnot(None),
-                        Slot.interviewer_name == current_interviewer_name # Filter by interviewer's name
-                    )
-                ).distinct() # Use distinct to avoid duplicate application IDs if one candidate has multiple interviews
-            ),
-
-            # Filter out candidates who already have feedback
-            ~Application.id.in_(
-                db.session.query(Feedback.candidate_id).filter(Feedback.candidate_id.isnot(None)).distinct()
-            )
-        ).order_by(Application.applied_at.desc()).all()
-
-        return render_template("feedback.html", candidates=candidates)
-
-    except Exception as e:
-            # Handle exceptions appropriately, e.g., log the error and return an error page
-        print(f"Error fetching candidates: {e}")
-            # Consider showing a more user-friendly message or logging full traceback
-        return render_template("error.html", message=f"An error occurred while fetching candidates: {e}")
+        except Exception as e:
+            print(f"Error fetching candidates: {e}")
+            return render_template("error.html", message=f"An error occurred while fetching candidates: {e}")
+    return render_template('feedback.html')
 
 @app.route("/dashboard")
 def dashboard():

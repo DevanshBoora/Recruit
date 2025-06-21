@@ -5,6 +5,7 @@
 {% block head_extra %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
+    /* ... (Your existing CSS styles remain unchanged) ... */
     .feedback-container {
         max-width: 700px;
         margin: 0 auto;
@@ -308,24 +309,12 @@
     <div class="feedback-form-card">
         <h1 class="feedback-title">
             <i class="fas fa-clipboard-check"></i>
-            Submit Interview Feedback
+            Submit Interview Feedback for <span id="candidateNamePlaceholder">Candidate</span>
         </h1>
 
-        <form method="POST">
-            <!-- Candidate Selection -->
-            <div class="form-group">
-                <label for="candidate">
-                    <i class="fas fa-user"></i>
-                    Select Candidate
-                </label>
-                <select id="candidate" name="candidate_id" required>
-                    {% for c in candidates %}
-                    <option value="{{ c['id'] }}">{{ c['applicant_name'] }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <form method="POST" action="http://127.0.0.1:5000/feedback">
+            <input type="hidden" id="candidate_id" name="candidate_id" value="">
 
-            <!-- Comments -->
             <div class="form-group">
                 <label for="comments">
                     <i class="fas fa-comment-dots"></i>
@@ -335,7 +324,6 @@
                           placeholder="Please provide detailed feedback about the candidate's performance, including strengths, areas for improvement, and overall impression..."></textarea>
             </div>
 
-            <!-- Scores Section -->
             <div class="score-section">
                 <h3>
                     <i class="fas fa-star"></i>
@@ -383,7 +371,6 @@
                 </div>
             </div>
 
-            <!-- Decision Section -->
             <div class="decision-section">
                 <h3>
                     <i class="fas fa-balance-scale"></i>
@@ -416,13 +403,20 @@
 </div>
 
 <script>
+    // Function to update score indicator visuals
     function updateScoreIndicator(field, value) {
         const fill = document.getElementById(field + '-fill');
-        const percentage = (value / 10) * 100;
-        fill.style.width = percentage + '%';
+        // Ensure value is a number and within 0-10 range
+        const numericValue = parseFloat(value);
+        if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 10) {
+            const percentage = (numericValue / 10) * 100;
+            fill.style.width = percentage + '%';
+        } else {
+            fill.style.width = '0%'; // Reset if invalid
+        }
     }
 
-    // Add interactive feedback
+    // Add interactive focus/blur feedback for form elements
     document.querySelectorAll('.form-group input, .form-group select, .form-group textarea').forEach(element => {
         element.addEventListener('focus', function() {
             this.parentElement.style.transform = 'translateY(-2px)';
@@ -433,7 +427,7 @@
         });
     });
 
-    // Initialize score indicators
+    // Initialize score indicators on page load
     window.addEventListener('load', function() {
         document.querySelectorAll('input[type="number"]').forEach(input => {
             if (input.value) {
@@ -441,9 +435,31 @@
                 updateScoreIndicator(field, input.value);
             }
         });
+
+        // --- Retrieve Candidate Data from Local Storage and Update UI ---
+        const candidateId = localStorage.getItem('candId');
+        const candidateName = localStorage.getItem('candName');
+        const candidateNamePlaceholder = document.getElementById('candidateNamePlaceholder');
+        const applicationIdInput = document.getElementById('candidate_id');
+
+        if (candidateId) {
+            applicationIdInput.value = candidateId; // Set hidden input value
+        }
+
+        if (candidateName) {
+            candidateNamePlaceholder.textContent = candidateName; // Update title
+        } else if (candidateId) {
+            // Fallback if name is not found but ID is, display ID
+            candidateNamePlaceholder.textContent = `Candidate ID: ${candidateId}`;
+        } else {
+            // If neither is found, keep default or display a message
+            candidateNamePlaceholder.textContent = 'Unknown Candidate';
+            console.warn("Candidate ID and Name not found in local storage.");
+        }
+        // --- End Local Storage Retrieval ---
     });
 
-    // Add submission confirmation
+    // Add submission confirmation logic
     document.querySelector('form').addEventListener('submit', function(e) {
         const communication = document.getElementById('communication').value;
         const technical = document.getElementById('technical').value;
@@ -451,12 +467,14 @@
         const decision = document.querySelector('input[name="decision"]:checked');
         
         if (communication && technical && problemSolving && decision) {
-            const avgScore = ((parseInt(communication) + parseInt(technical) + parseInt(problemSolving)) / 3).toFixed(1);
+            const avgScore = ((parseInt(communication) + parseInt(technical) + parseInt(problemSolving)) / 3).toFixed(1); 
             const confirmed = confirm(`Are you sure you want to submit this feedback?\n\nAverage Score: ${avgScore}/10\nDecision: ${decision.value}`);
-            
             if (!confirmed) {
-                e.preventDefault();
+                e.preventDefault(); // Prevent form submission if user cancels
             }
+        } else {
+            // If any required field is missing, the browser's 'required' attribute will handle it.
+            // You might add a custom alert here if preferred, but browser validation is usually sufficient.
         }
     });
 </script>
