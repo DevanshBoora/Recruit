@@ -511,13 +511,13 @@
         <a href="/" class="logo">DevOrks</a>
         <nav>
             <ul>
-                <li><a href="/admin/applications">Home</a></li>
-                <li><a href="/admin/job">Job Postings</a></li>
-                <li id="postJobLink" ><a href="/jobs/post_job.html">Post a Job</a></li>
-                <li id="slots"> <a href="/admin/slots">View Slots</a></li>
-                <li id="loginLink" style="display: none;"><a href="/auth/company_login">Login</a></li>
-                <li id="signupLink" style="display: none;"><a href="/auth/register_company">Register Company</a></li>
-                <li id="logoutLink" ><a href="http://127.0.0.1:5000/logout">Logout</a></li>
+                <li id="homeLink"><a href="/admin/applications">Home</a></li>
+                <li id="jobPostingsLink"><a href="/admin/job">Job Postings</a></li>
+                <li id="postJobLink"><a href="/jobs/post_job.html">Post a Job</a></li>
+                <li id="viewSlotsLink"><a href="/admin/slots">View Slots</a></li>
+                <li id="loginLink"><a href="/auth/company_login">Login</a></li>
+                <li id="signupLink"><a href="/admin/register">Create Users</a></li>
+                <li id="logoutLink"><a onclick="handleLogout()">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -540,7 +540,7 @@
 
     <script>
         // Global function for messages
-        function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
+        function showGlobalMessage(message, type) {
             const msgContainer = document.getElementById('globalMessageContainer');
             msgContainer.textContent = message;
             msgContainer.className = `show ${type}`;
@@ -550,19 +550,8 @@
                 msgContainer.addEventListener('transitionend', function handler() {
                     msgContainer.className = '';
                     msgContainer.removeEventListener('transitionend', handler);
-                    if (redirectUrl) {
-                        window.location.href = redirectUrl;
-                    }
                 }, { once: true });
-            }, delay);
-
-            if (redirectUrl) {
-                setTimeout(() => {
-                    if (window.location.href !== redirectUrl) {
-                        window.location.href = redirectUrl;
-                    }
-                }, delay + 500);
-            }
+            }, 3000);
         }
 
         // Function to handle logout
@@ -570,6 +559,8 @@
             if (event) {
                 event.preventDefault();
             }
+
+            console.log("clicked")
             
             try {
                 const logoutLink = document.getElementById('logoutLink');
@@ -579,8 +570,8 @@
                     logoutLink.style.pointerEvents = 'none';
                 }
 
-                const response = await fetch('/api/logout', { // Ensure this matches your Flask logout endpoint
-                    method: 'POST',
+                const response = await fetch('/logout', { 
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
@@ -590,26 +581,35 @@
                 const result = await response.json();
 
                 if (result.success) {
-                  localStorage.removeItem("company_name")
+                    // Clear specific localStorage items
+                    console.log("sucess")
+                    localStorage.clear();
+                    localStorage.removeItem('name');
+                    localStorage.removeItem('role');
+                    localStorage.removeItem('user_id');
+                    localStorage.removeItem('company_name'); 
                     
-                    showGlobalMessage(result.message || 'Logged out successfully', 'success');
+                    showGlobalMessage( 'Logged out successfully', 'success');
                     
-                    updateAuthNav();
+                    updateAuthNav(); // Update navigation after logout
                     
                     setTimeout(() => {
-                        window.location.href = result.redirect_url || '/';
-                    }, 1500);
+                        window.location.href = 'http://127.0.0.1:5000/user';
+                    }, 2000);
                     
                 } else {
-                    throw new Error(result.message || 'Logout failed');
+                    throw new Error('Logout failed');
                 }
                 
             } catch (error) {
                 console.error('Logout error:', error);
                 
-                // Still clear local storage even if server request fails
-                localStorage.clear();
-                sessionStorage.clear();
+                // Fallback: still clear local storage even if server request fails
+                localStorage.removeItem('name');
+                localStorage.removeItem('role');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('company_name'); 
+                sessionStorage.clear(); // Clear all sessionStorage as a fallback
                 
                 showGlobalMessage('Logout completed. Redirecting...', 'warning');
                 
@@ -628,24 +628,28 @@
 
         // Function to update authentication navigation
         function updateAuthNav() {
-            const userName = localStorage.getItem('name');
-            const userRole = localStorage.getItem('role');
-            const companyName = localStorage.getItem('company_name'); // Get company_name
+            const companyName = localStorage.getItem('company_name'); 
+            const userName = localStorage.getItem('name'); // Assuming this is for non-company user (admin/candidate)
+            const userRole = localStorage.getItem('role'); // Role for non-company user (e.g., 'a' for admin, 'candidate', 'interviewer')
 
-            const loginLink = document.getElementById('loginLink');
-            const signupLink = document.getElementById('signupLink');
-            const logoutLink = document.getElementById('logoutLink');
+            // Get references to navigation elements (added IDs to Home and Job Postings parent LIs)
+            const homeLink = document.getElementById('homeLink');
+            const jobPostingsLink = document.getElementById('jobPostingsLink');
             const postJobLink = document.getElementById('postJobLink');
-            const viewSlot = document.getElementById('slots')
-            
+            const viewSlotsLink = document.getElementById('viewSlotsLink'); 
+            const loginLink = document.getElementById('loginLink');
+            const signupLink = document.getElementById('signupLink'); // For 'Create Users'
+            const logoutLink = document.getElementById('logoutLink');
+
+            // Get references to chat elements
             const chatToggle = document.getElementById('chatOverlayToggle');
             const chatBox = document.getElementById('chatOverlay');
 
-            // First, hide all navigation elements to reset state
-            [loginLink, signupLink, logoutLink, postJobLink, viewApplicationsLink].forEach(element => {
+            // --- Step 1: Hide all dynamic nav elements by default ---
+            // This ensures a clean slate before applying display logic
+            [homeLink, jobPostingsLink, postJobLink, viewSlotsLink, loginLink, signupLink, logoutLink].forEach(element => {
                 if (element) element.style.display = 'none';
             });
-
             // Hide chat elements by default
             if (chatToggle) chatToggle.classList.add('hidden-chat-element');
             if (chatBox) {
@@ -653,40 +657,68 @@
                 chatBox.classList.remove('open'); // Ensure it's closed
             }
 
-            // Determine if any user type is logged in (admin OR company)
-            const isLoggedIn = (userName || companyName);
+            // --- Step 2: Apply display logic based on login status ---
+            const isCompanyLoggedIn = (companyName !== null && companyName !== undefined);
+            const isUserLoggedIn = (userName !== null && userName !== undefined); // Check if a regular user (not company) is logged in
 
-            if (isLoggedIn) { 
-                // User is logged in (either admin or company)
-                if (logoutLink) {
-                    logoutLink.style.display = 'list-item';
-                    const logoutLinkElement = logoutLink.querySelector('a');
-                    if (logoutLinkElement) {
-                        logoutLinkElement.removeEventListener('click', handleLogout); // Remove existing listener
-                        logoutLinkElement.addEventListener('click', handleLogout); // Add new listener
-                    }
-                }
+            if (isCompanyLoggedIn) {
+                // Scenario 1: Company is logged in
+                console.log("Company logged in:", companyName);
+                if (homeLink) homeLink.style.display = 'list-item';
+                if (jobPostingsLink) jobPostingsLink.style.display = 'list-item';
+                if (postJobLink) postJobLink.style.display = 'list-item';
+                if (viewSlotsLink) viewSlotsLink.style.display = 'list-item';
+                if (logoutLink) logoutLink.style.display = 'list-item';
                 
-                // Company-specific links (post a job)
-            if (companyName) { // If company_name is present, it's a company user
-                    if (postJobLink) postJobLink.style.display = 'list-item';
-                    if (viewSlot) viewSlot.style.display = 'list-item'; 
-                    if (logoutLink) logoutLink.style.display='list-item'
+                // Hide login/signup for company
+                if (loginLink) loginLink.style.display = 'none';
+                if (signupLink) signupLink.style.display = 'list-item'; 
+
+                // Show chat for companies (as per previous requirement for admin/company)
+                if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
+                if (chatBox) chatBox.classList.remove('hidden-chat-element');
+                
+            } else if (isUserLoggedIn) {
+                // Scenario 2: A regular user (not a company) is logged in
+                console.log("User logged in:", userName, "Role:", userRole);
+                // Basic links for any logged-in user
+                if (homeLink) homeLink.style.display = 'list-item';
+                if (jobPostingsLink) jobPostingsLink.style.display = 'list-item';
+                if (logoutLink) logoutLink.style.display = 'list-item';
+
+                // Role-specific visibility for regular users
+                const normalizedRole = userRole ? userRole.toLowerCase() : '';
+
+                if (normalizedRole === 'admin') { 
+                    // Admin specific links beyond general user
+                    if (postJobLink) postJobLink.style.display = 'list-item'; 
+                    if (viewSlotsLink) viewSlotsLink.style.display = 'list-item'; 
+                    if (signupLink) signupLink.style.display = 'list-item'; // Admins can create new users
                     
-                    // Show chat overlay for admin users
+                    // Show chat for admins
                     if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
                     if (chatBox) chatBox.classList.remove('hidden-chat-element');
-                    // Companies might also view applications (their own applications or interviews)
-                    // If 'View Slots' is for companies to see their scheduled interviews, enable it here.
-                    // if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item'; 
-            }
+                } else {
+                    // Candidate/Interviewer roles (not admin, not company)
+                    // These links are already hidden by default and not explicitly shown here, which is correct
+                    if (postJobLink) postJobLink.style.display = 'none';
+                    if (viewSlotsLink) viewSlotsLink.style.display = 'none';
+                    if (signupLink) signupLink.style.display = 'none';
+                    if (chatToggle) chatToggle.classList.add('hidden-chat-element');
+                    if (chatBox) chatBox.classList.add('hidden-chat-element');
+                }
 
-            } else { 
-                // User is logged out
+                // Hide login for any logged-in user
+                if (loginLink) loginLink.style.display = 'none';
+
+            } else {
+                // Scenario 3: No one is logged in (neither company nor regular user)
+                console.log("No one logged in.");
                 if (loginLink) loginLink.style.display = 'list-item';
-                if (postJobLink) postJobLink.classList.remove('list-item');
-                if (viewSlot) viewSlot.style.remove('list-item'); 
-                if (signupLink) signupLink.style.display = 'list-item';
+                if (signupLink) signupLink.style.display = 'none'; // Allow public registration
+                
+                // All other links should be hidden, which is handled by the initial hiding
+                // at the beginning of the function and not explicitly set to 'list-item' here.
             }
 
             console.log('Auth nav updated - User:', userName, 'Role:', userRole, 'Company:', companyName);
@@ -697,7 +729,6 @@
             updateAuthNav(); // Call initially to set correct state
 
             // --- CHAT OVERLAY JAVASCRIPT ---
-            // Only initialize chat related event listeners if the elements exist
             const chatOverlayToggle = document.getElementById('chatOverlayToggle');
             const chatOverlay = document.getElementById('chatOverlay');
             const chatOverlayMessages = document.getElementById('chatOverlayMessages');
@@ -882,15 +913,21 @@
                     if (isChatOpen) {
                         chatOverlay.classList.add('open');
                         sessionStorage.setItem('isChatOverlayOpen', 'true');
-                        // Load conversation when opening, if a user_id is available
+                        // Load conversation when opening, if a user_id is available AND it's an admin (or company as per new logic)
                         const userId = localStorage.getItem('user_id');
-                        if (userId && !currentConversationId) {
-                            // If no current conversation, try to start a new one or load default
-                            loadOverlayConversation('new'); // Or some default if applicable
-                        } else if (currentConversationId) {
-                            loadOverlayConversation(currentConversationId);
+                        const userRoleFromLS = localStorage.getItem('role');
+                        const companyNameFromLS = localStorage.getItem('company_name');
+
+                        const canUseChat = (userId && userRoleFromLS === 'admin') || (companyNameFromLS !== null && companyNameFromLS !== undefined);
+
+                        if (canUseChat) {
+                            if (!currentConversationId) {
+                                loadOverlayConversation('new'); // Or some default if applicable
+                            } else {
+                                loadOverlayConversation(currentConversationId);
+                            }
                         } else {
-                             chatOverlayMessages.innerHTML = '<p class="placeholder-text">Log in as admin to use chat.</p>';
+                            chatOverlayMessages.innerHTML = '<p class="placeholder-text">Log in as admin or company to use chat.</p>';
                         }
 
                     } else {
@@ -906,8 +943,12 @@
                     }
                 });
 
-                 // If chat was open on last visit, reopen it
-                if (isChatOpen && localStorage.getItem('user_id') && localStorage.getItem('role') === 'a') {
+                // If chat was open on last visit, reopen it IF the user is an admin or company
+                const userRoleFromLS = localStorage.getItem('role');
+                const companyNameFromLS = localStorage.getItem('company_name');
+                const canReopenChat = (localStorage.getItem('user_id') && userRoleFromLS === 'admin') || (companyNameFromLS !== null && companyNameFromLS !== undefined);
+
+                if (isChatOpen && canReopenChat) {
                     chatOverlay.classList.add('open');
                     if (currentConversationId) {
                         loadOverlayConversation(currentConversationId);

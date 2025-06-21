@@ -537,7 +537,7 @@
                 <li><a href="/slots">View Slots</a></li>
                 <li id="postJobLink" style="display: none;"><a href="/slots/add">Add Slots</a></li>
                 <li id="viewApplicationsLink" style="display: none;"><a href="/feedback">Feedback Form</a></li>
-                 <li id="logoutlink" ><a href="/logout">Logout</a></li>
+                 <li id="logoutlink" ><a onclick="handleLogout()">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -579,7 +579,7 @@ async function handleLogout(event) {
 
         // Make AJAX request to logout endpoint
         const response = await fetch('/logout', {
-            method: 'POST',
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -604,14 +604,14 @@ async function handleLogout(event) {
             sessionStorage.removeItem('chatOverlayBottom');
             
             // Show success message
-            showGlobalMessage(result.message || 'Logged out successfully', 'success');
+            showGlobalMessage('Logged out successfully', 'success');
             
             // Update navigation UI immediately
             updateAuthNav();
             
             // Redirect to home page after a short delay
             setTimeout(() => {
-                window.location.href = result.redirect_url || '/';
+                window.location.href = '/user';
             }, 1500);
             
         } else {

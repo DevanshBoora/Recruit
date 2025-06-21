@@ -1,5 +1,5 @@
 # my_tiny_app/routes/general.py
-from flask import Blueprint,render_template,request,jsonify
+from flask import Blueprint,render_template,request,jsonify,session
 from models import Job, db
 import json
 

@@ -133,20 +133,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 // Store user data in localStorage
-                localStorage.setItem('name', result.company_name || '');
                 localStorage.setItem('response', result.role);
+                localStorage.setItem('email',result.email || '');
+                if (result.role == 'u'){
+                    localStorage.setItem('candidate_name', name);
+                    localStorage.setItem('candidate_email',email);
+                    showGlobalMessage(result.message, 'success', '/user');
+                }else{
+                    localStorage.setItem('name', result.company_name || '');
+                }
                 if(result.position == "interviewer") {
                     localStorage.setItem('interviewer', 'true');
                     localStorage.setItem('role','i');
+                    showGlobalMessage(result.message, 'success', '/dashboard');
                 } else {
                     localStorage.setItem('interviewer', 'false');
                     localStorage.setItem('role','a');
-                }
-                
-                localStorage.setItem('email',result.email || '');
-                if(result.position == "interviewer") {
-                    showGlobalMessage(result.message, 'success', '/dashboard');
-                } else {
                     showGlobalMessage(result.message, 'success', '/');
                 }
                 

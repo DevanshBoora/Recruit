@@ -296,11 +296,11 @@
             <label for="experienceFilter">Experience</label>
             <select id="experienceFilter">
                 <option value="">All</option>
-                <option value="0 Years">Entry Level</option>
-                <option value="1-3 Years">1-3 Years</option>
-                <option value="3-5 Years">3-5 Years</option>
-                <option value="5-7 Years">5-7 Years</option>
-                <option value="7+ Years">7+years</option>
+                <option value="0">Entry Level</option>
+                <option value="1">1 Year</option>
+                <option value="3">3 Years</option>
+                <option value="5">5 Years</option>
+                <option value="7">7 years</option>
             </select>
         </div>
         <button id="clearFilters">Clear</button>
@@ -332,28 +332,32 @@ document.addEventListener('DOMContentLoaded', function() {
         if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
 
         // Try multiple possible endpoints
-        const possibleEndpoints = ['/jobs', '/jobs/', '/api/jobs'];
+        const endpoint = '/jobs'
         
-        for (let endpoint of possibleEndpoints) {
-            try {
-                console.log(`Trying to fetch from: ${endpoint}`);
-                const response = await fetch(endpoint);
-                console.log(`Response status for ${endpoint}:`, response.status);
-                
-                if (response.ok) {
-                    const jobs = await response.json();
-                    console.log("Successfully fetched jobs from", endpoint, ":", jobs);
+       
+        try {
+            console.log("sending the request")
+            const response = await fetch("http://127.0.0.1:5000/admin/fetch/jobs", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+            });
+            console.log(`Response status for ${endpoint}:`, response.status);
+            if (response.ok) {
+                const jobs = await response.json();
+                console.log("Successfully fetched jobs from", endpoint, ":", jobs);
                     
-                    loadingMsg.style.display = 'none';
-                    allJobs = jobs;
-                    displayJobs(allJobs);
-                    return; // Success, exit the function
-                } else {
-                    console.log(`Failed to fetch from ${endpoint}, status:`, response.status);
-                }
-            } catch (error) {
-                console.error(`Error fetching from ${endpoint}:`, error);
+                loadingMsg.style.display = 'none';
+                allJobs = jobs;
+                displayJobs(allJobs);
+                console.log("success")
+                return; // Success, exit the function
+            } else {
+                console.log(`Failed to fetch from ${endpoint}, status:`, response.status);
             }
+        } catch (error) {
+            console.error(`Error fetching from ${endpoint}:`, error);
         }
 
         // If we get here, all endpoints failed
@@ -395,7 +399,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3>Responsibilities:</h3>
                     <p class="responsibilities">${job.responsibilities}</p>
                     <div class="job-actions">
-                        <button class="btn btn-primary apply-btn" data-job-id="${job.id}" data-job-title="${job.title}">Apply</button>
                         <button class="btn btn-secondary edit-btn admin-only-btn" data-job-id="${job.id}">Edit</button>
                         <button class="btn btn-danger delete-btn admin-only-btn" data-job-id="${job.id}">Delete</button>
                     </div>

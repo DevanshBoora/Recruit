@@ -110,6 +110,7 @@
                 <p><strong>Address:</strong> {{ slot.address }}</p>
             {% endif %}
             <p><strong>Interviewer:</strong> {{ slot.interviewer_name }} ({{ slot.interviewer_email }})</p>
+            
             <p><span class="status {% if slot.is_booked %}booked{% else %}available{% endif %}">
                 {% if slot.is_booked %}Booked{% else %}Available{% endif %}
             </span></p>

@@ -119,9 +119,6 @@
   <div class="form-card">
     <h2 id="formTitle">Post a New Job</h2>
     <form id="jobForm">
-      <label for="jobTitle">Company Name:</label>
-      <input type="text" id="jobTitle" required />
-
       <label for="jobDescription">Job Description:</label>
       <textarea id="jobDescription" rows="6" required></textarea>
 
@@ -195,6 +192,7 @@
         }
       }
 
+      const company_name = localStorage.getItem('company_name')
       window.addQuestion = function (type) {
         const container = document.getElementById('questionsBuilderContainer');
         if (!container) return;
@@ -379,9 +377,9 @@
         if (!validateForm()) {
           return;
         }
-
+        
         const formData = new FormData();
-        formData.append('jobTitle', document.getElementById('jobTitle').value.trim());
+        formData.append('jobTitle', company_name);
         formData.append('jobDescription', document.getElementById('jobDescription').value.trim());
         formData.append('qualifications', document.getElementById('qualifications').value.trim());
         formData.append('responsibilities', document.getElementById('responsibilities').value.trim());
@@ -399,6 +397,7 @@
           });
 
           const result = await response.json();
+          
 
           if (response.ok) {
             // Check if showGlobalMessage function exists

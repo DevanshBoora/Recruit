@@ -535,12 +535,11 @@
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/jobs/job_post.html">Job Postings</a></li>
-                <li id="postJobLink" style="display: none;"><a href="/jobs/post_job.html">Post a Job</a></li>
-                <li id="viewApplicationsLink" style="display: none;"><a href="/view_applications.html">View Applications</a></li>
 
+                <li id="viewApplicationsLink" style="display: none;"><a href="/view_applications.html">View Applications</a></li>
+                 <li id="signupLink" style="display: none;"><a href="/signup">SignUp</a></li>
                 <li id="loginLink" style="display: none;"><a href="/login">Login</a></li>
-                <li id="signupLink" style="display: none;"><a href="/signup">Sign Up</a></li>
-                <li id="logoutLink" style="display: none;"><a href="/logout">Logout</a></li>
+                <li id="logoutLink" style="display: none;"><a onclick="handleLogout()">Logout</a></li>
             </ul>
         </nav>
     </header>
@@ -581,8 +580,8 @@ async function handleLogout(event) {
         }
 
         // Make AJAX request to logout endpoint
-        const response = await fetch('/api/logout', {
-            method: 'POST',
+        const response = await fetch('/logout', {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -607,14 +606,14 @@ async function handleLogout(event) {
             sessionStorage.removeItem('chatOverlayBottom');
             
             // Show success message
-            showGlobalMessage(result.message || 'Logged out successfully', 'success');
+            showGlobalMessage('Logged out successfully', 'success');
             
             // Update navigation UI immediately
             updateAuthNav();
             
             // Redirect to home page after a short delay
             setTimeout(() => {
-                window.location.href = result.redirect_url || '/';
+                window.location.href =  'http://127.0.0.1:5000/user';
             }, 1500);
             
         } else {
@@ -652,9 +651,9 @@ function updateAuthNav() {
 
     // Get references to navigation elements
     const loginLink = document.getElementById('loginLink');
-    const signupLink = document.getElementById('signupLink');
+    const signupLink = document.getElementById('signupLink')
     const logoutLink = document.getElementById('logoutLink');
-    const postJobLink = document.getElementById('postJobLink');
+
     const viewApplicationsLink = document.getElementById('viewApplicationsLink');
     
     // Get references to chat elements
@@ -662,7 +661,7 @@ function updateAuthNav() {
     const chatBox = document.getElementById('chatOverlay');
 
     // First, hide all navigation elements to reset state
-    [loginLink, signupLink, logoutLink, postJobLink, viewApplicationsLink].forEach(element => {
+    [loginLink, signupLink, logoutLink, viewApplicationsLink].forEach(element => {
         if (element) element.style.display = 'none';
     });
 
@@ -687,7 +686,6 @@ function updateAuthNav() {
         
         // Show admin-specific elements if user is admin
         if (userRole === 'a') {
-            if (postJobLink) postJobLink.style.display = 'list-item';
             if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item';
             
             // Show chat overlay for admin users
@@ -697,7 +695,7 @@ function updateAuthNav() {
     } else { 
         // User is logged out
         if (loginLink) loginLink.style.display = 'list-item';
-        if (signupLink) signupLink.style.display = 'list-item';
+        if (signupLink) signupLink.style.display ='list-item'
     }
 
     console.log('Auth nav updated - User:', userName, 'Role:', userRole);
@@ -759,9 +757,8 @@ window.addEventListener('beforeunload', function() {
             const userRole = localStorage.getItem('role');
 
             const loginLink = document.getElementById('loginLink');
-            const signupLink = document.getElementById('signupLink');
+            const signupLink = document.getElementById('signupLink')
             const logoutLink = document.getElementById('logoutLink');
-            const postJobLink = document.getElementById('postJobLink');
             const viewApplicationsLink = document.getElementById('viewApplicationsLink');
 
             const chatToggle = document.getElementById('chatOverlayToggle');
@@ -769,9 +766,8 @@ window.addEventListener('beforeunload', function() {
 
             // Set initial display to none for all controlled elements
             if (loginLink) loginLink.style.display = 'none';
-            if (signupLink) signupLink.style.display = 'none';
+            if(signupLink) signupLink.style.display ='none';
             if (logoutLink) logoutLink.style.display = 'none';
-            if (postJobLink) postJobLink.style.display = 'none';
             if (viewApplicationsLink) viewApplicationsLink.style.display = 'none';
 
             // Always hide chat elements by default, then show if admin
@@ -783,7 +779,6 @@ window.addEventListener('beforeunload', function() {
                  // Show logout
 
                 if (userRole === 'a') { // Admin specific links
-                    if (postJobLink) postJobLink.style.display = 'list-item';
                     if (viewApplicationsLink) viewApplicationsLink.style.display = 'list-item'; 
                     if (logoutLink) logoutLink.style.display = 'list-item';// This is the fix!
 
@@ -793,7 +788,7 @@ window.addEventListener('beforeunload', function() {
                 }
              else { // User is logged out
                 if (loginLink) loginLink.style.display = 'list-item'; // Show login
-                if (signupLink) signupLink.style.display = 'list-item'; // Show signup
+                if (signupLink) signupLink.style.display ='list-item'
             }
         }
 

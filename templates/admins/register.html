@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOrks - Sign Up</title>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+{% extends "admins/adminbase.html" %}
+
+{% block title %}Available Interview Slots - DevOrks{% endblock %}
+
+{% block head_extra %}
     <style>
         :root {
             --bg-color-dark: #1a1a1a;
@@ -216,70 +213,15 @@
             margin-top: 5px;
             display: none;
         }
-        /* Style for Google button specific to your dark theme */
-        .g_id_signin {
-            margin-top: 20px;
-            margin-bottom: 20px;
-            display: flex; /* Centers the button horizontally */
-            justify-content: center;
-        }
-        .or-divider {
-            text-align: center;
-            margin: 20px 0;
-            position: relative;
-            font-size: 0.9em;
-            color: var(--text-color-faded);
-        }
-        .or-divider::before,
-        .or-divider::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 40%;
-            height: 1px;
-            background-color: var(--border-color-dark);
-        }
-        .or-divider::before {
-            left: 0;
-        }
-        .or-divider::after {
-            right: 0;
-        }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
+
     <div id="globalMessageContainer"></div>
-    
-    <header>
-        <a href="/" class="logo">DevOrks</a>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/jobs/job_post.html">Job Postings</a></li>
-                <li><a href="/login">Login</a></li>
-                <li><a href="/signup">Sign Up</a></li>
-            </ul>
-        </nav>
-    </header>
 
     <div class="form-container">
         <h2>Sign Up</h2>
-        
-        <div id="g_id_onload"
-             data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-             data-callback="handleGoogleSignIn"
-             data-ux_mode="popup"> </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="large"
-             data-theme="outline"
-             data-text="signin_with"
-             data-shape="rectangular"
-             data-logo_alignment="left">
-        </div>
-
-        <div class="or-divider">OR</div>
-
         <form id="signupForm">
             <div class="form-group">
                 <label for="name">Username:</label>
@@ -292,19 +234,24 @@
                 <div class="error-message" id="emailError"></div>
             </div>
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required minlength="6">
-                <div class="error-message" id="passwordError"></div>
+                <label for="role">Role:</label>
+                <input type="text" id="role" name="role" maxlength="100">
+                <div class="error-message" id="roleError"></div>
+            </div>
+            <div class="form-group">
+                <label for="position">Position:</label>
+                <select id="position" name="position" required>
+                    <option value="">Select Position</option>
+                    <option value="manager">Manager</option>
+                    <option value="interviewer">Interviewer</option>
+                </select>
+                <div class="error-message" id="positionError"></div>
             </div>
             <button type="submit" id="submitBtn">Register</button>
         </form>
-        <div class="form-link">
-            Already have an account? <a href="/login">Login here</a>
-        </div>
     </div>
 
     <script>
-        // --- YOUR EXISTING JAVASCRIPT ---
         // Global function for messages
         function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
             const msgContainer = document.getElementById('globalMessageContainer');
@@ -338,6 +285,7 @@
             const field = document.getElementById(fieldId);
             const errorDiv = document.getElementById(errorId);
             
+            // Crucial check: Ensure both elements exist before trying to access properties
             if (!field) {
                 console.error(`Validation Error: Field with ID '${fieldId}' not found.`);
                 return false; 
@@ -364,14 +312,18 @@
                 (value) => value.length >= 3 && value.length <= 50, 
                 'Username must be between 3 and 50 characters');
             const emailValid = validateField('email', 'emailError', 
-                (value) => value.length >= 3 && value.length <= 50 && value.includes('@'), 
+                (value) => value.length >= 3 && value.length <= 50 && value.includes('@'), // Added basic email format check
                 'Please enter a valid email address');
-            
-            const passwordValid = validateField('password', 'passwordError', 
-                (value) => value.length >= 6, 
-                'Password must be at least 6 characters');
 
-            return nameValid && emailValid && passwordValid; 
+            const roleValid = validateField('role', 'roleError', 
+                (value) => value.trim() !== '', 
+                'Role cannot be empty');
+
+            const positionValid = validateField('position', 'positionError',
+                (value) => value !== '',
+                'Please select a position');
+
+            return nameValid && emailValid  && roleValid && positionValid; 
         }
 
         // Real-time validation
@@ -387,16 +339,25 @@
                 'Please enter a valid email address');
         });
 
-        document.getElementById('password').addEventListener('blur', () => {
-            validateField('password', 'passwordError', 
-                (value) => value.length >= 6, 
-                'Password must be at least 6 characters');
+      
+        document.getElementById('role').addEventListener('blur', () => {
+            validateField('role', 'roleError', 
+                (value) => value.trim() !== '', 
+                'Role cannot be empty');
         });
         
-        // Form submission (existing logic)
+       
+        document.getElementById('position').addEventListener('change', () => {
+            validateField('position', 'positionError',
+                (value) => value !== '',
+                'Please select a position');
+        });
+
+        // Form submission
         document.getElementById('signupForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
+            // Validate form before submission
             if (!validateForm()) {
                 showGlobalMessage('Please fix the errors in the form', 'error');
                 return;
@@ -405,16 +366,18 @@
             const submitBtn = document.getElementById('submitBtn');
             const form = document.getElementById('signupForm');
             
+            // Disable form during submission
             submitBtn.disabled = true;
             submitBtn.textContent = 'Registering...';
             form.classList.add('loading');
 
             const name = document.getElementById('name').value.trim();
-            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value.trim();
             const email = document.getElementById('email').value.trim();
+            const position = document.getElementById('position').value; // Get the value from the new dropdown
 
             try {
-                const response = await fetch('/signup', {
+                const response = await fetch('/admin/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -422,14 +385,15 @@
                     body: JSON.stringify({ 
                         name, 
                         email,
-                        password, 
+                        role,
+                        position // Include the new 'position' field in the request body
                     })
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    showGlobalMessage(result.message || 'Registration successful!', 'success', '/login');
+                    showGlobalMessage(result.message || 'Registration successful!', 'success', '/admin/applications');
                 } else {
                     showGlobalMessage(result.message || 'Registration failed. Please try again.', 'error');
                 }
@@ -437,6 +401,7 @@
                 console.error('Error during signup:', error);
                 showGlobalMessage('Network error. Please check your connection and try again.', 'error');
             } finally {
+                // Re-enable form
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register';
                 form.classList.remove('loading');
@@ -457,61 +422,5 @@
                 }
             });
         });
-
-        // --- NEW GOOGLE SIGN-IN JAVASCRIPT ---
-        // IMPORTANT: Replace with your actual Google Client ID from Google Cloud Console
-        const GOOGLE_CLIENT_ID = "117725968467-lnjpovni57fufnm6rqqm3rcknb6ph77h.apps.googleusercontent.com"; // <-- REMINDER: REPLACE THIS!
-
-        // Initialize Google Identity Services
-        window.onload = function () {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleSignIn, // This function will be called after successful sign-in
-                ux_mode: 'popup' // For better integration with your existing form
-            });
-            // Render the Google button for the div with class 'g_id_signin'
-            google.accounts.id.renderButton(
-                document.querySelector(".g_id_signin"), // Target the div
-                { type: "standard", size: "large", theme: "outline", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
-            );
-        };
-
-        // Function to handle the Google Sign-In response
-        async function handleGoogleSignIn(response) {
-            const idToken = response.credential; // This is the JWT token from Google
-            console.log("Google ID Token:", idToken);
-
-            showGlobalMessage('Signing in with Google...', 'warning');
-
-            try {
-                // Send the ID token to your Flask backend
-                const backendResponse = await fetch('/auth/google', { // Your new backend endpoint for Google auth
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ token: idToken })
-                });
-
-                const data = await backendResponse.json();
-
-                if (backendResponse.ok) { 
-                    showGlobalMessage(data.message || 'Google Sign-in successful!', 'success', '/login');
-                    if (data.message == "Login") {
-                        localStorage.setItem('candidate_name', data.user.name);
-                        localStorage.setItem('candidate_email',data.user.email);
-                        localStorage.setItem('role','u')
-                        showGlobalMessage(data.message || 'Google Log-in successful!', 'success', '/user');
-                    }
-                } else {
-                    showGlobalMessage(data.message || 'Google Sign-in failed.', 'error');
-                    console.error("Backend error during Google sign-in:", data.message);
-                }
-            } catch (error) {
-                console.error("Error sending Google token to backend:", error);
-                showGlobalMessage('Network error during Google sign-in. Please try again.', 'error');
-            }
-        }
     </script>
-</body>
-</html>
+{% endblock %}

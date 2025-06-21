@@ -2,8 +2,9 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
-import json
 from sqlalchemy.exc import IntegrityError
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from sqlalchemy import and_
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
@@ -535,26 +536,18 @@ def delete_slot(slot_id):
 
 
 # ==================== EXISTING ROUTES (PRESERVED) ====================
-
-@app.route('/signup', methods=['GET', 'POST'])
+@app.route('/signup' , methods=['POST',"GET"])
 def signup():
     if request.method == 'POST':
         data = request.get_json()
         name = data.get('name')
         email = data.get('email')
         password = data.get('password')
-        company_name = data.get('company_name')
-        role = data.get('role') 
-        company_password = data.get('company_password')
-        position = data.get('position')
-        company =  Company.query.filter_by(company_name=company_name).first()
+        company_name = "User"
+        role = "u"
+        position = "user"
         if not name or not password:
             return jsonify({"message": "Name and password are required"}), 400
-        
-        if not company or not company.check_password(company_password):
-            print(company)
-            return jsonify({"message": "company password error or company "}), 401
-        
 
         existing_user = User.query.filter_by(name=name).first()
         if existing_user:
@@ -562,13 +555,73 @@ def signup():
 
         new_user = User(name=name, email=email ,password=password, company_name=company_name, role=role,position=position)
         db.session.add(new_user)
-        try:
-            db.session.commit()
-            return jsonify({"message": "User registered successfully!", "user": new_user.to_dict()}), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"message": f"Error registering user: {str(e)}"}), 500
-    return render_template('signup.html')
+        session['candidate_name'] = name
+        session['candidate_email'] = email
+        session['who'] ='user'
+        return jsonify({"message": "Username signup"}), 200
+    return render_template('signUp.html')
+
+
+@app.route('/auth/google', methods=['POST'])
+def google_auth():
+    token = request.json.get('token')
+
+    if not token:
+        return jsonify({"message": "No Google token provided"}), 400
+
+    try:
+        # Verify the Google ID Token
+        # It verifies the token's signature, issuer, and audience (your client ID)
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), os.getenv("GOOGLE_CLIENT_ID"))
+
+        # Extract user information from the token
+        google_id = idinfo['sub'] # Unique Google User ID
+        email = idinfo.get('email')
+        name = idinfo.get('name', email.split('@')[0] if email else 'User') # Default name if not provided
+        password = "thub123"
+        role = "u"
+        position = "user"
+        if not email:
+            return jsonify({"message": "Google account did not provide an email address."}), 400
+
+        # Check if user already exists in your database by Google ID
+        user = User.query.filter_by(company_name=google_id).first()
+
+        if user:
+            # User exists via Google, log them in
+            message = "Login"
+        else:
+            # Check if an account with this email already exists (e.g., from manual signup)
+            existing_user_by_email = User.query.filter_by(email=email).first()
+            if existing_user_by_email:
+                # If email exists but google_id is null, link the Google ID to the existing account
+                if not existing_user_by_email.google_id:
+                    existing_user_by_email.google_id = google_id
+                    db.session.commit()
+                    user = existing_user_by_email
+                    message = "Google account linked and logged in successfully!"
+                else:
+                    return jsonify({"message": "An account with this email already exists. Please log in normally or try linking your account."}), 409
+            else:
+                user = User(company_name=google_id, email=email, name=name,password=password,role=role,position=position)
+                
+                db.session.add(user)
+                db.session.commit()
+                message = "Signed up with Google successfully and logged in!"
+
+        session['candidate_name'] = name
+        session['candidate_email'] = email
+        session['who'] ='user'
+        return jsonify({"message": message, "user": user.to_dict()}), 200
+
+    except ValueError as e:
+        # Invalid token or other verification issues
+        app.logger.error(f"Google token verification failed: {e}")
+        return jsonify({"message": f"Authentication failed: Invalid token or client mismatch: {e}"}), 401
+    except Exception as e:
+        app.logger.error(f"An unexpected error occurred during Google auth: {e}", exc_info=True)
+        return jsonify({"message": "An internal server error occurred during Google authentication."}), 500
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -607,7 +660,7 @@ def login():
 @app.route('/logout', methods=['GET'])
 def logout():
     session.clear()
-    return render_template('main_page.html')
+    return jsonify({"message": "Successfully logged out"}), 200
 
 
 

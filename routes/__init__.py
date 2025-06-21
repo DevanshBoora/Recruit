@@ -5,6 +5,7 @@ from .jobs import job_bp
 from .submissions import submit_bp
 from .chat import chat_bp
 from .compnay import company_bp
+from .users import user_bp
 
 def register_blueprints(app):
     
@@ -14,6 +15,7 @@ def register_blueprints(app):
     app.register_blueprint(submit_bp, url_prefix='/submit')  # Routes here will be prefixed with /submit
     app.register_blueprint(chat_bp, url_prefix='/api/chat')  # Routes here will be prefixed with /chat
     app.register_blueprint(company_bp, url_prefix='/auth')  # Routes here will be prefixed with /company
+    app.register_blueprint(user_bp, url_prefix='/user')
     
     
     
