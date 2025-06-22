@@ -157,6 +157,9 @@
       <label for="requiredExperience">Required Experience:</label>
       <input type="text" id="requiredExperience" placeholder="e.g., 2+ years, 5-7 years" required />
 
+      <label for="nop">Number Of Positions :</label>
+      <input type="number" id="nop" placeholder="e.g. 1,2,3,4" required />
+
       <label for="assessmentTimer">Assessment Timer (minutes):</label>
       <input type="number" id="assessmentTimer" name="assessmentTimer" min="0" value="0" />
 
@@ -386,6 +389,7 @@
         formData.append('jobType', document.getElementById('jobType').value);
         formData.append('jobLocation', document.getElementById('jobLocation').value);
         formData.append('requiredExperience', document.getElementById('requiredExperience').value.trim());
+        formData.append('number_of_positions',document.getElementById('nop').value);
         formData.append('assessmentTimer', document.getElementById('assessmentTimer').value);
         formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
         formData.append('assessmentQuestions', document.getElementById('assessmentQuestions').value);
@@ -405,7 +409,7 @@
               showGlobalMessage(result.message, 'success', '/admin/job');
             } else {
               alert('Job posted successfully!');
-              window.location.href = '/jobs/job_post.html';
+              window.location.href = '/admin/job';
             }
             
             // Reset form

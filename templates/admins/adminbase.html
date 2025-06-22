@@ -517,6 +517,7 @@
                 <li id="viewSlotsLink"><a href="/admin/slots">View Slots</a></li>
                 <li id="loginLink"><a href="/auth/company_login">Login</a></li>
                 <li id="signupLink"><a href="/admin/register">Create Users</a></li>
+                <li id="offerLink"><a href="/admin/offer">Send Offer</a></li>
                 <li id="logoutLink"><a onclick="handleLogout()">Logout</a></li>
             </ul>
         </nav>
@@ -639,6 +640,7 @@
             const viewSlotsLink = document.getElementById('viewSlotsLink'); 
             const loginLink = document.getElementById('loginLink');
             const signupLink = document.getElementById('signupLink'); // For 'Create Users'
+            const offerLink = document.getElementById('offerLink')
             const logoutLink = document.getElementById('logoutLink');
 
             // Get references to chat elements
@@ -647,7 +649,7 @@
 
             // --- Step 1: Hide all dynamic nav elements by default ---
             // This ensures a clean slate before applying display logic
-            [homeLink, jobPostingsLink, postJobLink, viewSlotsLink, loginLink, signupLink, logoutLink].forEach(element => {
+            [homeLink, jobPostingsLink, postJobLink, viewSlotsLink, loginLink, signupLink, offerLink,logoutLink].forEach(element => {
                 if (element) element.style.display = 'none';
             });
             // Hide chat elements by default
@@ -673,6 +675,7 @@
                 // Hide login/signup for company
                 if (loginLink) loginLink.style.display = 'none';
                 if (signupLink) signupLink.style.display = 'list-item'; 
+                if(offerLink) offerLink.style.display ='list-item';
 
                 // Show chat for companies (as per previous requirement for admin/company)
                 if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
@@ -694,6 +697,7 @@
                     if (postJobLink) postJobLink.style.display = 'list-item'; 
                     if (viewSlotsLink) viewSlotsLink.style.display = 'list-item'; 
                     if (signupLink) signupLink.style.display = 'list-item'; // Admins can create new users
+                    if(offerLink) offerLink.style.display ='list-item'
                     
                     // Show chat for admins
                     if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
@@ -704,6 +708,7 @@
                     if (postJobLink) postJobLink.style.display = 'none';
                     if (viewSlotsLink) viewSlotsLink.style.display = 'none';
                     if (signupLink) signupLink.style.display = 'none';
+                    if (offerLink) offerLink.style.display ='none';
                     if (chatToggle) chatToggle.classList.add('hidden-chat-element');
                     if (chatBox) chatBox.classList.add('hidden-chat-element');
                 }
@@ -716,6 +721,7 @@
                 console.log("No one logged in.");
                 if (loginLink) loginLink.style.display = 'list-item';
                 if (signupLink) signupLink.style.display = 'none'; // Allow public registration
+                if (offerLink) offerLink.style.display ='none'
                 
                 // All other links should be hidden, which is handled by the initial hiding
                 // at the beginning of the function and not explicitly set to 'list-item' here.

@@ -17,10 +17,11 @@ def handle_jobs():
         job_type = request.form.get('jobType')
         location = request.form.get('jobLocation')
         required_experience = request.form.get('requiredExperience')
+        number_of_positions = request.form.get('number_of_positions')
         assessment_timer_str = request.form.get('assessmentTimer')
         assessment_questions = request.form.get('assessmentQuestions')
         min_assesment_score = request.form.get('minAssessmentScore')
-        if not all([title, description, qualifications, responsibilities, job_type, location, required_experience]):
+        if not all([title, description, qualifications, responsibilities, job_type, location, required_experience,number_of_positions]):
             return jsonify({"message": "Missing required fields."}), 400
 
         assessment_timer = int(assessment_timer_str) if assessment_timer_str and assessment_timer_str.isdigit() else 0
@@ -35,7 +36,8 @@ def handle_jobs():
             required_experience=required_experience,
             assessment_timer=assessment_timer,
             assessment_questions=assessment_questions,
-            min_assesment_score=min_assesment_score
+            min_assesment_score=min_assesment_score,
+            number_of_positions=number_of_positions
         )
         db.session.add(new_job)
         try:
@@ -101,7 +103,8 @@ def handle_job(job_id):
             'required_experience': job.required_experience,
             'assessment_timer': job.assessment_timer,
             'assessment_questions': json.loads(job.assessment_questions) if job.assessment_questions else [],
-            'min_assessment_score': job.min_assesment_score
+            'min_assessment_score': job.min_assesment_score,
+            'number_of_positions':job.number_of_positions
         }), 200
 
     elif request.method == 'PUT':
@@ -115,6 +118,7 @@ def handle_job(job_id):
         assessment_timer_str = request.form.get('assessmentTimer')
         assessment_questions = request.form.get('assessmentQuestions')
         min_assesment_score = request.form.get('minAssessmentScore')
+        number_of_positions = request.form.get('number_of_positions')
 
         if not all([title, description, qualifications, responsibilities, job_type, location, required_experience]):
             return jsonify({"message": "Missing required fields."}), 400
@@ -129,6 +133,7 @@ def handle_job(job_id):
         job.assessment_timer = int(assessment_timer_str) if assessment_timer_str and assessment_timer_str.isdigit() else 0
         job.assessment_questions = assessment_questions
         job.min_assesment_score = min_assesment_score
+        job.number_of_positions = number_of_positions
         try:
             db.session.commit()
             return jsonify({"message": "Job updated successfully!"}), 200

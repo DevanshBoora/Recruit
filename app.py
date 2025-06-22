@@ -52,7 +52,7 @@ UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'upload
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications23'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -421,12 +421,12 @@ def view_slots():
     # You might want to filter by user's company if 'company_name' in Slot matches User's company
     current_user_id = session.get('user_id')
     user = User.query.get(current_user_id)
-    
+    print(user.email)
     if not user:
         return jsonify({"message": "User not found"}), 404
-    print(user.name)
     slots_query = Slot.query.options(db.joinedload(Slot.booked_application))\
-                               .filter_by(interviewer_name=user.name)\
+                               .filter_by(interviewer_email=user.email)\
+                               .filter(Slot.is_booked.in_([0, 1])) \
                                .order_by(Slot.interview_time)\
                                .all()
 
@@ -719,8 +719,6 @@ def update_application_status(app_id):
         return jsonify({"message": "Application not found"}), 404
     data = request.get_json()
     new_status = data.get('status')
-    if new_status not in ['Accepted', 'Rejected', 'Pending']:
-        return jsonify({"message": "Invalid status"}), 400
     if new_status == 'Rejected' and not application.rejection_email_sent:
         try:
             send_initial_rejection_email(application.applicant_email, application.applicant_name)
@@ -818,7 +816,8 @@ def feedback():
 
         # Prevent duplicate feedback using ORM
         existing = Feedback.query.filter_by(candidate_id=data["candidate_id"]).first()
-
+        name = session.get('name')
+        role = session.get('response')
         if existing:
             return "Feedback already submitted for this candidate.", 400
 
@@ -833,17 +832,27 @@ def feedback():
                 problem_solving_score=float(data["problem_solving_score"])
             )
             db.session.add(new_feedback)
-
+            application = Application.query.get(int(data['candidate_id']))
             if data['decision'] == "Accepted":
-                application = Application.query.get(int(data['candidate_id']))
                 if application:
                     accepted_candidate = AcceptedCandidate(
                         candidate_id=application.id,
                         applicant_name=application.applicant_name,
-                        applicant_email=application.applicant_email
+                        applicant_email=application.applicant_email,
+                        company_name = name,
+                        company_role =role
                     )
                     db.session.add(accepted_candidate)
+            else:
+                application.status = 'Rejected'
+            slot = Slot.query.filter_by(
+                booked_by_application_id=application.id,
+                company_name=name,
+                is_booked = 1,
+                role=role
+                ).first()
 
+            slot.is_booked = 2
             db.session.commit()
             flash("Feedback submitted successfully.", "success")
             return redirect("/dashboard")

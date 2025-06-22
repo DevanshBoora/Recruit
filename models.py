@@ -21,7 +21,7 @@ class Job(db.Model):
     assessment_questions = db.Column(db.Text)
     min_assesment_score = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    number_of_positions = db.Column(db.Integer,default=3)
     def to_dict(self):
         return {
             'id': self.id,
@@ -34,7 +34,8 @@ class Job(db.Model):
             'qualifications': self.qualifications,
             'assessment_timer': self.assessment_timer,
             'min_assesment_score': self.min_assesment_score,
-            'posted_at': self.posted_at.isoformat()
+            'posted_at': self.posted_at.isoformat(),
+            'number_of_positions':self.number_of_positions
         }
 
     def __repr__(self):
@@ -137,7 +138,8 @@ class AcceptedCandidate(db.Model):
     candidate_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=False)
     applicant_name = db.Column(db.String(255), nullable=False)
     applicant_email = db.Column(db.String(255), nullable=False)
-
+    company_name = db.Column(db.String(255), nullable=False)
+    company_role = db.Column(db.String(255), nullable=False)
     candidate = db.relationship('Application', backref=db.backref('accepted_entry', lazy=True))
 
 class JobOffer(db.Model):
@@ -148,7 +150,8 @@ class JobOffer(db.Model):
     offer_sent = db.Column(db.Boolean, default=False)
     offer_sent_time = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    company_name = db.Column(db.String(255), nullable=False)
+    company_role = db.Column(db.String(255), nullable=False)
     application = db.relationship('Application', backref=db.backref('job_offer', lazy=True))
 
     def to_dict(self):

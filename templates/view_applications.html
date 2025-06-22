@@ -430,7 +430,7 @@
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    status: newStatus
+                                    status: "Interview Scheduled"
                                 })
                             });
 
@@ -442,7 +442,7 @@
                                 } else {
                                     alert(result.message); // Simple alert for demonstration
                                 }
-                                updateApplicationRowInTable(appId, newStatus); // Update the specific row
+                                updateApplicationRowInTable(appId, "Interview Scheduled"); // Update the specific row
                             } else {
                                 if (typeof showGlobalMessage === 'function') {
                                     showGlobalMessage(result.message, 'error');
@@ -467,6 +467,34 @@
                         showGlobalMessage('Failed to accept application. Please try again.', 'error');
                     } else {
                         alert('Failed to accept application. Please try again.');
+                    }
+                }
+            }
+            else {
+                const response = await fetch(`/applications/${appId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (typeof showGlobalMessage === 'function') {
+                        showGlobalMessage(result.message, 'success');
+                    } else {
+                        alert(result.message); // Simple alert for demonstration
+                    }
+                    updateApplicationRowInTable(appId, newStatus); // Update the specific row
+                } else {
+                    if (typeof showGlobalMessage === 'function') {
+                        showGlobalMessage(result.message, 'error');
+                    } else {
+                        alert(result.message); // Simple alert for demonstration
                     }
                 }
             }
