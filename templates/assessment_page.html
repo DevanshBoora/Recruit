@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Job Assessment{% endblock %}
+{% block title %}Assessment{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -133,17 +133,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="assessment-container">
-    <h1>Job Assessment</h1>
-    <p class="assessment-timer">Time Remaining: <span id="timerDisplay">--:--</span></p>
-
-    <form id="assessmentForm">
-        <div id="questionsContainer">
-            <p>Loading assessment questions...</p>
-        </div>
-        <button type="submit" class="assessment-submit-btn" id="submitAssessmentBtn">Submit Assessment</button>
-    </form>
-</div>
+<h2>Assessment</h2>
+<p>This is the assessment page for the selected job and candidate. Assessment logic will be implemented here.</p>
 {% endblock %}
 
 {% block scripts %}

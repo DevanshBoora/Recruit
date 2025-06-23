@@ -266,46 +266,8 @@
 {% endblock %}
 
 {% block content %}
-<!-- Page-specific navigation - outside the main wrapper -->
-<div class="page-nav">
-    <ul>
-        <li><a href="/schedule">Schedule Interview</a></li>
-        <li><a href="/feedback">Feedback</a></li>
-        <li><a href="/dashboard">Dashboard</a></li>
-    </ul>
-</div>
-
-<div class="applications-wrapper">
-    <h1>All Job Applications</h1>
-    
-    <div id="applicationsListings">
-        <table id="applicationsTable" class="applications-table">
-            <thead>
-                <tr>
-                    <th>Job Title</th>
-                    <th>Applicant Name</th>
-                    <th>Email</th>
-                    <th>Age</th>             <th>Experience</th>      <th>Education</th>       <th>Applied At</th>
-                    <th>Eligibility Score</th>
-                    <th>Assessment Score</th>
-                    <th>Status</th>
-                    <th>Resume</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
-        <p id="noApplicationsMessage" style="text-align: center; color: var(--text-color-faded); display: none;">No applications found.</p>
-    </div>
-</div>
-
-<div id="resumeModal" class="modal">
-  <div class="modal-content">
-    <span class="close-button">&times;</span>
-    <iframe id="pdfViewer" class="pdf-viewer"></iframe>
-  </div>
-</div>
+<h2>Applications</h2>
+<p>This page will display all job applications. (Implement table and filtering as needed.)</p>
 {% endblock %}
 
 {% block scripts %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Feedback Form - DevOrks{% endblock %}
+{% block title %}Submit Feedback{% endblock %}
 
 {% block head_extra %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -304,116 +304,29 @@
 {% endblock %}
 
 {% block content %}
-<div class="feedback-container">
-    <div class="feedback-form-card">
-        <h1 class="feedback-title">
-            <i class="fas fa-clipboard-check"></i>
-            Submit Interview Feedback
-        </h1>
-
-        <form method="POST">
-            <!-- Candidate Selection -->
-            <div class="form-group">
-                <label for="candidate">
-                    <i class="fas fa-user"></i>
-                    Select Candidate
-                </label>
-                <select id="candidate" name="candidate_id" required>
-                    {% for c in candidates %}
-                    <option value="{{ c['id'] }}">{{ c['applicant_name'] }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Comments -->
-            <div class="form-group">
-                <label for="comments">
-                    <i class="fas fa-comment-dots"></i>
-                    Interview Comments
-                </label>
-                <textarea id="comments" name="comments" rows="4" required 
-                          placeholder="Please provide detailed feedback about the candidate's performance, including strengths, areas for improvement, and overall impression..."></textarea>
-            </div>
-
-            <!-- Scores Section -->
-            <div class="score-section">
-                <h3>
-                    <i class="fas fa-star"></i>
-                    Performance Scores
-                </h3>
-                <div class="score-grid">
-                    <div class="score-item">
-                        <label for="communication">
-                            <i class="fas fa-comments"></i>
-                            Communication Score
-                        </label>
-                        <input type="number" id="communication" name="communication_score" 
-                               min="0" max="10" required placeholder="0-10"
-                               oninput="updateScoreIndicator('communication', this.value)">
-                        <div class="score-indicator">
-                            <div class="score-fill" id="communication-fill"></div>
-                        </div>
-                    </div>
-
-                    <div class="score-item">
-                        <label for="technical">
-                            <i class="fas fa-code"></i>
-                            Technical Score
-                        </label>
-                        <input type="number" id="technical" name="technical_score" 
-                               min="0" max="10" required placeholder="0-10"
-                               oninput="updateScoreIndicator('technical', this.value)">
-                        <div class="score-indicator">
-                            <div class="score-fill" id="technical-fill"></div>
-                        </div>
-                    </div>
-
-                    <div class="score-item">
-                        <label for="problem_solving">
-                            <i class="fas fa-puzzle-piece"></i>
-                            Problem Solving Score
-                        </label>
-                        <input type="number" id="problem_solving" name="problem_solving_score" 
-                               min="0" max="10" required placeholder="0-10"
-                               oninput="updateScoreIndicator('problem_solving', this.value)">
-                        <div class="score-indicator">
-                            <div class="score-fill" id="problem_solving-fill"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Decision Section -->
-            <div class="decision-section">
-                <h3>
-                    <i class="fas fa-balance-scale"></i>
-                    Final Decision
-                </h3>
-                <div class="decision-options">
-                    <div class="decision-option">
-                        <input type="radio" id="accepted" name="decision" value="Accepted" required>
-                        <label for="accepted" class="decision-label accepted">
-                            <i class="fas fa-check-circle"></i>
-                            Accepted
-                        </label>
-                    </div>
-                    <div class="decision-option">
-                        <input type="radio" id="rejected" name="decision" value="Rejected" required>
-                        <label for="rejected" class="decision-label rejected">
-                            <i class="fas fa-times-circle"></i>
-                            Rejected
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="feedback-submit-btn">
-                <i class="fas fa-paper-plane"></i>
-                Submit Feedback
-            </button>
-        </form>
-    </div>
-</div>
+<h2>Submit Feedback</h2>
+<form method="POST">
+    <label for="candidate_id">Candidate:</label>
+    <select name="candidate_id" required>
+        {% for candidate in candidates %}
+        <option value="{{ candidate.id }}">{{ candidate.applicant_name }}</option>
+        {% endfor %}
+    </select>
+    <label for="comments">Comments:</label>
+    <textarea name="comments" required></textarea>
+    <label for="decision">Decision:</label>
+    <select name="decision" required>
+        <option value="Accepted">Accepted</option>
+        <option value="Rejected">Rejected</option>
+    </select>
+    <label for="communication_score">Communication Score:</label>
+    <input type="number" name="communication_score" min="0" max="10" step="0.1" required>
+    <label for="technical_score">Technical Score:</label>
+    <input type="number" name="technical_score" min="0" max="10" step="0.1" required>
+    <label for="problem_solving_score">Problem Solving Score:</label>
+    <input type="number" name="problem_solving_score" min="0" max="10" step="0.1" required>
+    <input type="submit" value="Submit Feedback">
+</form>
 {% endblock %}
 
 {% block scripts %}

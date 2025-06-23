@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Schedule Interview - DevOrks{% endblock %}
+{% block title %}Schedule Interview{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -152,90 +152,31 @@
 {% endblock %}
 
 {% block content %}
-<div class="schedule-form-container">
-    <div class="form-card">
-        <h2>Schedule Interview</h2>
-        
-        <div class="info-box">
-            <p><strong>Instructions:</strong> Select a candidate and fill in the interview details. The system will automatically send email notifications to both the candidate and interviewer.</p>
-        </div>
-        
-        <form method="POST" action="/schedule" id="scheduleForm">
-            <div class="form-section">
-                <h3>Candidate Selection</h3>
-                <div class="form-group">
-                    <label for="candidate_id">Select Candidate <span class="required">*</span></label>
-                    <select name="candidate_id" id="candidate_id" required>
-                        <option value="">-- Select a Candidate --</option>
-                        {% for candidate in candidates %}
-                        <option value="{{ candidate.id }}"selected>{{ candidate.applicant_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div id="candidateInfo" class="candidate-info" style="display: none;">
-                    <h4>Candidate Information</h4>
-                    <p id="candidateDetails">Select a candidate to view details</p>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>Interview Details</h3>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="mode">Interview Mode <span class="required">*</span></label>
-                        <select name="mode" id="mode" required>
-                            <option value="">-- Select Mode --</option>
-                            <option value="online">Online</option>
-                            <option value="offline">In-Person</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="interview_datetime">Interview Date & Time <span class="required">*</span></label>
-                        <input type="datetime-local" name="interview_datetime" id="interview_datetime" required>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>Interviewer Information</h3>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="interviewer_name">Interviewer Name <span class="required">*</span></label>
-                        <input type="text" name="interviewer_name" id="interviewer_name" placeholder="Enter interviewer's full name" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="interviewer_email">Interviewer Email <span class="required">*</span></label>
-                        <input type="email" name="interviewer_email" id="interviewer_email" placeholder="interviewer@company.com" required>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>Interview Location Details</h3>
-                
-                <div id="onlineSection" class="mode-dependent">
-                    <div class="form-group">
-                        <label for="meeting_link">Meeting Link</label>
-                        <input type="url" name="meeting_link" id="meeting_link" placeholder="https://zoom.us/j/meeting-id or https://meet.google.com/meeting-id">
-                    </div>
-                </div>
-                
-                <div id="offlineSection" class="mode-dependent">
-                    <div class="form-group">
-                        <label for="address">Interview Address</label>
-                        <textarea name="address" id="address" rows="3" placeholder="Enter the complete address where the interview will be conducted"></textarea>
-                    </div>
-                </div>
-            </div>
-            
-            <button type="submit" class="submit-button" id="submitBtn">Schedule Interview</button>
-        </form>
-    </div>
-</div>
+<h2>Schedule Interview</h2>
+<form method="POST">
+    <label for="candidate_id">Candidate:</label>
+    <select name="candidate_id" required>
+        {% for candidate in candidates %}
+        <option value="{{ candidate.id }}">{{ candidate.applicant_name }}</option>
+        {% endfor %}
+    </select>
+    <label for="mode">Mode:</label>
+    <select name="mode" required>
+        <option value="Virtual">Virtual</option>
+        <option value="In-Person">In-Person</option>
+    </select>
+    <label for="interview_datetime">Interview Date & Time:</label>
+    <input type="datetime-local" name="interview_datetime" required>
+    <label for="interviewer_name">Interviewer Name:</label>
+    <input type="text" name="interviewer_name" required>
+    <label for="interviewer_email">Interviewer Email:</label>
+    <input type="email" name="interviewer_email" required>
+    <label for="meeting_link">Meeting Link (if virtual):</label>
+    <input type="text" name="meeting_link">
+    <label for="address">Address (if in-person):</label>
+    <input type="text" name="address">
+    <input type="submit" value="Schedule Interview">
+</form>
 {% endblock %}
 
 {% block scripts %}
