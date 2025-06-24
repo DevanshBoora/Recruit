@@ -48,7 +48,7 @@ def handle_jobs():
             return jsonify({"message": f"Error posting job: {str(e)}"}), 500
 
     elif request.method == 'GET':
-        jobs = Job.query.all()
+        jobs = Job.query.filter_by(is_open=0).all() 
         jobs_list = []
         for job in jobs:
             jobs_list.append({
@@ -143,7 +143,7 @@ def handle_job(job_id):
 
     elif request.method == 'DELETE':
         try:
-            db.session.delete(job)
+            job.is_open= 1
             db.session.commit()
             return jsonify({"message": "Job deleted successfully!"}), 200
         except Exception as e:

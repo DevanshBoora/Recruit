@@ -2,36 +2,20 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
-from sqlalchemy.exc import IntegrityError
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from sqlalchemy import and_
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from sqlalchemy import text
 from datetime import datetime, timedelta
 import threading
-import time
-import schedule
-import subprocess
-import signal
-import atexit
+import time,schedule , smtplib,imaplib,unicodedata,re ,email
 import pandas as pd
-import smtplib
-import imaplib
-import email
-import re
-import traceback
-import unicodedata
-import requests
 from email.mime.text import MIMEText
-import mysql.connector
-from mysql.connector import Error
 from routes import register_blueprints
-from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot,Company
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot
 import logging
-from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
     send_initial_rejection_email,
     send_reminder_email,
@@ -853,7 +837,7 @@ def feedback():
                 role=role
                 ).first()
 
-            # slot.is_booked = 2
+            slot.is_booked = 2
             db.session.commit()
             flash("Feedback submitted successfully.", "success")
             return redirect("/dashboard")

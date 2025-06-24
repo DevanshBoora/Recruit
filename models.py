@@ -14,6 +14,7 @@ class Job(db.Model):
     qualifications = db.Column(db.Text)
     responsibilities = db.Column(db.Text)
     posted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    deadline = db.Column(db.DateTime, nullable=True) 
     job_type = db.Column(db.String(50))
     location = db.Column(db.String(255))
     required_experience = db.Column(db.String(50))
@@ -22,6 +23,7 @@ class Job(db.Model):
     min_assesment_score = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     number_of_positions = db.Column(db.Integer,default=3)
+    is_open = db.Column(db.Integer, default=0)
     def to_dict(self):
         return {
             'id': self.id,
@@ -35,7 +37,8 @@ class Job(db.Model):
             'assessment_timer': self.assessment_timer,
             'min_assesment_score': self.min_assesment_score,
             'posted_at': self.posted_at.isoformat(),
-            'number_of_positions':self.number_of_positions
+            'number_of_positions':self.number_of_positions,
+            'is_open': self.is_open,
         }
 
     def __repr__(self):

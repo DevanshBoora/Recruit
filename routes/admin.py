@@ -3,10 +3,20 @@ from flask import Blueprint,render_template,request,jsonify,url_for,session,json
 from models import Application, Slot, db,Job,Company,User,AcceptedCandidate,Feedback,JobOffer
 from email_utils import send_email
 from datetime import datetime , timezone
+from email_utils import send_email
 from sqlalchemy import desc
 # Create a blueprint for admin routes
 # THIS LINE IS CRUCIAL FOR 'admin_bp' TO EXIST
 admin_bp = Blueprint('admin_bp', __name__)
+
+
+def send_selection_email(name , email , company_name , role):
+    send_email(email , f"You have got selected in interview round of {company_name} for {role}",f"Dear {name},\n\nCongratulations! We are pleased to extend an offer respond to this offer letter in the website")
+
+def send_offer_letter(name , email , company_name , role):
+    send_email(email, f"Offer Letter from {company_name} for {role}",
+               f"Dear {name},\n\nCongratulations! We are pleased to extend an offer")
+
 
 @admin_bp.route('/applications' ,methods=['POST', 'GET'])
 def admin_applications():
@@ -20,7 +30,10 @@ def admin_applications():
         if name_filter is None:
             return jsonify([]), 200
         if name_filter:
-            applications_query = applications_query.join(Application.job).filter(Job.title.ilike(f'%{name_filter}%'))
+            applications_query = applications_query.join(Application.job).filter(
+        Job.title.ilike(f'%{name_filter}%'),
+        Job.is_open == 1
+    )
 
 
         applications = applications_query.all()
@@ -174,7 +187,8 @@ def offer():
             return jsonify({'error': 'Company name and role not found in session. Please log in or set session variables.'}), 400
 
 
-        job_entry = Job.query.filter_by(title=company_name, responsibilities=company_role).first()
+        job_entry = Job.query.filter_by(title=company_name, responsibilities=company_role,is_open=1).first()
+        job_entry.is_open = 2
 
         if not job_entry:
             return jsonify({'error': f'Job entry not found for company: {company_name}, role: {company_role}'}), 404
@@ -232,7 +246,7 @@ def offer():
             # In a real application, you would integrate with an email service here
             candidate_app = Application.query.get(feedback_entry.candidate_id)
             if candidate_app:
-                print(f"Simulating offer letter sent to: {candidate_app.applicant_name} ({candidate_app.applicant_email}) for {company_role} at {company_name}")
+                send_selection_email(candidate_app.applicant_name, candidate_app.applicant_email, company_name, company_role)
             else:
                 print(f"Simulating offer letter sent to candidate ID: {feedback_entry.candidate_id} for {company_role} at {company_name}")
 
@@ -322,7 +336,8 @@ def offer():
                     )
             else:
                 print(f"Warning: Job entry not found for {company_name}, {company_role}. Cannot decrement available jobs.")
-
+            candidate_app = Application.query.get(application_id)
+            send_offer_letter(candidate_app.applicant_name, candidate_app.applicant_email, company_name, company_role)
             db.session.commit()
             return jsonify({'message': f'Offer for application {application_id} accepted. Available jobs updated.','success':True}), 200
 
@@ -381,7 +396,7 @@ def offer():
 
                 candidate_app = Application.query.get(eligible_candidates_feedback.candidate_id)
                 if candidate_app:
-                    print(f"Simulating new offer letter sent to: {candidate_app.applicant_name} ({candidate_app.applicant_email}) for {company_role} at {company_name} due to a decline.")
+                    send_selection_email(candidate_app.applicant_name, candidate_app.applicant_email, company_name, company_role)
                 else:
                     print(f"Simulating new offer letter sent to candidate ID: {eligible_candidates_feedback.candidate_id} for {company_role} at {company_name} due to a decline.")
 
@@ -416,7 +431,7 @@ def get_jobs_for_admin():
         return jsonify({'error': 'company_name is required'}), 400
 
     # 🔍 Filter by company_name, then select distinct job titles
-    jobs = Job.query.filter_by(title=company_name).with_entities(Job.responsibilities).distinct().all()
+    jobs = Job.query.filter_by(title=company_name,is_open=1).with_entities(Job.responsibilities).distinct().all()
     job_titles = [job.responsibilities for job in jobs]
 
     return jsonify({'job_roles': job_titles}), 200
