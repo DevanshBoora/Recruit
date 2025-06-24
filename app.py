@@ -52,7 +52,7 @@ UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'upload
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications23'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications32'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -843,6 +843,7 @@ def feedback():
                         company_role =role
                     )
                     db.session.add(accepted_candidate)
+                    application.status='Interview Completed'
             else:
                 application.status = 'Rejected'
             slot = Slot.query.filter_by(
@@ -852,7 +853,7 @@ def feedback():
                 role=role
                 ).first()
 
-            slot.is_booked = 2
+            # slot.is_booked = 2
             db.session.commit()
             flash("Feedback submitted successfully.", "success")
             return redirect("/dashboard")

@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
        
         try {
             console.log("sending the request")
-            const response = await fetch("http://127.0.0.1:5000/admin/fetch/jobs", {
+            const response = await fetch("http://localhost:5000/admin/fetch/jobs", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

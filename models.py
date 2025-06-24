@@ -248,7 +248,7 @@ class Slot(db.Model):
     mode = db.Column(db.String(50), nullable=False) # 'online' or 'offline'
     meeting_link = db.Column(db.String(1000), nullable=True) # For online
     address = db.Column(db.String(1000), nullable=True) # For offline
-    is_booked = db.Column(db.Boolean, default=False)
+    is_booked = db.Column(db.Integer, default=0)
     booked_by_application_id = db.Column(db.Integer, db.ForeignKey('application.id'), nullable=True, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

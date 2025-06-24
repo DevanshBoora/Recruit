@@ -31,7 +31,7 @@ def get_user_applications():
         applications = Application.query.filter_by(applicant_email=user_email).options(
             selectinload(Application.job),
             selectinload(Application.interview_schedule),
-            selectinload(Application.job_offer)  # Correct relationship name from your model
+            selectinload(Application.job_offer) 
         ).order_by(desc(Application.applied_at)).all()
 
         applications_data = []

@@ -116,7 +116,7 @@ def signup():
         For your security, please log in immediately and change your password.
 
         Steps to get started:
-        1. Click on the following link to log in: http://127.0.0.1:5000/login
+        1. Click on the following link to log in: http://localhost:5000/login
         2. Enter your Username and Temporary Password provided above.
         3. You will be prompted to create a new, strong password. Please choose a password that is unique and difficult to guess.
         4. Once logged in, you can [mention next steps, e.g., "explore your dashboard," "complete your profile"].
@@ -126,7 +126,7 @@ def signup():
         Thank you,
 
         The Team at {company_name}
-        http://127.0.0.1:5000
+        http://localhost:5000
         """
         send_email(email,subject , body)
         try:
@@ -285,6 +285,11 @@ def offer():
             # Find the job entry to decrement available jobs
             job_entry = Job.query.filter_by(title=company_name, responsibilities=company_role).first()
 
+            updated_applications_count = Application.query.filter_by(id=application_id).update(
+                    {'status': 'OfferAccepted'}, # Ensure this status string is correct
+                    synchronize_session=False # Important for bulk/direct updates
+                )
+
             if job_entry:
                 if job_entry.number_of_positions > 0:
                     job_entry.number_of_positions -= 1
@@ -295,16 +300,29 @@ def offer():
 
                 # If available jobs become 0, delete all remaining accepted candidates for this role
                 if job_entry.number_of_positions == 0:
+
+                    all_accepted_candidates_for_job_ids = [
+                        ac.candidate_id for ac in AcceptedCandidate.query.filter_by(
+                            company_name=company_name,
+                            company_role=company_role
+                        ).all()
+                    ]
+
                     deleted_count = AcceptedCandidate.query.filter_by(
                         company_name=company_name,
                         company_role=company_role
                     ).delete(synchronize_session='fetch')
                     print(f"Deleted {deleted_count} accepted candidates for {company_role} at {company_name} as jobs are filled.")
+
+                    updated_applications_count = Application.query.filter(
+                        Application.id.in_(all_accepted_candidates_for_job_ids)
+                    ).update(
+                        {'status': 'Rejected'},
+                        synchronize_session=False # Important for bulk updates
+                    )
             else:
                 print(f"Warning: Job entry not found for {company_name}, {company_role}. Cannot decrement available jobs.")
 
-            application = Application.query.filter(id=application_id)
-            application.status = 'ACCEPTED'
             db.session.commit()
             return jsonify({'message': f'Offer for application {application_id} accepted. Available jobs updated.','success':True}), 200
 
@@ -318,6 +336,10 @@ def offer():
                 company_role=company_role
             ).all()
 
+            updated_applications_count = Application.query.filter_by(id=application_id).update(
+                    {'status': 'OfferDeclined'}, # Ensure this status string is correct
+                    synchronize_session=False # Important for bulk/direct updates
+                )
             if not accepted_candidates_for_role:
                 db.session.commit()
                 return jsonify({'message': f'Offer for application {application_id} declined. No more accepted candidates for {company_role} at {company_name} to send new offers.'}), 200
@@ -371,8 +393,6 @@ def offer():
                 ).delete(synchronize_session='fetch')
                 print(f"Deleted accepted candidate entry for {eligible_candidates_feedback.candidate_id} after sending new offer.")
 
-                application = Application.query.filter(id=application_id)
-                application.status = 'ACCEPTED'
                 db.session.commit()
                 return jsonify({'message': f'Offer for application {application_id} declined. New offer sent to next eligible candidate.','success':True}), 200
             else:

@@ -102,7 +102,7 @@
     <h2>Available Interview Slots</h2>
 
     <div class="add-slot-link">
-        <a href="http://127.0.0.1:5000/slots/add" class="btn btn-primary">Add New Slot</a>
+        <a href="http://localhost:5000/slots/add" class="btn btn-primary">Add New Slot</a>
     </div>
 
     {% if slots %}
@@ -175,7 +175,7 @@
                 localStorage.setItem("candId",responseData.candidate_id)
                 console.log("setting lcoalstorage :")
                 setTimeout(()=>{
-                    window.location.href ="http://127.0.0.1:5000/fetch/feedback"
+                    window.location.href ="http://localhost:5000/fetch/feedback"
                 },3000)
                 
             })
