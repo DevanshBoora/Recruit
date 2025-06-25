@@ -10,9 +10,7 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 from datetime import datetime, timedelta
 import threading
-
 import time,schedule , smtplib,imaplib,unicodedata,re ,email
-
 import pandas as pd
 from email.mime.text import MIMEText
 from routes import register_blueprints
