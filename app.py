@@ -909,11 +909,14 @@ def get_filtered_applications():
         applications_query = applications_query.join(Job)
 
     if name_filter:
-        applications_query = applications_query.filter(Job.title.ilike(f'%{name_filter}%'))
+        applications_query = applications_query.join(Application.job).filter(
+        Job.title.ilike(f'%{name_filter}%'),
+        Job.is_open == 1)
 
     if role_filter:
-        applications_query = applications_query.filter(Job.responsibilities.ilike(f'%{role_filter}%'))
-
+        applications_query = applications_query = applications_query.join(Application.job).filter(
+        Job.responsibilities.ilike(f'%{role_filter}%'),
+        Job.is_open == 1)
     applications = applications_query.all()
 
     filtered_applications_list = []

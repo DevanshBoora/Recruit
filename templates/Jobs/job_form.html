@@ -4,6 +4,7 @@
 
 {% block head_extra %}
   <style>
+    /* ... (Your existing CSS remains here) ... */
     .form-card {
       max-width: 800px;
       margin: 0 auto;
@@ -158,8 +159,12 @@
       <input type="text" id="requiredExperience" placeholder="e.g., 2+ years, 5-7 years" required />
 
       <label for="nop">Number Of Positions :</label>
-      <input type="number" id="nop" placeholder="e.g. 1,2,3,4" required />
+      <input type="number" id="nop" placeholder="e.g. 1,2,3,4" required min="1" />
 
+      <!-- NEW FIELD: Deadline Date -->
+      <label for="deadline">Interview Date & Time <span class="required">*</span></label>
+      <input type="datetime-local" id="deadline" name="deadline" required>
+      
       <label for="assessmentTimer">Assessment Timer (minutes):</label>
       <input type="number" id="assessmentTimer" name="assessmentTimer" min="0" value="0" />
 
@@ -188,6 +193,15 @@
       let questionCounter = 0;
       let questionsData = [];
 
+      const deadlineInput = document.getElementById('deadline');
+
+      const now = new Date();
+      const tomorrow = new Date(now); 
+      tomorrow.setDate(now.getDate() + 1);
+      const nowIso = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      deadlineInput.setAttribute('min', nowIso);
+
+
       function updateNoQuestionsMessage() {
         const message = document.getElementById('noQuestionsMessage');
         if (message) {
@@ -195,7 +209,8 @@
         }
       }
 
-      const company_name = localStorage.getItem('company_name')
+      const company_name = localStorage.getItem('company_name'); // Assuming this is where the job title comes from, based on your original formData.append('jobTitle', company_name);
+
       window.addQuestion = function (type) {
         const container = document.getElementById('questionsBuilderContainer');
         if (!container) return;
@@ -340,6 +355,25 @@
 
       // Form validation
       function validateForm() {
+        // Validate deadline
+        // const deadlineValue = deadlineInput.value;
+        // if (!deadlineValue) {
+        //     // Using a simple alert for brevity, consider a custom modal
+        //     alert('Please select an application deadline.');
+        //     return false;
+        // }
+        // const selectedDate = new Date(deadlineValue);
+        // // Set hours, minutes, seconds, milliseconds to 0 for accurate date-only comparison
+        // selectedDate.setHours(0, 0, 0, 0); 
+        // const todayAtMidnight = new Date(todayISO); // todayISO is YYYY-MM-DD
+        // todayAtMidnight.setHours(0, 0, 0, 0);
+
+        // if (selectedDate < todayAtMidnight) {
+        //     alert('The application deadline cannot be in the past.');
+        //     return false;
+        // }
+
+
         // Check if at least one question is added
         if (questionsData.length === 0) {
           alert('Please add at least one assessment question.');
@@ -382,14 +416,15 @@
         }
         
         const formData = new FormData();
-        formData.append('jobTitle', company_name);
+        formData.append('jobTitle', company_name); // Assuming company_name is intended as jobTitle
         formData.append('jobDescription', document.getElementById('jobDescription').value.trim());
         formData.append('qualifications', document.getElementById('qualifications').value.trim());
         formData.append('responsibilities', document.getElementById('responsibilities').value.trim());
         formData.append('jobType', document.getElementById('jobType').value);
         formData.append('jobLocation', document.getElementById('jobLocation').value);
         formData.append('requiredExperience', document.getElementById('requiredExperience').value.trim());
-        formData.append('number_of_positions',document.getElementById('nop').value);
+        formData.append('number_of_positions', document.getElementById('nop').value);
+        formData.append('deadline', document.getElementById('deadline').value); // Send the deadline
         formData.append('assessmentTimer', document.getElementById('assessmentTimer').value);
         formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
         formData.append('assessmentQuestions', document.getElementById('assessmentQuestions').value);
