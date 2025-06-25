@@ -14,9 +14,6 @@ from datetime import datetime, timedelta
 import threading
 import time
 import schedule
-import subprocess
-import signal
-import atexit
 import pandas as pd
 import smtplib
 import imaplib
