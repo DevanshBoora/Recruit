@@ -2,6 +2,7 @@
 from flask import Blueprint,render_template,request,jsonify,session
 from models import Job, db
 import json
+from datetime import datetime
 
 # Create a blueprint for general routes
 job_bp = Blueprint('job_bp', __name__)
@@ -18,10 +19,16 @@ def handle_jobs():
         location = request.form.get('jobLocation')
         required_experience = request.form.get('requiredExperience')
         number_of_positions = request.form.get('number_of_positions')
+        deadline_str = request.form.get('deadline')  
+        try:
+            deadline = datetime.fromisoformat(deadline_str)
+        except ValueError:
+            return jsonify({"message": "Invalid date/time format"}), 400
+
         assessment_timer_str = request.form.get('assessmentTimer')
         assessment_questions = request.form.get('assessmentQuestions')
         min_assesment_score = request.form.get('minAssessmentScore')
-        if not all([title, description, qualifications, responsibilities, job_type, location, required_experience,number_of_positions]):
+        if not all([title, description, qualifications, responsibilities, job_type, location, required_experience,number_of_positions,deadline]):
             return jsonify({"message": "Missing required fields."}), 400
 
         assessment_timer = int(assessment_timer_str) if assessment_timer_str and assessment_timer_str.isdigit() else 0
@@ -37,7 +44,8 @@ def handle_jobs():
             assessment_timer=assessment_timer,
             assessment_questions=assessment_questions,
             min_assesment_score=min_assesment_score,
-            number_of_positions=number_of_positions
+            number_of_positions=number_of_positions,
+            deadline=deadline
         )
         db.session.add(new_job)
         try:
@@ -48,7 +56,7 @@ def handle_jobs():
             return jsonify({"message": f"Error posting job: {str(e)}"}), 500
 
     elif request.method == 'GET':
-        jobs = Job.query.all()
+        jobs = Job.query.filter_by(is_open=0).all() 
         jobs_list = []
         for job in jobs:
             jobs_list.append({
@@ -143,7 +151,7 @@ def handle_job(job_id):
 
     elif request.method == 'DELETE':
         try:
-            db.session.delete(job)
+            job.is_open= 1
             db.session.commit()
             return jsonify({"message": "Job deleted successfully!"}), 200
         except Exception as e:

@@ -224,12 +224,10 @@
 
                     const data = await response.json();
 
-                    if (response.ok && data.success) { // Check both HTTP status and custom success flag
+                    if (response.ok && data.success) { 
                         alert(`Job offer ${action} successfully!`);
-                        // You might want to refresh the page or update the UI here
-                        location.reload(); // Simple reload for demonstration
+                        location.reload(); 
                     } else {
-                        // Handle server-side errors or failed logic (e.g., data.success is false)
                         alert(`Failed to ${action} job offer: ${data.message || response.statusText || 'Unknown error'}`);
                     }
                 } catch (error) {
@@ -426,7 +424,7 @@
             // Handle logout button click
             logoutButton.addEventListener('click', async () => {
                 showLoading();
-                window.location.href = "http://127.0.0.1:5000/user/"
+                window.location.href = "http://localhost:5000/user/"
             });
 
             // Handle 'Go to Login' button click on error message

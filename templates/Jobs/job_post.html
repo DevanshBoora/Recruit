@@ -332,9 +332,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (noJobsMsg) noJobsMsg.style.display = 'none'; // Hide no jobs message
 
         // Try multiple possible endpoints
-        const possibleEndpoints = ['/jobs', '/jobs/', '/api/jobs'];
+        const endpoint = '/jobs';
         
-        for (let endpoint of possibleEndpoints) {
+       
             try {
                 console.log(`Trying to fetch from: ${endpoint}`);
                 const response = await fetch(endpoint);
@@ -354,7 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error(`Error fetching from ${endpoint}:`, error);
             }
-        }
 
         // If we get here, all endpoints failed
         console.error('All endpoints failed');
@@ -401,30 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 jobListingsDiv.appendChild(jobCard);
             });
 
-            // Show/hide edit and delete buttons based on role
-            document.querySelectorAll('.edit-btn, .delete-btn').forEach(button => {
-                if (userRole === 'a') { // 'a' signifies admin role
-                    button.style.display = 'inline-block'; // Show the button
-                } else {
-                    button.style.display = 'none'; // Hide the button for non-admins
-                }
-
-                if (button.classList.contains('delete-btn')) {
-                    button.addEventListener('click', function() {
-                        const jobId = this.dataset.jobId;
-                        if (confirm('Are you sure you want to delete this job posting?')) {
-                            deleteJob(jobId);
-                        }
-                    });
-                } else if (button.classList.contains('edit-btn')) {
-                    button.addEventListener('click', function() {
-                        const jobId = this.dataset.jobId;
-                        window.location.href = `/jobs/edit_job.html?job_id=${jobId}`;
-                    });
-                }
-            });
-
-            // Add event listener for apply buttons
             document.querySelectorAll('.apply-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const jobId = this.dataset.jobId;
@@ -503,28 +478,10 @@ document.addEventListener('DOMContentLoaded', function() {
         applyFilters();
     }
 
-    async function deleteJob(jobId) {
-        try {
-            const response = await fetch(`/jobs/${jobId}`, {
-                method: 'DELETE'
-            });
-            const result = await response.json();
-            if (response.ok) {
-                alert(result.message);
-                fetchJobs();
-            } else {
-                alert(result.message);
-            }
-        } catch (error) {
-            console.error('Error deleting job:', error);
-            alert('Failed to delete job. Please try again.');
-        }
-    }
 
-    // Fetch jobs when the page loads
+   
     fetchJobs();
 
-    // Filter event listeners
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
     document.getElementById('jobTitleFilter').addEventListener('input', applyFilters);
     document.getElementById('jobTypeFilter').addEventListener('change', applyFilters);

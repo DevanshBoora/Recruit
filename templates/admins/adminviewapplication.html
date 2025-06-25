@@ -327,7 +327,7 @@
             // It seems your backend is expecting a POST request for fetching,
             // which is unconventional but we'll stick to it if that's the setup.
             // Ensure your Flask route for /applications expects POST and processes JSON body.
-            const response = await fetch('http://127.0.0.1:5000/admin/applications', {
+            const response = await fetch('http://localhost:5000/admin/applications', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

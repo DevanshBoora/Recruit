@@ -3,10 +3,20 @@ from flask import Blueprint,render_template,request,jsonify,url_for,session,json
 from models import Application, Slot, db,Job,Company,User,AcceptedCandidate,Feedback,JobOffer
 from email_utils import send_email
 from datetime import datetime , timezone
+from email_utils import send_email
 from sqlalchemy import desc
 # Create a blueprint for admin routes
 # THIS LINE IS CRUCIAL FOR 'admin_bp' TO EXIST
 admin_bp = Blueprint('admin_bp', __name__)
+
+
+def send_selection_email(name , email , company_name , role):
+    send_email(email , f"You have got selected in interview round of {company_name} for {role}",f"Dear {name},\n\nCongratulations! We are pleased to extend an offer respond to this offer letter in the website")
+
+def send_offer_letter(name , email , company_name , role):
+    send_email(email, f"Offer Letter from {company_name} for {role}",
+               f"Dear {name},\n\nCongratulations! We are pleased to extend an offer")
+
 
 @admin_bp.route('/applications' ,methods=['POST', 'GET'])
 def admin_applications():
@@ -20,7 +30,10 @@ def admin_applications():
         if name_filter is None:
             return jsonify([]), 200
         if name_filter:
-            applications_query = applications_query.join(Application.job).filter(Job.title.ilike(f'%{name_filter}%'))
+            applications_query = applications_query.join(Application.job).filter(
+        Job.title.ilike(f'%{name_filter}%'),
+        Job.is_open == 1
+    )
 
 
         applications = applications_query.all()
@@ -116,7 +129,7 @@ def signup():
         For your security, please log in immediately and change your password.
 
         Steps to get started:
-        1. Click on the following link to log in: http://127.0.0.1:5000/login
+        1. Click on the following link to log in: http://localhost:5000/login
         2. Enter your Username and Temporary Password provided above.
         3. You will be prompted to create a new, strong password. Please choose a password that is unique and difficult to guess.
         4. Once logged in, you can [mention next steps, e.g., "explore your dashboard," "complete your profile"].
@@ -126,7 +139,7 @@ def signup():
         Thank you,
 
         The Team at {company_name}
-        http://127.0.0.1:5000
+        http://localhost:5000
         """
         send_email(email,subject , body)
         try:
@@ -174,7 +187,8 @@ def offer():
             return jsonify({'error': 'Company name and role not found in session. Please log in or set session variables.'}), 400
 
 
-        job_entry = Job.query.filter_by(title=company_name, responsibilities=company_role).first()
+        job_entry = Job.query.filter_by(title=company_name, responsibilities=company_role,is_open=1).first()
+        job_entry.is_open = 2
 
         if not job_entry:
             return jsonify({'error': f'Job entry not found for company: {company_name}, role: {company_role}'}), 404
@@ -232,7 +246,7 @@ def offer():
             # In a real application, you would integrate with an email service here
             candidate_app = Application.query.get(feedback_entry.candidate_id)
             if candidate_app:
-                print(f"Simulating offer letter sent to: {candidate_app.applicant_name} ({candidate_app.applicant_email}) for {company_role} at {company_name}")
+                send_selection_email(candidate_app.applicant_name, candidate_app.applicant_email, company_name, company_role)
             else:
                 print(f"Simulating offer letter sent to candidate ID: {feedback_entry.candidate_id} for {company_role} at {company_name}")
 
@@ -285,6 +299,11 @@ def offer():
             # Find the job entry to decrement available jobs
             job_entry = Job.query.filter_by(title=company_name, responsibilities=company_role).first()
 
+            updated_applications_count = Application.query.filter_by(id=application_id).update(
+                    {'status': 'OfferAccepted'}, # Ensure this status string is correct
+                    synchronize_session=False # Important for bulk/direct updates
+                )
+
             if job_entry:
                 if job_entry.number_of_positions > 0:
                     job_entry.number_of_positions -= 1
@@ -295,16 +314,30 @@ def offer():
 
                 # If available jobs become 0, delete all remaining accepted candidates for this role
                 if job_entry.number_of_positions == 0:
+
+                    all_accepted_candidates_for_job_ids = [
+                        ac.candidate_id for ac in AcceptedCandidate.query.filter_by(
+                            company_name=company_name,
+                            company_role=company_role
+                        ).all()
+                    ]
+
                     deleted_count = AcceptedCandidate.query.filter_by(
                         company_name=company_name,
                         company_role=company_role
                     ).delete(synchronize_session='fetch')
                     print(f"Deleted {deleted_count} accepted candidates for {company_role} at {company_name} as jobs are filled.")
+
+                    updated_applications_count = Application.query.filter(
+                        Application.id.in_(all_accepted_candidates_for_job_ids)
+                    ).update(
+                        {'status': 'Rejected'},
+                        synchronize_session=False # Important for bulk updates
+                    )
             else:
                 print(f"Warning: Job entry not found for {company_name}, {company_role}. Cannot decrement available jobs.")
-
-            application = Application.query.filter(id=application_id)
-            application.status = 'ACCEPTED'
+            candidate_app = Application.query.get(application_id)
+            send_offer_letter(candidate_app.applicant_name, candidate_app.applicant_email, company_name, company_role)
             db.session.commit()
             return jsonify({'message': f'Offer for application {application_id} accepted. Available jobs updated.','success':True}), 200
 
@@ -318,6 +351,10 @@ def offer():
                 company_role=company_role
             ).all()
 
+            updated_applications_count = Application.query.filter_by(id=application_id).update(
+                    {'status': 'OfferDeclined'}, # Ensure this status string is correct
+                    synchronize_session=False # Important for bulk/direct updates
+                )
             if not accepted_candidates_for_role:
                 db.session.commit()
                 return jsonify({'message': f'Offer for application {application_id} declined. No more accepted candidates for {company_role} at {company_name} to send new offers.'}), 200
@@ -359,7 +396,7 @@ def offer():
 
                 candidate_app = Application.query.get(eligible_candidates_feedback.candidate_id)
                 if candidate_app:
-                    print(f"Simulating new offer letter sent to: {candidate_app.applicant_name} ({candidate_app.applicant_email}) for {company_role} at {company_name} due to a decline.")
+                    send_selection_email(candidate_app.applicant_name, candidate_app.applicant_email, company_name, company_role)
                 else:
                     print(f"Simulating new offer letter sent to candidate ID: {eligible_candidates_feedback.candidate_id} for {company_role} at {company_name} due to a decline.")
 
@@ -371,8 +408,6 @@ def offer():
                 ).delete(synchronize_session='fetch')
                 print(f"Deleted accepted candidate entry for {eligible_candidates_feedback.candidate_id} after sending new offer.")
 
-                application = Application.query.filter(id=application_id)
-                application.status = 'ACCEPTED'
                 db.session.commit()
                 return jsonify({'message': f'Offer for application {application_id} declined. New offer sent to next eligible candidate.','success':True}), 200
             else:
@@ -396,7 +431,7 @@ def get_jobs_for_admin():
         return jsonify({'error': 'company_name is required'}), 400
 
     # 🔍 Filter by company_name, then select distinct job titles
-    jobs = Job.query.filter_by(title=company_name).with_entities(Job.responsibilities).distinct().all()
+    jobs = Job.query.filter_by(title=company_name,is_open=1).with_entities(Job.responsibilities).distinct().all()
     job_titles = [job.responsibilities for job in jobs]
 
     return jsonify({'job_roles': job_titles}), 200

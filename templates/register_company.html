@@ -124,7 +124,7 @@
 {% block content %}
 <div class="form-container">
     <h2>Register Your Company</h2>
-    <form id="registerCompanyForm" method="POST" action="http://127.0.0.1:5000/auth/register_company">
+    <form id="registerCompanyForm" method="POST" action="http://localhost:5000/auth/register_company">
         <div class="form-group">
             <label for="company_name">Company Name <span class="required">*</span></label>
             <input type="text" id="company_name" name="company_name" required>
@@ -140,7 +140,7 @@
         <button type="submit" class="submit-button">Register Company</button>
     </form>
     <div class="login-link">
-        Already have an account? <a href="http://127.0.0.1:5000/auth/company_login">Login here</a>
+        Already have an account? <a href="http://localhost:5000/auth/company_login">Login here</a>
     </div>
 </div>
 
@@ -199,7 +199,7 @@
                     showFormMessage(result.message, 'success');
                     // Optionally redirect after a short delay
                     setTimeout(() => {
-                        window.location.href = "http://127.0.0.1:5000/auth/company_login"; // Redirect to company login
+                        window.location.href = "http://localhost:5000/auth/company_login"; // Redirect to company login
                     }, 2000);
                 } else {
                     // Handle server-side errors (e.g., company name already exists)

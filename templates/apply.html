@@ -125,7 +125,7 @@
             <input type="email" id="email" name="email" required value="gangolamanikanta@gmail.com" />
 
             <label for="applicantExperience">Your Work Experience (e.g., 2 years in software development):</label>
-            <textarea id="applicantExperience" name="experience" rows="3" required>2 years</textarea>
+            <textarea id="applicantExperience" name="experience" rows="3" required>2</textarea>
 
             <label for="education">Education (e.g., B.Sc. Computer Science):</label>
             <textarea id="education" name="education" rows="2" required>Btech</textarea>
@@ -154,7 +154,13 @@
             // Get job ID from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const jobId = urlParams.get('job_id');
+            const name = document.getElementById('name');
+            const email = document.getElementById('email');
             
+            const nameValue = localStorage.getItem('candidate_name') || name.value;
+            const emailValue = localStorage.getItem('candidate_email') || email.value;
+            name.value = nameValue;
+            email.value = emailValue;
             console.log('Job ID from URL:', jobId); // Debug log
 
             // Set the value of the hidden jobId input

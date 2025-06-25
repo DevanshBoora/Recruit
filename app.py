@@ -2,33 +2,22 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
-from sqlalchemy.exc import IntegrityError
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from sqlalchemy import and_
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from sqlalchemy import text
 from datetime import datetime, timedelta
 import threading
-import time
-import schedule
+
+import time,schedule , smtplib,imaplib,unicodedata,re ,email
+
 import pandas as pd
-import smtplib
-import imaplib
-import email
-import re
-import traceback
-import unicodedata
-import requests
 from email.mime.text import MIMEText
-import mysql.connector
-from mysql.connector import Error
 from routes import register_blueprints
-from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot,Company
+from models import db, Job, Application, InterviewSchedule, Feedback, AcceptedCandidate, User, JobOffer, Slot
 import logging
-from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status
 from email_utils import (
     send_initial_rejection_email,
     send_reminder_email,
@@ -49,7 +38,7 @@ UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'upload
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications23'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications32'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -840,6 +829,7 @@ def feedback():
                         company_role =role
                     )
                     db.session.add(accepted_candidate)
+                    application.status='Interview Completed'
             else:
                 application.status = 'Rejected'
             slot = Slot.query.filter_by(
@@ -921,11 +911,14 @@ def get_filtered_applications():
         applications_query = applications_query.join(Job)
 
     if name_filter:
-        applications_query = applications_query.filter(Job.title.ilike(f'%{name_filter}%'))
+        applications_query = applications_query.join(Application.job).filter(
+        Job.title.ilike(f'%{name_filter}%'),
+        Job.is_open == 1)
 
     if role_filter:
-        applications_query = applications_query.filter(Job.responsibilities.ilike(f'%{role_filter}%'))
-
+        applications_query = applications_query = applications_query.join(Application.job).filter(
+        Job.responsibilities.ilike(f'%{role_filter}%'),
+        Job.is_open == 1)
     applications = applications_query.all()
 
     filtered_applications_list = []
