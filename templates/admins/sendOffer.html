@@ -1,0 +1,373 @@
+{% extends "admins/adminbase.html" %}
+
+{% block title %}Send Job Offers - DevOrks{% endblock %}
+
+{% block head_extra %}
+    <style>
+        /* Re-using styles from your signup form, ensuring consistency */
+        :root {
+            --bg-color-dark: #1a1a1a;
+            --surface-color-dark: #2a2a2a;
+            --text-color-light: #e0e0e0;
+            --text-color-faded: #b0b0b0;
+            --accent-color: #00bcd4;
+            --accent-color-rgb: 0, 188, 212;
+            --button-bg-dark: #007bff;
+            --button-hover-dark: #0056b3;
+            --border-color-dark: #444;
+            --shadow-color-dark: rgba(0, 0, 0, 0.5);
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --input-bg-dark: #444;
+            --input-border-dark: #666;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-light);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--surface-color-dark);
+            padding: 15px 30px;
+            border-bottom: 1px solid var(--border-color-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color-dark);
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-left: 25px;
+        }
+
+        nav ul li a {
+            color: var(--text-color-faded);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Global Message Container */
+        #globalMessageContainer {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        #globalMessageContainer.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #globalMessageContainer.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #globalMessageContainer.success {
+            background-color: var(--success-color);
+        }
+
+        #globalMessageContainer.error {
+            background-color: var(--error-color);
+        }
+
+        #globalMessageContainer.warning {
+            background-color: orange;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 40px;
+            background-color: var(--surface-color-dark);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px var(--shadow-color-dark);
+            border: 1px solid var(--border-color-dark);
+            color: var(--text-color-light);
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color-light);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"], /* Added number type */
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color-dark);
+            border-radius: 8px;
+            background-color: var(--input-bg-dark);
+            color: var(--text-color-light);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus, /* Added number type focus */
+        .form-group select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+            outline: none;
+        }
+
+        .form-container button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--button-bg-dark);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-container button[type="submit"]:hover:not(:disabled) {
+            background-color: var(--button-hover-dark);
+        }
+
+        .form-container button[type="submit"]:disabled {
+            background-color: var(--border-color-dark);
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div id="globalMessageContainer"></div>
+
+    <div class="form-container">
+        <h2>Send Job Offers</h2>
+        <form id="sendOffersForm">
+            <div class="form-group">
+                <label for="jobRole">Job Role:</label>
+                <select id="jobRole" name="jobRole" required>
+                    <option value="">Select a Job Role</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+                <div class="error-message" id="jobRoleError"></div>
+            </div>
+
+
+            <button type="submit" id="submitBtn">Send Offers</button>
+        </form>
+    </div>
+
+    <script>
+        // Re-use the global message function from adminbase.html or ensure it's loaded
+        // If adminbase.html already provides it, you don't need this block.
+        // For standalone testing, you might need to include it here or have a separate JS file.
+        function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
+            const msgContainer = document.getElementById('globalMessageContainer');
+            if (!msgContainer) return;
+            
+            msgContainer.textContent = message;
+            msgContainer.className = `show ${type}`;
+
+            setTimeout(() => {
+                msgContainer.classList.add('hide');
+                msgContainer.addEventListener('transitionend', function handler() {
+                    msgContainer.className = '';
+                    msgContainer.removeEventListener('transitionend', handler);
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }, { once: true });
+            }, delay);
+
+            if (redirectUrl) {
+                setTimeout(() => {
+                    if (window.location.href !== redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }, delay + 500);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const jobRoleSelect = document.getElementById('jobRole');
+            const capacityInput = document.getElementById('capacity');
+            const sendOffersForm = document.getElementById('sendOffersForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const jobRoleError = document.getElementById('jobRoleError');
+            const capacityError = document.getElementById('capacityError');
+
+            // --- Form Validation Functions ---
+            function validateField(field, errorDiv, validator, errorMessage) {
+                if (!field || !errorDiv) {
+                    console.error("Validation target elements missing.");
+                    return true; // Don't break if elements are missing
+                }
+                if (!validator(field.value)) {
+                    errorDiv.textContent = errorMessage;
+                    errorDiv.style.display = 'block';
+                    field.style.borderColor = 'var(--error-color)';
+                    return false;
+                } else {
+                    errorDiv.style.display = 'none';
+                    field.style.borderColor = 'var(--border-color-dark)';
+                    return true;
+                }
+            }
+
+            function validateForm() {
+                const jobRoleValid = validateField(
+                    jobRoleSelect,
+                    jobRoleError,
+                    (value) => value !== '',
+                    'Please select a job role.'
+                );
+                return jobRoleValid;
+            }
+
+            // --- Real-time Validation Listeners ---
+            jobRoleSelect.addEventListener('change', () => {
+                validateField(jobRoleSelect, jobRoleError, (value) => value !== '', 'Please select a job role.');
+            });
+
+
+            // --- Fetch Job Roles and Populate Dropdown ---
+            async function fetchJobRoles() {
+                try {
+                    const response = await fetch('/admin/jobs');
+                    const data = await response.json();
+
+                    if (response.ok && data.job_roles) {
+                        data.job_roles.forEach(role => {
+                            const option = document.createElement('option');
+                            option.value = role;
+                            option.textContent = role;
+                            jobRoleSelect.appendChild(option);
+                        });
+                    } else {
+                        showGlobalMessage(data.message || 'Failed to load job roles.', 'error');
+                        console.error('Error fetching job roles:', data);
+                    }
+                } catch (error) {
+                    console.error('Network error fetching job roles:', error);
+                    showGlobalMessage('Network error fetching job roles. Please try again.', 'error');
+                }
+            }
+
+            await fetchJobRoles(); // Call this when the page loads
+
+            // --- Form Submission Handler ---
+            sendOffersForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                if (!validateForm()) {
+                    showGlobalMessage('Please fix the errors in the form.', 'error');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending Offers...';
+                sendOffersForm.classList.add('loading');
+
+                const jobRole = jobRoleSelect.value;
+
+                try {
+                    const response = await fetch('/admin/offer', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ job_role: jobRole}),
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showGlobalMessage(result.message, 'success');
+                    } else {
+                        showGlobalMessage(result.message || 'Failed to send offers.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error sending offers:', error);
+                    showGlobalMessage('Network error. Please check your connection and try again.', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Offers';
+                    sendOffersForm.classList.remove('loading');
+                }
+            });
+
+            // --- Clear errors when user starts typing/interacting ---
+            document.querySelectorAll('#sendOffersForm input, #sendOffersForm select').forEach(field => {
+                field.addEventListener('input', () => {
+                    if (field.style.borderColor === 'var(--error-color)') {
+                        field.style.borderColor = 'var(--border-color-dark)';
+                    }
+                    const errorDivId = field.id + 'Error';
+                    const errorDiv = document.getElementById(errorDivId);
+                    if (errorDiv && errorDiv.style.display === 'block') {
+                        errorDiv.style.display = 'none';
+                        errorDiv.textContent = '';
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

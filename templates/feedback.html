@@ -1,10 +1,11 @@
-{% extends "base.html" %}
+{% extends "interviewerbase.html" %}
 
 {% block title %}Submit Feedback{% endblock %}
 
 {% block head_extra %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
+    /* ... (Your existing CSS styles remain unchanged) ... */
     .feedback-container {
         max-width: 700px;
         margin: 0 auto;
@@ -304,40 +305,118 @@
 {% endblock %}
 
 {% block content %}
-<h2>Submit Feedback</h2>
-<form method="POST">
-    <label for="candidate_id">Candidate:</label>
-    <select name="candidate_id" required>
-        {% for candidate in candidates %}
-        <option value="{{ candidate.id }}">{{ candidate.applicant_name }}</option>
-        {% endfor %}
-    </select>
-    <label for="comments">Comments:</label>
-    <textarea name="comments" required></textarea>
-    <label for="decision">Decision:</label>
-    <select name="decision" required>
-        <option value="Accepted">Accepted</option>
-        <option value="Rejected">Rejected</option>
-    </select>
-    <label for="communication_score">Communication Score:</label>
-    <input type="number" name="communication_score" min="0" max="10" step="0.1" required>
-    <label for="technical_score">Technical Score:</label>
-    <input type="number" name="technical_score" min="0" max="10" step="0.1" required>
-    <label for="problem_solving_score">Problem Solving Score:</label>
-    <input type="number" name="problem_solving_score" min="0" max="10" step="0.1" required>
-    <input type="submit" value="Submit Feedback">
-</form>
-{% endblock %}
+<div class="feedback-container">
+    <div class="feedback-form-card">
+        <h1 class="feedback-title">
+            <i class="fas fa-clipboard-check"></i>
+            Submit Interview Feedback for <span id="candidateNamePlaceholder">Candidate</span>
+        </h1>
 
-{% block scripts %}
+        <form method="POST" action="http://127.0.0.1:5000/feedback">
+            <input type="hidden" id="candidate_id" name="candidate_id" value="">
+
+            <div class="form-group">
+                <label for="comments">
+                    <i class="fas fa-comment-dots"></i>
+                    Interview Comments
+                </label>
+                <textarea id="comments" name="comments" rows="4" required 
+                          placeholder="Please provide detailed feedback about the candidate's performance, including strengths, areas for improvement, and overall impression..."></textarea>
+            </div>
+
+            <div class="score-section">
+                <h3>
+                    <i class="fas fa-star"></i>
+                    Performance Scores
+                </h3>
+                <div class="score-grid">
+                    <div class="score-item">
+                        <label for="communication">
+                            <i class="fas fa-comments"></i>
+                            Communication Score
+                        </label>
+                        <input type="number" id="communication" name="communication_score" 
+                               min="0" max="10" required placeholder="0-10"
+                               oninput="updateScoreIndicator('communication', this.value)">
+                        <div class="score-indicator">
+                            <div class="score-fill" id="communication-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="score-item">
+                        <label for="technical">
+                            <i class="fas fa-code"></i>
+                            Technical Score
+                        </label>
+                        <input type="number" id="technical" name="technical_score" 
+                               min="0" max="10" required placeholder="0-10"
+                               oninput="updateScoreIndicator('technical', this.value)">
+                        <div class="score-indicator">
+                            <div class="score-fill" id="technical-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="score-item">
+                        <label for="problem_solving">
+                            <i class="fas fa-puzzle-piece"></i>
+                            Problem Solving Score
+                        </label>
+                        <input type="number" id="problem_solving" name="problem_solving_score" 
+                               min="0" max="10" required placeholder="0-10"
+                               oninput="updateScoreIndicator('problem_solving', this.value)">
+                        <div class="score-indicator">
+                            <div class="score-fill" id="problem_solving-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision-section">
+                <h3>
+                    <i class="fas fa-balance-scale"></i>
+                    Final Decision
+                </h3>
+                <div class="decision-options">
+                    <div class="decision-option">
+                        <input type="radio" id="accepted" name="decision" value="Accepted" required>
+                        <label for="accepted" class="decision-label accepted">
+                            <i class="fas fa-check-circle"></i>
+                            Accepted
+                        </label>
+                    </div>
+                    <div class="decision-option">
+                        <input type="radio" id="rejected" name="decision" value="Rejected" required>
+                        <label for="rejected" class="decision-label rejected">
+                            <i class="fas fa-times-circle"></i>
+                            Rejected
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="feedback-submit-btn">
+                <i class="fas fa-paper-plane"></i>
+                Submit Feedback
+            </button>
+        </form>
+    </div>
+</div>
+
 <script>
+    // Function to update score indicator visuals
     function updateScoreIndicator(field, value) {
         const fill = document.getElementById(field + '-fill');
-        const percentage = (value / 10) * 100;
-        fill.style.width = percentage + '%';
+        // Ensure value is a number and within 0-10 range
+        const numericValue = parseFloat(value);
+        if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 10) {
+            const percentage = (numericValue / 10) * 100;
+            fill.style.width = percentage + '%';
+        } else {
+            fill.style.width = '0%'; // Reset if invalid
+        }
     }
 
-    // Add interactive feedback
+    // Add interactive focus/blur feedback for form elements
     document.querySelectorAll('.form-group input, .form-group select, .form-group textarea').forEach(element => {
         element.addEventListener('focus', function() {
             this.parentElement.style.transform = 'translateY(-2px)';
@@ -348,7 +427,7 @@
         });
     });
 
-    // Initialize score indicators
+    // Initialize score indicators on page load
     window.addEventListener('load', function() {
         document.querySelectorAll('input[type="number"]').forEach(input => {
             if (input.value) {
@@ -356,9 +435,31 @@
                 updateScoreIndicator(field, input.value);
             }
         });
+
+        // --- Retrieve Candidate Data from Local Storage and Update UI ---
+        const candidateId = localStorage.getItem('candId');
+        const candidateName = localStorage.getItem('candName');
+        const candidateNamePlaceholder = document.getElementById('candidateNamePlaceholder');
+        const applicationIdInput = document.getElementById('candidate_id');
+
+        if (candidateId) {
+            applicationIdInput.value = candidateId; // Set hidden input value
+        }
+
+        if (candidateName) {
+            candidateNamePlaceholder.textContent = candidateName; // Update title
+        } else if (candidateId) {
+            // Fallback if name is not found but ID is, display ID
+            candidateNamePlaceholder.textContent = `Candidate ID: ${candidateId}`;
+        } else {
+            // If neither is found, keep default or display a message
+            candidateNamePlaceholder.textContent = 'Unknown Candidate';
+            console.warn("Candidate ID and Name not found in local storage.");
+        }
+        // --- End Local Storage Retrieval ---
     });
 
-    // Add submission confirmation
+    // Add submission confirmation logic
     document.querySelector('form').addEventListener('submit', function(e) {
         const communication = document.getElementById('communication').value;
         const technical = document.getElementById('technical').value;
@@ -366,12 +467,14 @@
         const decision = document.querySelector('input[name="decision"]:checked');
         
         if (communication && technical && problemSolving && decision) {
-            const avgScore = ((parseInt(communication) + parseInt(technical) + parseInt(problemSolving)) / 3).toFixed(1);
+            const avgScore = ((parseInt(communication) + parseInt(technical) + parseInt(problemSolving)) / 3).toFixed(1); 
             const confirmed = confirm(`Are you sure you want to submit this feedback?\n\nAverage Score: ${avgScore}/10\nDecision: ${decision.value}`);
-            
             if (!confirmed) {
-                e.preventDefault();
+                e.preventDefault(); // Prevent form submission if user cancels
             }
+        } else {
+            // If any required field is missing, the browser's 'required' attribute will handle it.
+            // You might add a custom alert here if preferred, but browser validation is usually sufficient.
         }
     });
 </script>

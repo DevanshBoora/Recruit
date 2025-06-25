@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DevOrks{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color-dark: #1a1a1a;
+            --surface-color-dark: #2a2a2a;
+            --text-color-light: #e0e0e0;
+            --text-color-faded: #b0b0b0;
+            --accent-color: #00bcd4; /* A cool blue/cyan */
+            --button-bg-dark: #007bff;
+            --button-hover-dark: #0056b3;
+            --border-color-dark: #444;
+            --shadow-color-dark: rgba(0, 0, 0, 0.5);
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            /* NEW: Colors for assessment builder */
+            --card-bg-light: #3a3a3a; /* Lighter shade for builder container */
+            --input-bg-dark: #444;
+            --input-border-dark: #666;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-light);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--surface-color-dark);
+            padding: 15px 30px;
+            border-bottom: 1px solid var(--border-color-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color-dark);
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-left: 25px;
+        }
+
+        nav ul li a {
+            color: var(--text-color-faded);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        .form-card, .job-listing-wrapper, .applications-wrapper, .assessment-container {
+            background-color: var(--surface-color-dark);
+            border: 1px solid var(--border-color-dark);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px var(--shadow-color-dark);
+            padding: 30px;
+            margin: 40px auto;
+        }
+
+        .form-card {
+          max-width: 800px;
+        }
+
+        .form-card h2 {
+          text-align: center;
+          margin-bottom: 30px;
+          font-size: 2.5em;
+          color: var(--accent-color);
+        }
+
+        .form-card form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color-light);
+        }
+
+        .form-card form input[type="text"],
+        .form-card form input[type="email"],
+        .form-card form input[type="number"],
+        .form-card form input[type="file"],
+        .form-card form textarea,
+        .form-card form select {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color-dark);
+            border-radius: 5px;
+            background-color: var(--input-bg-dark);
+            color: var(--text-color-light);
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .form-card form textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-card form input[type="file"] {
+            padding: 8px;
+        }
+
+        .form-card form button[type="submit"] {
+            background-color: var(--button-bg-dark);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-card form button[type="submit"]:hover {
+            background-color: var(--button-hover-dark);
+        }
+
+        /* Global Message Container */
+        #globalMessageContainer {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        #globalMessageContainer.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #globalMessageContainer.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #globalMessageContainer.success {
+            background-color: var(--success-color);
+        }
+
+        #globalMessageContainer.error {
+            background-color: var(--error-color);
+        }
+        #globalMessageContainer.warning {
+            background-color: orange;
+        }
+
+        /* New styles for the Assessment Questions Builder */
+        .secondary-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .secondary-button:hover {
+            background-color: #45a049;
+        }
+        .assessment-builder-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .question-block {
+            background-color: var(--card-bg-light);
+            border: 1px solid var(--border-color-dark);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .question-block h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .question-block .delete-question-btn {
+            background-color: var(--error-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .question-block .delete-question-btn:hover {
+            background-color: #a71d2a;
+        }
+        .question-block label {
+            margin-top: 15px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .question-block textarea,
+        .question-block input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid var(--input-border-dark);
+            background-color: var(--input-bg-dark);
+            color: var(--text-color-light);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .question-block textarea.question-text {
+            min-height: 80px;
+        }
+        .options-list {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .option-item input[type="text"] {
+            flex-grow: 1;
+            margin-right: 10px;
+            margin-bottom: 0;
+        }
+        .option-item .delete-option-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 0.7em;
+            flex-shrink: 0;
+        }
+        .option-item .delete-option-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Specific for 'correct-option' input */
+        .question-block input.correct-option {
+            width: 80px;
+        }
+
+        /* Class to hide general elements when they should not be visible */
+        .hidden-chat-element {
+            display: none !important;
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div id="globalMessageContainer"></div>
+    <header>
+        <a href="/" class="logo">DevOrks</a>
+        <nav>
+            <ul>
+                <li><a href="/user">Home</a></li>
+                <li><a href="/jobs/job_post.html">Job Postings</a></li>
+                <li id="myApplicationsLink" class="hidden-nav-item"><a href="/user/myapp">My Applications</a></li> 
+                <li id="signupLink" class="hidden-nav-item"><a href="/signup">SignUp</a></li>
+                <li id="loginLink" class="hidden-nav-item"><a href="/login">Login</a></li>
+                <li id="logoutLink" class="hidden-nav-item"><a href="#" onclick="handleLogout(event)">Logout</a></li> 
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Global function for messages
+        function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
+            const msgContainer = document.getElementById('globalMessageContainer');
+            msgContainer.textContent = message;
+            msgContainer.className = `show ${type}`;
+
+            setTimeout(() => {
+                msgContainer.classList.add('hide');
+                msgContainer.addEventListener('transitionend', function handler() {
+                    msgContainer.className = '';
+                    msgContainer.removeEventListener('transitionend', handler);
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }, { once: true });
+            }, delay);
+
+            if (redirectUrl) {
+                setTimeout(() => {
+                    // Only redirect if current URL isn't already the target
+                    if (window.location.href !== redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }, delay + 500);
+            }
+        }
+
+        // --- AUTHENTICATION UI LOGIC ---
+        function updateAuthNav() {
+            const userName = localStorage.getItem('candidate_name');
+            const userRole = localStorage.getItem('role'); // 'a' for admin, 'u' for user
+
+            // Get references to navigation elements
+            const loginLink = document.getElementById('loginLink');
+            const signupLink = document.getElementById('signupLink');
+            const logoutLink = document.getElementById('logoutLink');
+            const myApplicationsLink = document.getElementById('myApplicationsLink');     // For regular users
+
+            // First, hide all relevant navigation elements to reset state
+            [loginLink, signupLink, logoutLink, myApplicationsLink].forEach(element => {
+                if (element) element.style.display = 'none';
+            });
+
+            if (userName) {
+                // User is logged in
+                if (logoutLink) {
+                    logoutLink.style.display = 'list-item';
+                }
+
+                if (userRole === 'u') {
+                    // Regular user specific links
+                    if (myApplicationsLink) myApplicationsLink.style.display = 'list-item';
+                }
+            } else {
+                // User is logged out
+                if (loginLink) loginLink.style.display = 'list-item';
+                if (signupLink) signupLink.style.display = 'list-item';
+            }
+            console.log('Auth nav updated - User:', userName, 'Role:', userRole);
+        }
+
+        // Function to handle logout
+        async function handleLogout(event) {
+            if (event) {
+                event.preventDefault(); // Prevent default link behavior
+            }
+
+            try {
+                // Show loading state
+                const logoutLinkLi = document.getElementById('logoutLink');
+                if (logoutLinkLi) {
+                    const logoutAnchor = logoutLinkLi.querySelector('a');
+                    if (logoutAnchor) {
+                        const originalText = logoutAnchor.textContent;
+                        logoutAnchor.textContent = 'Logging out...';
+                        logoutAnchor.style.pointerEvents = 'none'; // Disable clicks
+                    }
+                }
+
+                // Make AJAX request to logout endpoint
+                const response = await fetch('/logout', {
+                    method: 'GET', // Or 'POST' if your Flask route expects it
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Clear all relevant localStorage and sessionStorage data
+                    localStorage.removeItem('candidate_name');
+                    localStorage.removeItem('role');
+                    localStorage.removeItem('user_id');
+                    localStorage.removeItem('candidate_email'); // For Google users
+
+                    showGlobalMessage('Logged out successfully', 'success');
+
+                    // Update navigation UI immediately before redirect
+                    updateAuthNav();
+
+                    // Redirect to home page after a short delay
+                    setTimeout(() => {
+                        window.location.href = 'http://127.0.0.1:5000/user';
+                    }, 1500);
+
+                } else {
+                    throw new Error(result.message || 'Logout failed on server.');
+                }
+
+            } catch (error) {
+                console.error('Logout error:', error);
+
+                // Even if AJAX fails, we should attempt to clear client-side data
+                localStorage.clear();
+                sessionStorage.clear();
+
+                showGlobalMessage('Logout attempted. Redirecting...', 'warning');
+
+                // Fallback: always redirect
+                setTimeout(() => {
+                    window.location.href = 'http://127.0.0.1:5000/';
+                }, 2000);
+
+            } finally {
+                // Restore logout link appearance if still on page (e.g., if redirect didn't happen)
+                const logoutLinkLi = document.getElementById('logoutLink');
+                if (logoutLinkLi) {
+                    const logoutAnchor = logoutLinkLi.querySelector('a');
+                    if (logoutAnchor) {
+                        logoutAnchor.textContent = 'Logout';
+                        logoutAnchor.style.pointerEvents = 'auto';
+                    }
+                }
+            }
+        }
+
+        // Run authentication check on page load
+        document.addEventListener('DOMContentLoaded', updateAuthNav);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

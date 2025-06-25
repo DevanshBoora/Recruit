@@ -108,6 +108,8 @@ def submit_assessment(job_id, application_id):
     data = request.get_json()
     user_answers = data.get('answers', [])
 
+    print("submitted assesment")
+
     job_description = job.description
     job_qualifications = job.qualifications
     job_responsibilities = job.responsibilities
@@ -130,17 +132,20 @@ def submit_assessment(job_id, application_id):
         You are an advanced AI expert in resume screening and candidate-job matching.
 
         You will receive a job description and a resume. Analyze the resume in detail against the job description and provide a comprehensive evaluation.
-
-        Score the resume out of 100 based on:
+       Score the resume out of 100 based on:
         - skills, qualifications, achievements, certifications, projects, location, experience, resume_quality
 
         Also evaluate assessment answers (provided below) on a 0–100 scale.
+
+        also extrct the good summary of the resume in Resume Summary field
+        If the name in the resume and the name in the applicant_anme are not similar then  return a score of 0.
 
         Format:
         {{
           "gemini_score": 85.5,
           "assessment_score": 86.7,
-          "reasoning": "Strong alignment with qualifications and good answers."
+          "reasoning": "Strong alignment with qualifications and good answers.",
+          "Resume Summary": "The candidate has relevant experience and skills.",
         }}
 
         Job Title: {job.title}
@@ -155,9 +160,11 @@ def submit_assessment(job_id, application_id):
         - Experience: {application.applicant_experience}
         - Education: {application.education}
         - Resume: {resume_text[:3000]}
-
+        dont direct match the name strings in the resume and applicant_name , just check the similarity and if it looks complety differetn then return 0 else behave normally 
+        Name in the Resume should matcht the applicant_name other wise return 0 score
         Assessment Answers:
         {user_answers_str}
+        if the name in the resume and the name in the applicant_name do not match, return a score of 0.
         """
     ]
 
@@ -172,14 +179,15 @@ def submit_assessment(job_id, application_id):
 
         gemini_score = float(gemini_output.get('gemini_score', 0.0))
         assessment_score = float(gemini_output.get('assessment_score', 0.0))
-
-        if assessment_score < min_assessment_score:
-            db.session.delete(application)
-            db.session.commit()
-            return jsonify({
-                "message": "Application rejected. Assessment score below minimum threshold.",
-                "assessment_score": assessment_score
-            }), 200
+        print("assesmnet score :", assessment_score)
+        # if assessment_score < min_assessment_score:
+        #     db.session.delete(application)
+        #     db.session.commit()
+        #     return jsonify({
+        #         "message": "Application rejected. Assessment score below minimum threshold.",
+        #         "assessment_score": assessment_score,
+        #         "min_assessment_score":min_assessment_score
+        #     }), 200
 
         application.eligibility_score = gemini_score
         application.assessment_score = assessment_score

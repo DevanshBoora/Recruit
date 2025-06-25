@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOrks - Sign Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --bg-color-dark: #1a1a1a;
+            --surface-color-dark: #2a2a2a;
+            --text-color-light: #e0e0e0;
+            --text-color-faded: #b0b0b0;
+            --accent-color: #00bcd4;
+            --accent-color-rgb: 0, 188, 212;
+            --button-bg-dark: #007bff;
+            --button-hover-dark: #0056b3;
+            --border-color-dark: #444;
+            --shadow-color-dark: rgba(0, 0, 0, 0.5);
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --input-bg-dark: #444;
+            --input-border-dark: #666;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-light);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--surface-color-dark);
+            padding: 15px 30px;
+            border-bottom: 1px solid var(--border-color-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color-dark);
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-left: 25px;
+        }
+
+        nav ul li a {
+            color: var(--text-color-faded);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Global Message Container */
+        #globalMessageContainer {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        #globalMessageContainer.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #globalMessageContainer.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #globalMessageContainer.success {
+            background-color: var(--success-color);
+        }
+
+        #globalMessageContainer.error {
+            background-color: var(--error-color);
+        }
+
+        #globalMessageContainer.warning {
+            background-color: orange;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 40px;
+            background-color: var(--surface-color-dark);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px var(--shadow-color-dark);
+            border: 1px solid var(--border-color-dark);
+            color: var(--text-color-light);
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color-light);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group input[type="email"],
+        .form-group select { /* Added select to this rule */
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color-dark);
+            border-radius: 8px;
+            background-color: var(--input-bg-dark);
+            color: var(--text-color-light);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="password"]:focus,
+        .form-group input[type="email"]:focus, /* Added email to focus rule */
+        .form-group select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+            outline: none;
+        }
+
+        .form-container button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--button-bg-dark);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-container button[type="submit"]:hover:not(:disabled) {
+            background-color: var(--button-hover-dark);
+        }
+
+        .form-container button[type="submit"]:disabled {
+            background-color: var(--border-color-dark);
+            cursor: not-allowed;
+        }
+
+        .form-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .form-link a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .form-link a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+        /* Style for Google button specific to your dark theme */
+        .g_id_signin {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex; /* Centers the button horizontally */
+            justify-content: center;
+        }
+        .or-divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            font-size: 0.9em;
+            color: var(--text-color-faded);
+        }
+        .or-divider::before,
+        .or-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background-color: var(--border-color-dark);
+        }
+        .or-divider::before {
+            left: 0;
+        }
+        .or-divider::after {
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="globalMessageContainer"></div>
+    
+    <header>
+        <a href="/" class="logo">DevOrks</a>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/jobs/job_post.html">Job Postings</a></li>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/signup">Sign Up</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="form-container">
+        <h2>Sign Up</h2>
+        
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+             data-callback="handleGoogleSignIn"
+             data-ux_mode="popup"> </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="signin_with"
+             data-shape="rectangular"
+             data-logo_alignment="left">
+        </div>
+
+        <div class="or-divider">OR</div>
+
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="name">Username:</label>
+                <input type="text" id="name" name="name" required minlength="3" maxlength="50">
+                <div class="error-message" id="nameError"></div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required minlength="3" maxlength="50">
+                <div class="error-message" id="emailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required minlength="6">
+                <div class="error-message" id="passwordError"></div>
+            </div>
+            <button type="submit" id="submitBtn">Register</button>
+        </form>
+        <div class="form-link">
+            Already have an account? <a href="/login">Login here</a>
+        </div>
+    </div>
+
+    <script>
+        // --- YOUR EXISTING JAVASCRIPT ---
+        // Global function for messages
+        function showGlobalMessage(message, type, redirectUrl = null, delay = 3000) {
+            const msgContainer = document.getElementById('globalMessageContainer');
+            if (!msgContainer) return;
+            
+            msgContainer.textContent = message;
+            msgContainer.className = `show ${type}`;
+
+            setTimeout(() => {
+                msgContainer.classList.add('hide');
+                msgContainer.addEventListener('transitionend', function handler() {
+                    msgContainer.className = '';
+                    msgContainer.removeEventListener('transitionend', handler);
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }, { once: true });
+            }, delay);
+
+            if (redirectUrl) {
+                setTimeout(() => {
+                    if (window.location.href !== redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }, delay + 500);
+            }
+        }
+
+        // Form validation functions
+        function validateField(fieldId, errorId, validator, errorMessage) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(errorId);
+            
+            if (!field) {
+                console.error(`Validation Error: Field with ID '${fieldId}' not found.`);
+                return false; 
+            }
+            if (!errorDiv) {
+                console.error(`Validation Error: Error div with ID '${errorId}' not found for field '${fieldId}'.`);
+                return validator(field.value); 
+            }
+
+            if (!validator(field.value)) {
+                errorDiv.textContent = errorMessage;
+                errorDiv.style.display = 'block';
+                field.style.borderColor = 'var(--error-color)';
+                return false;
+            } else {
+                errorDiv.style.display = 'none';
+                field.style.borderColor = 'var(--border-color-dark)';
+                return true;
+            }
+        }
+
+        function validateForm() {
+            const nameValid = validateField('name', 'nameError', 
+                (value) => value.length >= 3 && value.length <= 50, 
+                'Username must be between 3 and 50 characters');
+            const emailValid = validateField('email', 'emailError', 
+                (value) => value.length >= 3 && value.length <= 50 && value.includes('@'), 
+                'Please enter a valid email address');
+            
+            const passwordValid = validateField('password', 'passwordError', 
+                (value) => value.length >= 6, 
+                'Password must be at least 6 characters');
+
+            return nameValid && emailValid && passwordValid; 
+        }
+
+        // Real-time validation
+        document.getElementById('name').addEventListener('blur', () => {
+            validateField('name', 'nameError', 
+                (value) => value.length >= 3 && value.length <= 50, 
+                'Username must be between 3 and 50 characters');
+        });
+
+        document.getElementById('email').addEventListener('blur', () => {
+            validateField('email', 'emailError', 
+                (value) => value.length >= 3 && value.length <= 50 && value.includes('@'), 
+                'Please enter a valid email address');
+        });
+
+        document.getElementById('password').addEventListener('blur', () => {
+            validateField('password', 'passwordError', 
+                (value) => value.length >= 6, 
+                'Password must be at least 6 characters');
+        });
+        
+        // Form submission (existing logic)
+        document.getElementById('signupForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            if (!validateForm()) {
+                showGlobalMessage('Please fix the errors in the form', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const form = document.getElementById('signupForm');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registering...';
+            form.classList.add('loading');
+
+            const name = document.getElementById('name').value.trim();
+            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value.trim();
+
+            try {
+                const response = await fetch('/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name, 
+                        email,
+                        password, 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showGlobalMessage(result.message || 'Registration successful!', 'success', '/login');
+                } else {
+                    showGlobalMessage(result.message || 'Registration failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Error during signup:', error);
+                showGlobalMessage('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register';
+                form.classList.remove('loading');
+            }
+        });
+
+        // Clear errors when user starts typing
+        document.querySelectorAll('input, select').forEach(field => {
+            field.addEventListener('input', () => {
+                if (field.style.borderColor === 'var(--error-color)') {
+                    field.style.borderColor = 'var(--border-color-dark)';
+                }
+                const errorDivId = field.id + 'Error';
+                const errorDiv = document.getElementById(errorDivId);
+                if (errorDiv && errorDiv.style.display === 'block') {
+                    errorDiv.style.display = 'none';
+                    errorDiv.textContent = ''; 
+                }
+            });
+        });
+
+        // --- NEW GOOGLE SIGN-IN JAVASCRIPT ---
+        // IMPORTANT: Replace with your actual Google Client ID from Google Cloud Console
+        const GOOGLE_CLIENT_ID = "117725968467-lnjpovni57fufnm6rqqm3rcknb6ph77h.apps.googleusercontent.com"; // <-- REMINDER: REPLACE THIS!
+
+        // Initialize Google Identity Services
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleSignIn, // This function will be called after successful sign-in
+                ux_mode: 'popup' // For better integration with your existing form
+            });
+            // Render the Google button for the div with class 'g_id_signin'
+            google.accounts.id.renderButton(
+                document.querySelector(".g_id_signin"), // Target the div
+                { type: "standard", size: "large", theme: "outline", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
+            );
+        };
+
+        // Function to handle the Google Sign-In response
+        async function handleGoogleSignIn(response) {
+            const idToken = response.credential; // This is the JWT token from Google
+            console.log("Google ID Token:", idToken);
+
+            showGlobalMessage('Signing in with Google...', 'warning');
+
+            try {
+                // Send the ID token to your Flask backend
+                const backendResponse = await fetch('/auth/google', { // Your new backend endpoint for Google auth
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token: idToken })
+                });
+
+                const data = await backendResponse.json();
+
+                if (backendResponse.ok) { 
+                    showGlobalMessage(data.message || 'Google Sign-in successful!', 'success', '/login');
+                    if (data.message == "Login") {
+                        localStorage.setItem('candidate_name', data.user.name);
+                        localStorage.setItem('candidate_email',data.user.email);
+                        localStorage.setItem('role','u')
+                        showGlobalMessage(data.message || 'Google Log-in successful!', 'success', '/user');
+                    }
+                } else {
+                    showGlobalMessage(data.message || 'Google Sign-in failed.', 'error');
+                    console.error("Backend error during Google sign-in:", data.message);
+                }
+            } catch (error) {
+                console.error("Error sending Google token to backend:", error);
+                showGlobalMessage('Network error during Google sign-in. Please try again.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

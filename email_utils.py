@@ -25,8 +25,9 @@ def send_schedule_email(to_email, interview_datetime, mode, interviewer, meeting
         body += f"📍 Address: {address}\n"
 
     body += "\nPlease be on time and prepare accordingly.\n\nBest regards,\nRecruitment Team"
-
+    print("Atleast reached here")
     send_email(to_email, subject, body)
+  
 
 def send_rejection_email(to_email, name, summary):
     subject = "Application Status Update"

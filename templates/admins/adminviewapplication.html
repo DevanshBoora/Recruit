@@ -1,0 +1,536 @@
+{% extends 'admins/adminbase.html' %}
+
+{% block title %}DevOrks - View Applications{% endblock %}
+
+{% block head_extra %}
+<style>
+    :root {
+        --background-color-dark: #121212;
+        --surface-color-dark: #1e1e1e;
+        --card-color-dark: #2a2a2a;
+        --text-color-light: #e0e0e0;
+        --text-color-faded: #a0a0a0;
+        --border-color-dark: #3a3a3a;
+        --shadow-color-dark: rgba(0, 0, 0, 0.4);
+        --accent-color: #00bcd4;
+        /* Cyan/Turquoise for primary actions/highlights */
+        --success-color: #4CAF50;
+        /* Green for accept */
+        --error-color: #f44336;
+        /* Red for reject */
+        --button-hover-darken: brightness(0.8);
+        /* Darken on hover */
+    }
+
+    body {
+        background-color: var(--background-color-dark);
+        color: var(--text-color-light);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .applications-wrapper {
+        max-width: 5000px;
+        padding: 30px;
+        margin: 40px auto;
+        background-color: var(--surface-color-dark);
+        border-radius: 12px;
+        box-shadow: 0 8px 25px var(--shadow-color-dark);
+        border: 1px solid var(--border-color-dark);
+    }
+
+    .applications-wrapper h1 {
+        text-align: center;
+        margin-bottom: 35px;
+        font-size: 2.8em;
+        color: var(--accent-color);
+        letter-spacing: 1px;
+        text-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
+    }
+
+    .applications-table {
+        width: 100%;
+        /* Changed to 100% for better responsiveness */
+        border-collapse: separate;
+        /* Use separate to allow border-radius on cells */
+        border-spacing: 0;
+        /* Remove space between borders */
+        margin-top: 20px;
+        overflow: hidden;
+        /* Ensures rounded corners are applied */
+        border-radius: 8px;
+        /* Slightly rounded corners for the table itself */
+    }
+
+    .applications-table th,
+    .applications-table td {
+        border: 1px solid var(--border-color-dark);
+        padding: 14px 18px;
+        text-align: left;
+        color: var(--text-color-light);
+    }
+
+    .applications-table th {
+        background-color: var(--card-color-dark);
+        color: var(--text-color-light);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9em;
+        letter-spacing: 0.5px;
+    }
+
+    #applicationsListings {
+        overflow-x: auto;
+        /* This is the key change */
+        -webkit-overflow-scrolling: touch;
+        /* Improves scrolling on touch devices */
+    }
+
+    /* Optional: Add some padding to the right of the table for better scroll experience */
+    .applications-table {
+        padding-right: 1px;
+        /* Small right padding */
+    }
+
+    .applications-table tbody tr:nth-child(even) {
+        background-color: #242424;
+        /* Slightly different shade for even rows */
+    }
+
+    .applications-table tbody tr:hover {
+        background-color: #333333;
+        /* Lighter shade on hover */
+        transition: background-color 0.2s ease;
+    }
+
+    /* Specific styling for the first and last cells in a row/header for rounded corners */
+    .applications-table thead tr:first-child th:first-child {
+        border-top-left-radius: 8px;
+    }
+
+    .applications-table thead tr:first-child th:last-child {
+        border-top-right-radius: 8px;
+    }
+
+    .applications-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 8px;
+    }
+
+    .applications-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 8px;
+    }
+
+    .status-cell {
+        font-weight: bold;
+        text-align: center;
+        padding: 10px 15px;
+        border-radius: 5px;
+    }
+
+    .status-pending {
+        color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.15);
+    }
+
+    .status-accepted {
+        color: var(--success-color);
+        background-color: rgba(76, 175, 80, 0.15);
+    }
+
+    .status-rejected {
+        color: var(--error-color);
+        background-color: rgba(244, 67, 54, 0.15);
+    }
+
+    .actions-cell button {
+        margin-right: 8px;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .actions-cell .accept-btn {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .actions-cell .accept-btn:hover {
+        filter: var(--button-hover-darken);
+    }
+
+    .actions-cell .reject-btn {
+        background-color: var(--error-color);
+        color: white;
+    }
+
+    .actions-cell .reject-btn:hover {
+        filter: var(--button-hover-darken);
+    }
+
+    .view-resume-btn {
+        background-color: var(--accent-color);
+        color: var(--surface-color-dark);
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .view-resume-btn:hover {
+        filter: var(--button-hover-darken);
+    }
+
+    .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        /* Stay in place */
+        z-index: 1;
+        /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%;
+        /* Full width */
+        height: 100%;
+        /* Full height */
+        overflow: auto;
+        /* Enable scroll if needed */
+        background-color: rgba(0, 0, 0, 0.8);
+        /* Black w/ opacity */
+        padding-top: 60px;
+    }
+
+    .modal-content {
+        background-color: var(--surface-color-dark);
+        margin: 5% auto;
+        /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid var(--border-color-dark);
+        width: 80%;
+        /* Could be more or less, depending on screen size */
+        max-width: 900px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        position: relative;
+    }
+
+    .close-button {
+        color: var(--text-color-light);
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: var(--accent-color);
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .pdf-viewer {
+        width: 100%;
+        height: 600px;
+        /* Adjust height as needed */
+        border: none;
+    }
+
+    /* Styles for the new buttons */
+    .top-buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px; /* Space between buttons */
+        margin-bottom: 30px; /* Space below buttons */
+    }
+
+    .top-buttons-container .action-btn {
+        background-color: var(--accent-color);
+        color: var(--surface-color-dark);
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: 600;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        text-decoration: none; /* For anchor tags */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .top-buttons-container .action-btn:hover {
+        background-color: #008c9e; /* Slightly darker accent on hover */
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="applications-wrapper">
+    <h1>All Job Applications</h1>
+    
+    <div id="applicationsListings">
+        <table id="applicationsTable" class="applications-table">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Applicant Name</th>
+                    <th>Email</th>
+                    <th>Age</th>
+                    <th>Experience</th>
+                    <th>Education</th>
+                    <th>Applied At</th>
+                    <th>Eligibility Score</th>
+                    <th>Assessment Score</th>
+                    <th>Status</th>
+                    <th>Resume</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <p id="noApplicationsMessage" style="text-align: center; color: var(--text-color-faded); display: none;">No
+            applications found.</p>
+    </div>
+</div>
+
+<div id="resumeModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <iframe id="pdfViewer" class="pdf-viewer"></iframe>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', fetchApplications);
+
+    const applicationsTableBody = document.querySelector('#applicationsTable tbody');
+    const noApplicationsMessage = document.getElementById('noApplicationsMessage');
+ 
+    async function fetchApplications() {
+        const companyName = localStorage.getItem('company_name') // Assuming 'role' is stored as 'response' in local storage
+
+        if (!companyName) {
+            console.warn("authorization error");
+            noApplicationsMessage.textContent = 'User data (Name/Role) not found. Please login or ensure data is available.';
+            noApplicationsMessage.style.display = 'block';
+            return;
+        }
+
+        try {
+            // It seems your backend is expecting a POST request for fetching,
+            // which is unconventional but we'll stick to it if that's the setup.
+            // Ensure your Flask route for /applications expects POST and processes JSON body.
+            const response = await fetch('http://127.0.0.1:5000/admin/applications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            });
+
+            console.log("Fetch response received:", response);
+
+            if (!response.ok) {
+                const errorText = await response.text(); // Get raw response text for debugging
+                console.error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+            }
+
+            const applications = await response.json();
+            console.log("Fetched applications (parsed JSON):", applications);
+
+            applicationsTableBody.innerHTML = ''; // Clear existing rows
+            if (applications.length === 0) {
+                noApplicationsMessage.style.display = 'block';
+                return;
+            }
+            noApplicationsMessage.style.display = 'none';
+
+            applications.forEach(application => {
+                const applicationRow = applicationsTableBody.insertRow();
+                applicationRow.dataset.applicationId = application.id;
+
+                applicationRow.innerHTML = `
+                    <td>${application.job_title}</td>
+                    <td>${application.applicant_name}</td>
+                    <td>${application.applicant_email}</td>
+                    <td>${application.applicant_age !== null ? application.applicant_age : 'N/A'}</td>
+                    <td>${application.applicant_experience !== null ? application.applicant_experience : 'N/A'}</td>
+                    <td>${application.education !== null ? application.education : 'N/A'}</td>
+                    <td>${new Date(application.applied_at).toLocaleString()}</td>
+                    <td>${application.eligibility_score.toFixed(2)}</td>
+                    <td>${application.assessment_score.toFixed(2)}</td>
+                    <td class="status-cell status-${application.status.toLowerCase()}">${application.status}</td>
+                    <td><button class="view-resume-btn" data-resume-path="${application.resume_path}">View Resume</button></td>
+                    <td class="actions-cell">
+                        </td>
+                `;
+
+                // Initial button setup - ensure these are added to the dynamically created row
+                // We pass `application.status` directly here
+                updateApplicationRowInTable(application.id, application.status);
+            });
+
+            // Add event listener for view resume buttons
+            // This needs to be done *after* the rows are added to the DOM
+            document.querySelectorAll('.view-resume-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const resumePath = this.dataset.resumePath;
+                    openResumeModal(resumePath);
+                });
+            });
+
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            noApplicationsMessage.textContent = `Failed to load applications: ${error.message}. Please check console for details.`;
+            noApplicationsMessage.style.display = 'block';
+        }
+    }
+
+    async function updateApplicationStatus(appId, newStatus) {
+        console.log(`Attempting to update application ${appId} status to ${newStatus}`);
+        try {
+            const response = await fetch(`/applications/${appId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            });
+
+            const result = await response.json();
+            console.log("Update status response:", result);
+            
+            if( newStatus === 'Accepted') {
+                console.log("Accepted");
+                try {
+                const acceptResponse = await fetch(`/applications/${appId}/accept`, { // Changed variable name to avoid conflict
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    // No body needed for this simple action
+                });
+                const acceptResult = await acceptResponse.json(); // Changed variable name to avoid conflict
+                if (acceptResponse.ok) {
+                    if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
+                        showGlobalMessage(acceptResult.message, 'success');
+                    } else {
+                        alert(acceptResult.message);
+                    }
+                    // The status will be updated by updateApplicationRowInTable already
+                } else {
+                    if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
+                        showGlobalMessage(acceptResult.message || 'Error accepting application', 'error');
+                    } else {
+                        alert(acceptResult.message || 'Error accepting application');
+                    }
+                }
+                } catch (error) {
+                    console.error('Error accepting application:', error);
+                    if (typeof showGlobalMessage === 'function') { // Check if showGlobalMessage is defined
+                        showGlobalMessage('Failed to accept application. Please try again.', 'error');
+                    } else {
+                        alert('Failed to accept application. Please try again.');
+                    }
+                }
+            }
+
+            if (response.ok) {
+                if (typeof showGlobalMessage === 'function') {
+                    showGlobalMessage(result.message, 'success');
+                } else {
+                    alert(result.message); // Simple alert for demonstration
+                }
+                updateApplicationRowInTable(appId, newStatus); // Update the specific row
+            } else {
+                if (typeof showGlobalMessage === 'function') {
+                    showGlobalMessage(result.message, 'error');
+                } else {
+                    alert(result.message); // Simple alert for demonstration
+                }
+            }
+        } catch (error) {
+            console.error('Error updating application status:', error);
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage('Failed to update application status. Please try again.', 'error');
+            } else {
+                alert('Failed to update application status. Please try again.'); // Simple alert for demonstration
+            }
+        }
+    }
+
+    function updateApplicationRowInTable(appId, newStatus) {
+        const row = document.querySelector(`[data-application-id="${appId}"]`);
+        if (row) {
+            const statusCell = row.querySelector('.status-cell');
+            const actionsCell = row.querySelector('.actions-cell');
+
+            // Update status cell classes and text
+            statusCell.className = `status-cell status-${newStatus.toLowerCase()}`;
+            statusCell.textContent = newStatus;
+
+            // Clear existing buttons
+            actionsCell.innerHTML = '';
+
+            // Only add buttons if the current user is an admin ('a') AND the status is 'Pending'
+            const currentUserRole = localStorage.getItem('response'); // Corrected to use 'response' key
+            if (currentUserRole === 'a' && newStatus === 'Pending') {
+                const acceptBtn = document.createElement('button');
+                acceptBtn.textContent = 'Accept';
+                acceptBtn.classList.add('accept-btn');
+                acceptBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Accepted'));
+
+                const rejectBtn = document.createElement('button');
+                rejectBtn.textContent = 'Reject';
+                rejectBtn.classList.add('reject-btn');
+                rejectBtn.addEventListener('click', () => updateApplicationStatus(appId, 'Rejected'));
+
+                actionsCell.appendChild(acceptBtn);
+                actionsCell.appendChild(rejectBtn);
+            }
+        } else {
+            console.warn(`Row with application ID ${appId} not found in table for status update. Re-fetching all applications.`);
+            fetchApplications(); // Fallback: re-fetch all applications to ensure consistency
+        }
+    }
+
+    function openResumeModal(resumePath) {
+        const resumeModal = document.getElementById('resumeModal');
+        const pdfViewer = document.getElementById('pdfViewer');
+        // Construct the full path to the resume. Assuming Flask serves static files from /resumes.
+        pdfViewer.src = `/resumes/${resumePath}`;
+        resumeModal.style.display = 'block'; // Show the modal
+    }
+
+    // Modal close logic
+    const resumeModal = document.getElementById('resumeModal');
+    const closeModalButton = document.querySelector('#resumeModal .close-button');
+    const pdfViewer = document.getElementById('pdfViewer'); // Get the iframe
+
+    closeModalButton.addEventListener('click', function() {
+        resumeModal.style.display = 'none';
+        pdfViewer.src = ''; // Clear iframe source to stop loading
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target == resumeModal) {
+            resumeModal.style.display = 'none';
+            pdfViewer.src = ''; // Clear iframe source
+        }
+    });
+
+    // Note: The previous window.addEventListener('load', fetchApplications); is commented out,
+    // but document.addEventListener('DOMContentLoaded', fetchApplications); is active,
+    // which is generally preferred for fetching data after the DOM is fully loaded.
+    
+</script>
+{% endblock %}

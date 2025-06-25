@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admins/adminbase.html' %}
 
 {% block title %}Edit Job Post{% endblock %}
 
@@ -48,6 +48,9 @@
       <label for="requiredExperience">Required Experience:</label>
       <input type="text" id="requiredExperience" placeholder="e.g., 2+ years, 5-7 years" required />
 
+      <label for="nop">Number Of Positions:</label>
+      <input type="number" id="nop" placeholder="e.g.,1,2,3" required />
+
       <label for="assessmentTimer">Assessment Timer (minutes):</label>
       <input type="number" id="assessmentTimer" name="assessmentTimer" min="0" value="0" />
 
@@ -70,9 +73,7 @@
       <button type="submit" class="btn btn-primary">Update Job</button>
     </form>
   </div>
-{% endblock %}
 
-{% block scripts %}
   <script>
     // Global counter for questions
     let questionCounter = 0;
@@ -206,6 +207,7 @@
                     document.getElementById('jobType').value = job.job_type;
                     document.getElementById('jobLocation').value = job.location;
                     document.getElementById('requiredExperience').value = job.required_experience;
+                    document.getElementById('nop').value = job.number_of_positions;
                     document.getElementById('assessmentTimer').value = job.assessment_timer;
                     document.getElementById('minAssessmentScore').value = job.min_assessment_score; // Add this line
                     document.getElementById('minAssessmentScore').setAttribute('max', job.assessment_timer); // Set max to assessment timer
@@ -236,7 +238,7 @@
                 console.error('Fetch error:', err);
             }
         } else {
-            showGlobalMessage('No job ID provided for editing.', 'error', '/jobs/job_post.html');
+            showGlobalMessage('No job ID provided for editing.', 'error', '/admin/applications');
         }
     });
 
@@ -253,7 +255,8 @@
         formData.append('jobLocation', document.getElementById('jobLocation').value); // Get value from select
         formData.append('requiredExperience', document.getElementById('requiredExperience').value.trim());
         formData.append('assessmentTimer', document.getElementById('assessmentTimer').value);
-        formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value); // Add this line
+        formData.append('minAssessmentScore', document.getElementById('minAssessmentScore').value);
+        formData.append('number_of_positions',document.getElementById('nop').value) // Add this line
 
         const assessmentQuestionsHiddenInput = document.getElementById('assessmentQuestions');
         updateQuestionData(); // Ensure questionsData is up-to-date before submitting
@@ -268,10 +271,12 @@
             const result = await response.json();
 
             if (response.ok) {
-                showGlobalMessage(result.message, 'success', 'Jobs/job_post.html');
+                showGlobalMessage(result.message, 'success', '/admin/applications');
+                window.location.href="http://127.0.0.1:5000/admin/applications"
                 // No form reset needed for edit
             } else {
                 showGlobalMessage(result.message, 'error');
+                
             }
         } catch (err) {
             showGlobalMessage('Error updating job. Please try again.', 'error');
