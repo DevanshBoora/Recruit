@@ -559,6 +559,7 @@ def send_reminders():
 schedule.every(2).minutes.do(send_feedback_rejections)
 schedule.every(2).minutes.do(send_reminders)
 
+
 def run_scheduler():
     while True:
         schedule.run_pending()
