@@ -26,13 +26,13 @@ def admin_applications():
         
         name_filter = session.get('company_name')
         applications_query = Application.query
-        print(name_filter)
+
+        applications_query = applications_query.filter(Job.is_open==1)
         if name_filter is None:
             return jsonify([]), 200
         if name_filter:
             applications_query = applications_query.join(Application.job).filter(
         Job.title.ilike(f'%{name_filter}%'),
-        Job.is_open == 1
     )
 
 
@@ -155,7 +155,7 @@ def signup():
 def fetch_job():
         company_name= session.get('company_name')
         if company_name:
-            jobs = Job.query.filter_by(title=company_name).all()
+            jobs = Job.query.filter_by(title=company_name,is_open=0).all()
         else:
             return jsonify([])
         jobs_list = []

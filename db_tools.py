@@ -128,7 +128,10 @@ def create_job_posting(
     required_experience: str,
     assessment_timer: int = 0,
     assessment_questions: str = None,
-    min_assesment_score: int = 0
+    min_assesment_score: int = 0,
+    number_of_positions: int = 1,
+    is_open: int=0,
+
 ):
     """
     Creates a new job posting in the database.
@@ -165,7 +168,9 @@ def create_job_posting(
             posted_at=datetime.utcnow(), # Ensure datetime is used for default
             assessment_timer=assessment_timer,
             assessment_questions=assessment_questions,
-            min_assesment_score=min_assesment_score
+            min_assesment_score=min_assesment_score,
+            number_of_positions=number_of_positions,
+            is_open=is_open
         )
         db.session.add(new_job)
         db.session.commit()

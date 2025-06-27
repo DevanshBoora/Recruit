@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,8 @@
             --surface-color-dark: #2a2a2a;
             --text-color-light: #e0e0e0;
             --text-color-faded: #b0b0b0;
-            --accent-color: #00bcd4; /* A cool blue/cyan */
+            --accent-color: #00bcd4;
+            /* A cool blue/cyan */
             --button-bg-dark: #007bff;
             --button-hover-dark: #0056b3;
             --border-color-dark: #444;
@@ -19,14 +21,18 @@
             --success-color: #28a745;
             --error-color: #dc3545;
             /* NEW: Colors for assessment builder */
-            --card-bg-light: #3a3a3a; /* Lighter shade for builder container */
+            --card-bg-light: #3a3a3a;
+            /* Lighter shade for builder container */
             --input-bg-dark: #444;
             --input-border-dark: #666;
 
             /* Chat Overlay specific colors */
-            --chat-bubble-user: #007bff; /* Primary color for user messages */
-            --chat-bubble-bot: #555;    /* Dark gray for bot messages */
-            --chat-bg-light: #333; /* Slightly lighter background for chat messages area */
+            --chat-bubble-user: #007bff;
+            /* Primary color for user messages */
+            --chat-bubble-bot: #555;
+            /* Dark gray for bot messages */
+            --chat-bg-light: #333;
+            /* Slightly lighter background for chat messages area */
         }
 
         body {
@@ -86,7 +92,10 @@
             margin: 20px auto;
         }
 
-        .form-card, .job-listing-wrapper, .applications-wrapper, .assessment-container {
+        .form-card,
+        .job-listing-wrapper,
+        .applications-wrapper,
+        .assessment-container {
             background-color: var(--surface-color-dark);
             border: 1px solid var(--border-color-dark);
             border-radius: 10px;
@@ -129,10 +138,12 @@
             font-size: 1em;
             box-sizing: border-box;
         }
+
         .form-card form textarea {
             resize: vertical;
             min-height: 80px;
         }
+
         .form-card form input[type="file"] {
             padding: 8px;
         }
@@ -170,7 +181,7 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             text-align: center;
         }
 
@@ -191,6 +202,7 @@
         #globalMessageContainer.error {
             background-color: var(--error-color);
         }
+
         #globalMessageContainer.warning {
             background-color: orange;
         }
@@ -208,15 +220,18 @@
             margin-right: 10px;
             margin-bottom: 10px;
         }
+
         .secondary-button:hover {
             background-color: #45a049;
         }
+
         .assessment-builder-controls {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 20px;
         }
+
         .question-block {
             background-color: var(--card-bg-light);
             border: 1px solid var(--border-color-dark);
@@ -225,6 +240,7 @@
             border-radius: 8px;
             position: relative;
         }
+
         .question-block h3 {
             margin-top: 0;
             color: var(--accent-color);
@@ -232,6 +248,7 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .question-block .delete-question-btn {
             background-color: var(--error-color);
             color: white;
@@ -242,14 +259,17 @@
             font-size: 0.8em;
             margin-left: 10px;
         }
+
         .question-block .delete-question-btn:hover {
             background-color: #a71d2a;
         }
+
         .question-block label {
             margin-top: 15px;
             margin-bottom: 5px;
             display: block;
         }
+
         .question-block textarea,
         .question-block input[type="text"] {
             width: calc(100% - 20px);
@@ -260,23 +280,28 @@
             border-radius: 5px;
             box-sizing: border-box;
         }
+
         .question-block textarea.question-text {
             min-height: 80px;
         }
+
         .options-list {
             margin-top: 10px;
             margin-bottom: 15px;
         }
+
         .option-item {
             display: flex;
             align-items: center;
             margin-bottom: 8px;
         }
+
         .option-item input[type="text"] {
             flex-grow: 1;
             margin-right: 10px;
             margin-bottom: 0;
         }
+
         .option-item .delete-option-btn {
             background-color: #f44336;
             color: white;
@@ -287,6 +312,7 @@
             font-size: 0.7em;
             flex-shrink: 0;
         }
+
         .option-item .delete-option-btn:hover {
             background-color: #d32f2f;
         }
@@ -327,7 +353,8 @@
             bottom: 90px;
             right: 20px;
             width: 350px;
-            height: 450px; /* Fixed height for the entire overlay */
+            height: 450px;
+            /* Fixed height for the entire overlay */
             background-color: var(--surface-color-dark);
             border-radius: 10px;
             box-shadow: 0 4px 20px var(--shadow-color-dark);
@@ -505,6 +532,7 @@
     </style>
     {% block head_extra %}{% endblock %}
 </head>
+
 <body>
     <div id="globalMessageContainer"></div>
     <header>
@@ -562,7 +590,7 @@
             }
 
             console.log("clicked")
-            
+
             try {
                 const logoutLink = document.getElementById('logoutLink');
                 if (logoutLink) {
@@ -571,7 +599,7 @@
                     logoutLink.style.pointerEvents = 'none';
                 }
 
-                const response = await fetch('/logout', { 
+                const response = await fetch('/logout', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -584,40 +612,40 @@
                 if (result.success) {
                     // Clear specific localStorage items
                     console.log("sucess")
-                    localStorage.clear();
+                    localStorage.clear(); // This line clears everything. The individual removeItem calls below it are redundant.
                     localStorage.removeItem('name');
                     localStorage.removeItem('role');
                     localStorage.removeItem('user_id');
-                    localStorage.removeItem('company_name'); 
-                    
-                    showGlobalMessage( 'Logged out successfully', 'success');
-                    
+                    localStorage.removeItem('company_name');
+
+                    showGlobalMessage('Logged out successfully', 'success');
+
                     updateAuthNav(); // Update navigation after logout
-                    
+
                     setTimeout(() => {
                         window.location.href = 'http://localhost:5000/user';
                     }, 2000);
-                    
+
                 } else {
                     throw new Error('Logout failed');
                 }
-                
+
             } catch (error) {
                 console.error('Logout error:', error);
-                
+
                 // Fallback: still clear local storage even if server request fails
                 localStorage.removeItem('name');
                 localStorage.removeItem('role');
                 localStorage.removeItem('user_id');
-                localStorage.removeItem('company_name'); 
+                localStorage.removeItem('company_name');
                 sessionStorage.clear(); // Clear all sessionStorage as a fallback
-                
+
                 showGlobalMessage('Logout completed. Redirecting...', 'warning');
-                
+
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 2000);
-                
+
             } finally {
                 const logoutLink = document.getElementById('logoutLink');
                 if (logoutLink) {
@@ -629,7 +657,7 @@
 
         // Function to update authentication navigation
         function updateAuthNav() {
-            const companyName = localStorage.getItem('company_name'); 
+            const companyName = localStorage.getItem('company_name');
             const userName = localStorage.getItem('name'); // Assuming this is for non-company user (admin/candidate)
             const userRole = localStorage.getItem('role'); // Role for non-company user (e.g., 'a' for admin, 'candidate', 'interviewer')
 
@@ -637,7 +665,7 @@
             const homeLink = document.getElementById('homeLink');
             const jobPostingsLink = document.getElementById('jobPostingsLink');
             const postJobLink = document.getElementById('postJobLink');
-            const viewSlotsLink = document.getElementById('viewSlotsLink'); 
+            const viewSlotsLink = document.getElementById('viewSlotsLink');
             const loginLink = document.getElementById('loginLink');
             const signupLink = document.getElementById('signupLink'); // For 'Create Users'
             const offerLink = document.getElementById('offerLink')
@@ -649,7 +677,7 @@
 
             // --- Step 1: Hide all dynamic nav elements by default ---
             // This ensures a clean slate before applying display logic
-            [homeLink, jobPostingsLink, postJobLink, viewSlotsLink, loginLink, signupLink, offerLink,logoutLink].forEach(element => {
+            [homeLink, jobPostingsLink, postJobLink, viewSlotsLink, loginLink, signupLink, offerLink, logoutLink].forEach(element => {
                 if (element) element.style.display = 'none';
             });
             // Hide chat elements by default
@@ -671,16 +699,16 @@
                 if (postJobLink) postJobLink.style.display = 'list-item';
                 if (viewSlotsLink) viewSlotsLink.style.display = 'list-item';
                 if (logoutLink) logoutLink.style.display = 'list-item';
-                
+
                 // Hide login/signup for company
                 if (loginLink) loginLink.style.display = 'none';
-                if (signupLink) signupLink.style.display = 'list-item'; 
-                if(offerLink) offerLink.style.display ='list-item';
+                if (signupLink) signupLink.style.display = 'list-item';
+                if (offerLink) offerLink.style.display = 'list-item';
 
                 // Show chat for companies (as per previous requirement for admin/company)
                 if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
                 if (chatBox) chatBox.classList.remove('hidden-chat-element');
-                
+
             } else if (isUserLoggedIn) {
                 // Scenario 2: A regular user (not a company) is logged in
                 console.log("User logged in:", userName, "Role:", userRole);
@@ -692,13 +720,13 @@
                 // Role-specific visibility for regular users
                 const normalizedRole = userRole ? userRole.toLowerCase() : '';
 
-                if (normalizedRole === 'admin') { 
+                if (normalizedRole === 'admin') {
                     // Admin specific links beyond general user
-                    if (postJobLink) postJobLink.style.display = 'list-item'; 
-                    if (viewSlotsLink) viewSlotsLink.style.display = 'list-item'; 
+                    if (postJobLink) postJobLink.style.display = 'list-item';
+                    if (viewSlotsLink) viewSlotsLink.style.display = 'list-item';
                     if (signupLink) signupLink.style.display = 'list-item'; // Admins can create new users
-                    if(offerLink) offerLink.style.display ='list-item'
-                    
+                    if (offerLink) offerLink.style.display = 'list-item'
+
                     // Show chat for admins
                     if (chatToggle) chatToggle.classList.remove('hidden-chat-element');
                     if (chatBox) chatBox.classList.remove('hidden-chat-element');
@@ -708,7 +736,7 @@
                     if (postJobLink) postJobLink.style.display = 'none';
                     if (viewSlotsLink) viewSlotsLink.style.display = 'none';
                     if (signupLink) signupLink.style.display = 'none';
-                    if (offerLink) offerLink.style.display ='none';
+                    if (offerLink) offerLink.style.display = 'none';
                     if (chatToggle) chatToggle.classList.add('hidden-chat-element');
                     if (chatBox) chatBox.classList.add('hidden-chat-element');
                 }
@@ -721,8 +749,8 @@
                 console.log("No one logged in.");
                 if (loginLink) loginLink.style.display = 'list-item';
                 if (signupLink) signupLink.style.display = 'none'; // Allow public registration
-                if (offerLink) offerLink.style.display ='none'
-                
+                if (offerLink) offerLink.style.display = 'none'
+
                 // All other links should be hidden, which is handled by the initial hiding
                 // at the beginning of the function and not explicitly set to 'list-item' here.
             }
@@ -730,8 +758,45 @@
             console.log('Auth nav updated - User:', userName, 'Role:', userRole, 'Company:', companyName);
         }
 
+        // Function to start a new chat conversation
+        async function startNewChatConversation() {
+            const chatOverlayMessages = document.getElementById('chatOverlayMessages'); // Get inside function scope
+            chatOverlayMessages.innerHTML = '<p class="placeholder-text">Starting a new conversation...</p>';
+            try {
+                // *** This is the key change: Calling your /api/chat/start_new endpoint ***
+                const response = await fetch('/api/chat/start_new', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({}) // Send an empty body or any initial data if needed
+                });
+
+                const data = await response.json();
+                console.log('New conversation response:', data);
+
+                if (response.ok && data.conversation_id) {
+                    // Update global currentConversationId and sessionStorage
+                    currentConversationId = data.conversation_id;
+                    sessionStorage.setItem('lastActiveConversationId', currentConversationId);
+                    chatOverlayMessages.innerHTML = '<p class="placeholder-text">New conversation started. Say hello!</p>';
+                    return true; // Indicate success
+                } else {
+                    console.error('Failed to start new conversation:', data.message || 'Unknown error');
+                    chatOverlayMessages.innerHTML = '<p class="placeholder-text" style="color: var(--error-color);">Failed to start new chat.</p>';
+                    showGlobalMessage('Failed to start new chat.', 'error');
+                    return false; // Indicate failure
+                }
+            } catch (error) {
+                console.error('Network error starting new conversation:', error);
+                chatOverlayMessages.innerHTML = '<p class="placeholder-text" style="color: var(--error-color);">Network error starting chat.</p>';
+                showGlobalMessage('Network error starting new chat.', 'error');
+                return false; // Indicate failure
+            }
+        }
+
         // Initialize authentication UI and chat functionality when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             updateAuthNav(); // Call initially to set correct state
 
             // --- CHAT OVERLAY JAVASCRIPT ---
@@ -764,7 +829,6 @@
                     chatOverlay.style.top = 'auto';
                 }
             }
-
 
             function clamp(value, min, max) {
                 return Math.min(Math.max(value, min), max);
@@ -836,11 +900,18 @@
             async function loadOverlayConversation(convId) {
                 currentConversationId = convId;
                 sessionStorage.setItem('lastActiveConversationId', convId);
+                if(convId == "new"){
+                    console.log("hello")
+                    startNewChatConversation();
+                    currentConversationId = sessionStorage.getItem('lastActiveConversationId');
+                    convId = currentConversationId;
+                }
 
                 chatOverlayMessages.innerHTML = '<p class="placeholder-text">Loading messages...</p>';
 
                 try {
                     const response = await fetch(`/api/chat/history/${convId}`);
+                    console.log("Loading conversation with ID:", response);
                     if (response.ok) {
                         const conversationData = await response.json();
                         chatOverlayMessages.innerHTML = '';
@@ -861,23 +932,27 @@
                 }
             }
 
+
             // --- Send Message in Overlay ---
             async function sendOverlayMessage() {
+                let companyName = localStorage.getItem('company_name');
                 const messageContent = chatOverlayInput.value.trim();
                 if (!messageContent) return;
 
                 chatOverlayInput.value = ''; // Clear input immediately
 
-                const userId = localStorage.getItem('user_id');
-                const userName = localStorage.getItem('name');
-
-                if (!userId || !userName) {
-                    showGlobalMessage("Please log in to chat.", 'error');
-                    return;
-                }
-
                 // Add user message to UI
                 addOverlayMessageToChat({ sender: 'user', content: messageContent, timestamp: new Date().toISOString() });
+
+                // If there's no current conversation ID, try to start a new one first
+                if (!currentConversationId) {
+                    const started = await startNewChatConversation();
+                    if (!started) {
+                        // If starting a new conversation failed, don't proceed with sending message
+                        addOverlayMessageToChat({ sender: 'bot', content: 'Could not start a new chat. Please try again.', timestamp: new Date().toISOString() });
+                        return;
+                    }
+                }
 
                 try {
                     const response = await fetch('/api/chat/message', {
@@ -886,18 +961,19 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            user_id: userId,
-                            user_name: userName,
-                            message: messageContent,
-                            conversation_id: currentConversationId
+                            message: messageContent, 
+                            conversation_id: currentConversationId // Now guaranteed to be set or null if new failed
                         })
                     });
 
                     const data = await response.json();
 
                     if (response.ok) {
-                        if (!currentConversationId) {
-                            currentConversationId = data.conversation_id; // Set new conversation ID if started
+                        // If it was the very first message and conversation_id was null initially,
+                        // and the backend responded with a new ID, update it.
+                        // (Though with the new `startNewChatConversation` this might be less critical here)
+                        if (!currentConversationId && data.conversation_id) {
+                            currentConversationId = data.conversation_id;
                             sessionStorage.setItem('lastActiveConversationId', currentConversationId);
                         }
                         addOverlayMessageToChat({ sender: 'bot', content: data.reply, timestamp: new Date().toISOString() });
@@ -914,23 +990,24 @@
 
             // Event Listeners for Overlay Chat (Only if elements exist)
             if (chatOverlayToggle && chatOverlay && chatOverlayInput && sendOverlayMessageBtn) {
-                chatOverlayToggle.addEventListener('click', () => {
+                chatOverlayToggle.addEventListener('click', async () => { // Make this async
                     isChatOpen = !isChatOpen;
                     if (isChatOpen) {
                         chatOverlay.classList.add('open');
                         sessionStorage.setItem('isChatOverlayOpen', 'true');
-                        // Load conversation when opening, if a user_id is available AND it's an admin (or company as per new logic)
-                        const userId = localStorage.getItem('user_id');
-                        const userRoleFromLS = localStorage.getItem('role');
                         const companyNameFromLS = localStorage.getItem('company_name');
 
-                        const canUseChat = (userId && userRoleFromLS === 'admin') || (companyNameFromLS !== null && companyNameFromLS !== undefined);
+                        const canUseChat = (companyNameFromLS !== null && companyNameFromLS !== undefined);
 
                         if (canUseChat) {
                             if (!currentConversationId) {
-                                loadOverlayConversation('new'); // Or some default if applicable
+                                // If no existing conversation, start a new one
+                                await startNewChatConversation();
+                                // *** FIXED: Corrected typo from 'consoel.log' to 'console.log' ***
+                                console.log("I was called with new conversation");
                             } else {
-                                loadOverlayConversation(currentConversationId);
+                                // Otherwise, load the existing one
+                                await loadOverlayConversation(currentConversationId);
                             }
                         } else {
                             chatOverlayMessages.innerHTML = '<p class="placeholder-text">Log in as admin or company to use chat.</p>';
@@ -949,17 +1026,17 @@
                     }
                 });
 
-                // If chat was open on last visit, reopen it IF the user is an admin or company
-                const userRoleFromLS = localStorage.getItem('role');
                 const companyNameFromLS = localStorage.getItem('company_name');
-                const canReopenChat = (localStorage.getItem('user_id') && userRoleFromLS === 'admin') || (companyNameFromLS !== null && companyNameFromLS !== undefined);
+                const canReopenChat = (companyNameFromLS !== null && companyNameFromLS !== undefined);
 
+                // Initial load for reopening chat
                 if (isChatOpen && canReopenChat) {
                     chatOverlay.classList.add('open');
                     if (currentConversationId) {
                         loadOverlayConversation(currentConversationId);
                     } else {
-                        loadOverlayConversation('new');
+                        // If chat was open but no conversation ID, try to start a new one
+                        startNewChatConversation();
                     }
                 }
             }
@@ -967,7 +1044,7 @@
 
         // Alternative: Handle logout via direct navigation (fallback)
         // This handles cases where JavaScript is disabled or fails
-        window.addEventListener('beforeunload', function() {
+        window.addEventListener('beforeunload', function () {
             // Only clear if we're navigating to logout
             if (window.location.pathname === '/logout') { // This '/logout' should match your Flask logout route
                 localStorage.clear();
@@ -976,4 +1053,5 @@
         });
     </script>
 </body>
+
 </html>

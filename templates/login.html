@@ -134,13 +134,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 // Store user data in localStorage
                 localStorage.setItem('response', result.role);
-                localStorage.setItem('email',result.email || '');
                 if (result.role == 'u'){
                     localStorage.setItem('candidate_name', name);
-                    localStorage.setItem('candidate_email',email);
-                    showGlobalMessage(result.message, 'success', '/user');
+                    localStorage.setItem('candidate_email',result.email);
+                    localStorage.setItem('role','u')
+                    window.location.href = '/user';
+                    return ;
                 }else{
                     localStorage.setItem('name', result.company_name || '');
+                    localStorage.setItem('email',result.email || '');
                 }
                 if(result.position == "interviewer") {
                     localStorage.setItem('interviewer', 'true');

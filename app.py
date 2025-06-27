@@ -36,7 +36,7 @@ UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'upload
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications32'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/JobApplications33'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -557,7 +557,9 @@ def signup():
             return jsonify({"message": "Username already exists"}), 409
 
         new_user = User(name=name, email=email ,password=password, company_name=company_name, role=role,position=position)
+        print("user created sucessfully ")
         db.session.add(new_user)
+        db.session.commit()
         session['candidate_name'] = name
         session['candidate_email'] = email
         session['who'] ='user'
@@ -905,18 +907,14 @@ def get_filtered_applications():
 
     applications_query = Application.query
 
-    if name_filter or role_filter:
-        applications_query = applications_query.join(Job)
+    applications_query = applications_query.filter(Job.is_open == 1)
 
     if name_filter:
-        applications_query = applications_query.join(Application.job).filter(
-        Job.title.ilike(f'%{name_filter}%'),
-        Job.is_open == 1)
+        applications_query = applications_query.filter(Job.title.ilike(f'%{name_filter}%'))
 
     if role_filter:
-        applications_query = applications_query = applications_query.join(Application.job).filter(
-        Job.responsibilities.ilike(f'%{role_filter}%'),
-        Job.is_open == 1)
+        applications_query = applications_query.filter(Job.responsibilities.ilike(f'%{role_filter}%'))
+
     applications = applications_query.all()
 
     filtered_applications_list = []

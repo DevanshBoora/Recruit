@@ -2,10 +2,10 @@
 from flask import Blueprint,render_template,jsonify,session,request
 import json
 from flask import current_app as app
-from models import Conversation, Message, db
+from models import Conversation, Message, db,Job
+import datetime
 import google.generativeai as genai
 import logging
-from db_tools import get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status,create_job_posting,open_web_page
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -14,10 +14,52 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 chat_bp = Blueprint('chat_bp', __name__)
 
 
+
+def create_job_posting(
+    title: str,
+    description: str,
+    qualifications: str,
+    responsibilities: str,
+    job_type: str = "on-site",
+    location: str ="Hyderabad",
+    required_experience: str = "",
+    assessment_timer: int = 10,
+    assessment_questions: str = None,
+    min_assesment_score: int = 50,
+    number_of_positions: int = 1,
+    is_open: int=0,
+
+):
+    try:
+        title = session.get('company_name') # Use session title or default
+        new_job = Job(
+            title=title,
+            description=description,
+            qualifications=qualifications,
+            responsibilities=responsibilities,
+            job_type=job_type,
+            location=location,
+            required_experience=required_experience,
+            posted_at=datetime.utcnow(), # Ensure datetime is used for default
+            assessment_timer=assessment_timer,
+            assessment_questions=assessment_questions,
+            min_assesment_score=min_assesment_score,
+            number_of_positions=number_of_positions,
+            is_open=is_open
+        )
+        db.session.add(new_job)
+        db.session.commit()
+        
+        return {"status": "success", "job_id": new_job.id, "job_title": title}
+    except Exception as e:
+        db.session.rollback()
+        return {"status": "error", "message": str(e)}
+
 model = genai.GenerativeModel(
     'gemini-1.5-flash', # Using a stable, generally available model
     system_instruction=(
        "You are 'Spryple Bot', a friendly and helpful AI assistant for **Spryple Solutions**. "
+       "every message format for you is in natural language will be in form USERMESSAGE+ TITLE: TITLE ignore the title part , whenver their is a job posting use that as the title"
         "Your main goal is to provide information about Spryple, its job openings, and applicant details. "
         "Here are some key facts about Spryple that you should use to answer questions:\n"
         "- **Founders:** Spryple was founded by Venkateswarlu Boora and Sree Lahari Raavi.\n"
@@ -35,32 +77,27 @@ model = genai.GenerativeModel(
         "    * If the tool returns **exactly one result**: Provide the requested information directly and concisely (e.g., 'The email for [Applicant Name] is [Email Address].').\n"
         "    * If the tool returns **multiple results**: State that multiple applicants were found. List their full names (and perhaps the job title they applied for if available in the tool's output) and politely ask the user to provide the full name or more specific details to identify the correct person. For example: 'I found multiple applicants matching [Partial Name]: [Name 1], [Name 2], etc. Could you please specify the full name of the person you're looking for?'\n"
 
-        "- **Job Details (get_job_details):** Use this to get specific descriptions, locations, or requirements for a job opening. Trigger this if the user asks for details about a job title.\n"
-        "  *Example Usage:* `get_job_details(job_title='Software Engineer')`\n"
-        "- **Jobs by Type (get_jobs_by_type):** Use this to list jobs based on their employment type (e.g., 'full-time', 'contract'). Trigger this if the user asks for jobs of a certain type.\n"
-        "  *Example Usage:* `get_jobs_by_type(job_type='Full-time')`\n"
-        "- **Applications by Status (get_applications_by_status):** Use this to list applications based on their current status (e.g., 'Pending', 'Approved', 'Rejected'). Trigger this if the user asks for applications with a specific status.\n"
-        "  *Example Usage:* `get_applications_by_status(status='Approved')`\n"
-        
-        # If you've added get_applicants_by_job_title:
-        # "- **Applicants for a Specific Job (get_applicants_by_job_title):** Use this to find applicants who applied for a particular job title. Trigger this if the user asks 'who applied for [job title]?' or 'list candidates for [job title]'.\n"
-        # "  *Example Usage:* `get_applicants_by_job_title(job_title='HR Manager')`\n"
         "\n"
         "**General Output Handling (Applies after specific tool handling rules):**\n"
         "After using a tool, summarize the information clearly and concisely in natural language to the user. "
         "If a question is outside the scope of Spryple Solutions, its jobs, or applications, or you don't have the information based on the facts provided, "
         "politely state that you only have information about Spryple and cannot answer questions on other topics or details you haven't been given."
     
-         "- **Create New Job Posting/post a job  (create_job_posting):** Use this to add a brand new job opening to the database. Trigger this when the user provides a *full job description* and indicates an intent to 'post', 'create', 'add', or 'list' a new job opportunity. **You must extract ALL required parameters (title, description, qualifications, responsibilities, job_type, location, required_experience) accurately from the provided text.** If any required parameter is missing or unclear, ask the user for clarification before calling the tool. For optional parameters like `assessment_timer`, `assessment_questions`, `min_assesment_score`, use defaults (0 or None) if not explicitly provided by the user.\n"
+        "- **Create New Job Posting/post a job  (create_job_posting):** Use this to add a brand new job opening to the database. Trigger this when the user provides a *full job description* and indicates an intent to 'post', 'create', 'add', or 'list' a new job opportunity. **You must extract ALL required parameters (description, qualifications, responsibilities, job_type, location, required_experience) accurately from the provided text the title is provided in the user message format itself , please take that from it .** If any required parameter is missing or unclear, ask the user for clarification before calling the tool. For optional parameters like `assessment_timer`, `assessment_questions`, `min_assesment_score`, use defaults (0 or None) if not explicitly provided by the user.\n"
         "  * **Input Extraction Guidelines:**\n" 
-        "  Even if i give the just job title , you should be able to create a job posting by creatign your own sutiable job desciption , the qulaification should be generally btech if not mentioned any ,"
-        "    * **`title`**: Look for a clear job title, usually at the beginning or explicitly stated (e.g., 'We're hiring a **Senior Software Engineer**').\n"
+        "  Even if i give only some information you should be able to create a job posting by creatign your own sutiable job desciption , the qulaification should be generally btech if not mentioned any ,"
+        "    * **`title`**: Take the title of job exactly as provided by the user."
         "    * **`description`**: This should be the main body of the job ad, summarizing the role. Extract the core purpose and what the role entails.\n"
         "    * **`qualifications`**: Look for sections like 'Requirements', 'Qualifications', 'Must-haves', 'Skills needed'. Summarize them concisely.\n"
-        "    * **`responsibilities`**: Look for sections like 'Responsibilities', 'What you'll do', 'Key tasks'. Summarize them concisely.\n"
+        "    * **`responsibilities`**:This is just one or two words not the sentences, eg like software development, tester, mentor , it will given in the user message itself"
         "    * **`job_type`**: Infer from terms like 'full-time', 'part-time', 'contract', 'internship'. Default to 'Full-time' if not specified but implies a standard role.\n"
         "    * **`location`**: Look for city, state, country, or 'Remote', 'Hybrid'. Default to 'Remote' or 'Anywhere' if not specified but implies flexibility.\n"
         "    * **`required_experience`**: Look for phrases like 'X years of experience', 'Entry-level', 'Mid-level', 'Senior'. Default to 'Not specified' if not found.\n"
+        "    * **`assessment_timer`**: If the user mentions an assessment or test, extract the time limit (in minutes) they specify. Default to 0 if not mentioned.\n"
+        "    * **`assessment_questions`**: If the user provides specific questions or a format for an assessment, extract that. Default ask some questions realted to the job role , ask minimum of 5 MCQ questions related to that job. the format of questions is '1', 'T-hub', 'fadkjl', 'Btech', 'Software', '2025-06-24 13:50:16', '2025-06-25 23:21:00', 'Remote', 'Hyderabad', '2', '10', '[{\"id\":\"question-0\",\"type\":\"mcq\",\"text\":\"ha ha kuch bhi\",\"expected_keywords\":[],\"options\":{\"a\":\"hey\",\"b\":\"Bro\",\"c\":\"How\",\"d\":\"are\"},\"correct_option\":\"b\"}]', '100', '2025-06-24 13:50:16', '1', '0'\n"
+        "    * **`min_assesment_score`**: If the user specifies a minimum score for the assessment, extract that. Default to 0 if not mentioned.\n"
+        "    * **`number_of_positions`**: If the user specifies how many positions are available, extract that number. Default to 1 if not specified.\n"
+        "  * **Output Handling:**\n"    
         "Important  , dont trouble user to provide this or that , ,just create a job posting with the best possibtle parameters and description "
 
         "- **Open Web Page (open_web_page):** Use this to open a specific web page (like the job application page or the main jobs page) in the current browser tab. Trigger this when the user asks to 'open', 'go to', 'show me', or 'take me to' a specific page, and identifies the page by name (e.g., 'application page', 'job page', 'home page', 'contact us'). This tool takes only one parameter: `name`.\n"
@@ -78,7 +115,7 @@ model = genai.GenerativeModel(
         "If a question is outside the scope of Spryple Solutions, its jobs, or applications, or you don't have the information based on the facts provided, "
         "politely state that you only have information about Spryple and cannot answer questions on other topics or details you haven't been given."
 ),
-    tools=[get_applicant_info, get_job_details, get_jobs_by_type, get_applications_by_status,create_job_posting , open_web_page] # Register your tools here
+    tools=[create_job_posting] # Register your tools here
  )
 
 
@@ -95,12 +132,7 @@ def get_gemini_chat_history(conversation_id):
 # Define a dictionary to map tool names (strings) to their actual functions
 # This is crucial for executing the tool calls dynamically
 available_tools = {
-    'get_applicant_info': get_applicant_info,
-    'get_job_details': get_job_details,
-    'get_jobs_by_type': get_jobs_by_type,
-    'get_applications_by_status': get_applications_by_status,
     'create_job_posting': create_job_posting,
-    'open_web_page': open_web_page # ADD THIS LINE
 }
 
 
@@ -151,25 +183,10 @@ def send_chat_message():
         db.session.add(user_message_db)
         db.session.commit()
 
-        # 2. Get historical messages for Gemini
+        title = session.get('company_name') # Use session title or default
         gemini_history = get_gemini_chat_history(conversation_id)
-        # The last message added to history *is* the current user message.
-        # Gemini's `start_chat` history parameter expects the history *before* the current turn.
-        # The current message is then sent via `send_message`.
-        # So, we should *not* remove the last user message from `gemini_history` if it's already there
-        # because the `send_message` call is designed for the current turn.
-        # If get_gemini_chat_history includes the current user message, then it's wrong.
-        # Let's assume get_gemini_chat_history fetches everything *up to and including* the last user message saved.
-        # So we pass the full history to start_chat, then send the message again.
-        # This is a common pattern for "continuation" of a chat session.
-
-        # If you want to use start_chat with *only previous* messages and then send the new one:
-        # gemini_history_for_start = get_gemini_chat_history(conversation_id)
-        # if gemini_history_for_start and gemini_history_for_start[-1]['role'] == 'user' and gemini_history_for_start[-1]['parts'][0] == user_message_content:
-        #     gemini_history_for_start = gemini_history_for_start[:-1] # Remove current user message from history for start_chat
-
         chat_session = model.start_chat(history=gemini_history)
-        gemini_response = chat_session.send_message(user_message_content)
+        gemini_response = chat_session.send_message(user_message_content+ f"title :{title} ")
         print("message sent to Gemini")
         bot_response_content = ""
         tool_outputs = []
